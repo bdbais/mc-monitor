@@ -1,0 +1,9 @@
+Elenco dei server con aggiungi, modifica, duplica e rimuovi: gestisci più installazioni dalla stessa app.
+
+Lista d'attesa: chi prova a entrare senza essere né in whitelist né bannato compare con due pulsanti, ammetti o banna.
+
+RCON con attivazione guidata sul server e connessione dentro il tunnel SSH.
+
+Pannello per giocatore: teletrasporto, modalità, permessi, moderazione e cronologia chat con data e ora.
+
+Mappa che segue un giocatore mentre si muove, cambiando dimensione da sola.

@@ -173,6 +173,42 @@ keytool -genkeypair -v -keystore mcmonitor.jks -storetype JKS -keyalg RSA -keysi
 
 e affianca un `keystore.properties` con `storeFile`, `storePassword`, `keyAlias`, `keyPassword`.
 
+## Pubblicazione automatica
+
+Il workflow [`.github/workflows/release.yml`](.github/workflows/release.yml) compila,
+firma e distribuisce. Si attiva con un tag `v*` oppure a mano da Actions, scegliendo la
+traccia di Play.
+
+Cosa fa, in ordine: verifica che il tag corrisponda a `versionName` (così non si pubblica
+`v1.8` con dentro la 1.7), esegue i test, ricostruisce il keystore dai segreti, compila
+`bundleRelease` e `assembleRelease`, allega l'APK alla release GitHub e carica l'AAB sulla
+traccia scelta di Google Play.
+
+Segreti da impostare in *Settings → Secrets and variables → Actions*:
+
+| Segreto | Contenuto |
+|---|---|
+| `KEYSTORE_BASE64` | il file `.jks` codificato in base64 |
+| `KEYSTORE_PASSWORD` | password del keystore |
+| `KEY_ALIAS` | alias della chiave (`mcmonitor`) |
+| `KEY_PASSWORD` | password della chiave |
+| `PLAY_SERVICE_ACCOUNT_JSON` | JSON del service account con accesso a Play Console |
+
+Per generare il base64 del keystore:
+
+```bash
+base64 -w0 mcmonitor.jks > keystore.base64
+```
+
+I passaggi sono indipendenti: senza `KEYSTORE_BASE64` il workflow compila comunque (non
+firmato), senza `PLAY_SERVICE_ACCOUNT_JSON` salta solo il caricamento su Play. Le note di
+rilascio mostrate su Play vengono da `store/whatsnew/whatsnew-it-IT.txt` (limite 500
+caratteri per lingua).
+
+Il service account si crea in Google Cloud, poi va invitato in Play Console
+(*Utenti e autorizzazioni*) con il permesso di gestire le release. L'API può caricare
+versioni su un'app **già esistente**: la prima creazione dell'app resta manuale.
+
 ## Licenza
 
 **Apache License 2.0** — testo completo in [LICENSE](LICENSE). Puoi usare, modificare e

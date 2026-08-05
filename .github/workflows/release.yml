@@ -1,0 +1,110 @@
+name: Compila e pubblica
+
+# Un tag "v1.8" compila, allega l'APK alla release GitHub e carica l'AAB su Play.
+# L'avvio manuale permette di scegliere la traccia senza creare un tag.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Traccia di Google Play
+        type: choice
+        default: internal
+        options: [internal, alpha, beta, production]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    env:
+      # I segreti non si possono leggere dentro "if": si trasformano in flag qui.
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
+      HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+      TRACK: ${{ inputs.track || 'internal' }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Verifica che il tag corrisponda alla versione dichiarata
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          dichiarata=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$dichiarata" != "$tag" ]; then
+            echo "::error::Il tag $GITHUB_REF_NAME non corrisponde a versionName=$dichiarata in app/build.gradle.kts"
+            exit 1
+          fi
+          echo "versione $dichiarata"
+
+      - name: Test
+        run: ./gradlew testReleaseUnitTest --no-daemon
+
+      - name: Ricostruisci il keystore di firma
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > mcmonitor.jks
+          cat > keystore.properties <<PROPS
+          storeFile=mcmonitor.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          PROPS
+
+      - name: Compila bundle e APK
+        run: ./gradlew bundleRelease assembleRelease --no-daemon
+
+      - name: Rinomina gli artefatti con la versione
+        id: artefatti
+        run: |
+          versione=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          cp app/build/outputs/apk/release/app-release.apk "MC-Monitor-$versione.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "MC-Monitor-$versione.aab"
+          echo "versione=$versione" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mc-monitor-${{ steps.artefatti.outputs.versione }}
+          path: |
+            MC-Monitor-*.apk
+            MC-Monitor-*.aab
+
+      - name: Pubblica la release su GitHub
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          file="MC-Monitor-${{ steps.artefatti.outputs.versione }}.apk"
+          gh release create "$GITHUB_REF_NAME" "$file" \
+            --title "MC Monitor ${{ steps.artefatti.outputs.versione }}" \
+            --notes-file store/whatsnew/whatsnew-it-IT.txt \
+            || gh release upload "$GITHUB_REF_NAME" "$file" --clobber
+
+      # Il bundle va a Play solo se il service account è configurato: senza segreto
+      # il workflow resta comunque utile per compilare e firmare.
+      - name: Carica su Google Play (${{ env.TRACK }})
+        if: env.HAS_PLAY == 'true'
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.bellizia.mcmonitor
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          track: ${{ env.TRACK }}
+          status: completed
+          releaseName: ${{ steps.artefatti.outputs.versione }}
+          whatsNewDirectory: store/whatsnew
