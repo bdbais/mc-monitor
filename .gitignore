@@ -1,0 +1,19 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Firma: non versionare mai keystore e password
+/keystore.properties
+/mcmonitor.jks
+*.jks
+*.keystore
+
+# Gli APK vengono pubblicati come release, non nel repository
+*.apk

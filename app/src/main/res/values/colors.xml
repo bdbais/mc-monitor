@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="grass">#5FBF6B</color>
+    <color name="grass_dark">#2E7D32</color>
+    <color name="dirt">#8D6E63</color>
+    <color name="bg">#0E1512</color>
+    <color name="surface">#16211C</color>
+    <color name="surface_high">#1D2C25</color>
+    <color name="text">#E6F0EA</color>
+    <color name="text_dim">#9DB3A7</color>
+    <color name="danger">#EF5350</color>
+    <color name="warning">#FFB300</color>
+    <color name="ic_launcher_background">#16211C</color>
+</resources>

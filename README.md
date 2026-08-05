@@ -1,0 +1,186 @@
+# MC Monitor
+
+App Android per gestire un server Minecraft installato con **LinuxGSM**, via **SSH**.
+
+APK pronto all'uso: **`MC-Monitor-1.7.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
+
+## Installazione
+
+1. Copia l'APK sul telefono.
+2. Abilita "Installa app sconosciute" per il gestore file / browser che usi.
+3. Apri l'APK e installa.
+
+## Elenco server
+
+L'app si apre sull'elenco dei server configurati, con cinque comandi:
+
+| Comando | Cosa fa |
+|---|---|
+| **Aggiungi** | crea un profilo nuovo e apre le Impostazioni per compilarlo |
+| **Modifica** | apre il server selezionato direttamente sulle Impostazioni |
+| **Duplica** | copia il profilo (utile per due istanze sullo stesso host) |
+| **Rimuovi** | cancella il profilo dal telefono, previa conferma; il server non viene toccato |
+| **Apri** | entra nel server selezionato |
+
+Tocca una scheda per selezionarla; ogni riga mostra nome, `utente@host:porta`, se la
+configurazione è completa, lo script LinuxGSM e la porta RCON quando è attiva.
+
+Con **un solo server già configurato** l'app entra direttamente, senza far passare
+dall'elenco, che resta comunque raggiungibile con la freccia indietro in alto a sinistra.
+Dentro un server si parte dalla scheda **Stato**; se la configurazione è incompleta o si
+è arrivati da "Modifica", si parte dalle **Impostazioni**.
+
+Cambiare server chiude sessione SSH, connessione RCON e azzera le scie in memoria: nessun
+dato di un server può finire mescolato con quelli di un altro.
+
+## Configurare un server
+
+Scheda **Impostazioni** (il campo **Nome** è quello che vedi nell'elenco):
+
+| Campo | Esempio | Note |
+|---|---|---|
+| Host o IP | `mc.miodominio.it` | del server Linux |
+| Porta | `22` | porta SSH |
+| Utente SSH | `mcserver` | l'utente proprietario di LinuxGSM |
+| Password | | lascia vuoto se usi la chiave |
+| Chiave privata OpenSSH | `-----BEGIN OPENSSH PRIVATE KEY----- …` | incolla il file intero |
+| Directory LinuxGSM | `/home/mcserver` | dove sta lo script |
+| Script LinuxGSM | `mcserver` | il nome dello script LinuxGSM |
+| serverfiles | *(vuoto)* | default `<dir>/serverfiles` |
+| URL mappa web | `http://mc.miodominio.it:8123` | Dynmap / BlueMap / squaremap, opzionale |
+
+Poi **Prova connessione** → **Salva**.
+
+Se qualcosa non va, **Diagnostica connessione** prova gli stadi uno per uno — DNS, apertura
+TCP della porta, handshake SSH, autenticazione — e poi verifica sul server tmux, le sessioni
+attive, lo script LinuxGSM, il supporto al comando `send` e i file di log. Il report è
+copiabile negli appunti.
+
+Il campo host accetta anche `host:2222` o `ssh://host`: l'app separa da sola la porta.
+
+Il fingerprint della chiave host viene memorizzato al primo collegamento (TOFU): se in
+seguito cambia, l'app blocca la connessione e lo segnala. "Dimentica fingerprint host"
+lo riazzera dopo una reinstallazione legittima del server.
+
+## Cosa fa
+
+- **Stato** — `lgsm details`: stato STARTED/STOPPED, IP, porte, versione, uptime, output completo. Pulsanti **Avvia / Ferma / Riavvia** (`lgsm start|stop|restart`), con conferma sulle azioni distruttive.
+- **Console** — coda di `logs/latest.log` (fallback sul console log di LinuxGSM), aggiornamento automatico ogni 6 s, e invio comandi alla console del server. La riga di scorciatoie sopra il campo di testo compila il comando al posto tuo: quelle che finiscono con uno spazio (`tp `, `kick `…) aspettano l'argomento e aprono la tastiera, le altre sono complete e basta premere **Invia**.
+- **Giocatori** — chi è online con coordinate X/Y/Z e dimensione; whitelist e lista ban lette da `whitelist.json` e `banned-players.json`, con aggiunta/rimozione. Toccando un nome (online, in whitelist o bannato) si apre il pannello con tutte le operazioni — vedi sotto.
+- **Mappa** — piano X/Z navigabile (trascina, pizzica, doppio tap) con griglia dei chunk, spawn, giocatori e **scia degli spostamenti** aggiornata in tempo reale; filtro Overworld / Nether / End. Il pulsante **Mappa web** apre Dynmap/BlueMap a tutto schermo, se configurata.
+
+### Lista d'attesa
+
+In cima alla scheda Giocatori compare, solo quando serve, la card **In attesa di
+approvazione**: chi risulta nei log come tentativo di accesso e non è né in `whitelist.json`
+né in `banned-players.json`. Per ognuno la data dell'ultimo tentativo, l'esito (respinto
+dalla whitelist / entrato / tentativo) e l'UUID, con due pulsanti: **Ammetti (whitelist)**
+e **Banna**. Toccando la riga si apre il pannello completo del giocatore.
+
+Non c'è nessuna lista da mantenere: appena decidi, il nome finisce in uno dei due file del
+server e sparisce da qui. Se sul server `white-list=false`, la card lo segnala — ammettere
+qualcuno non impedirebbe comunque agli altri di entrare.
+
+### Pannello del giocatore
+
+Si apre toccando un nome nella scheda Giocatori:
+
+- **Mostra sulla mappa e segui** — porta alla scheda Mappa agganciata a quel giocatore: a ogni aggiornamento la vista lo ricentra e traccia la scia. Se passa nel Nether o nell'End il filtro dimensione si adegua da solo. "Smetti di seguire" sblocca la vista.
+- **Cronologia chat e comandi** — tutte le sue righe di chat e i comandi digitati, con data e ora, raggruppati per giorno.
+- **Teletrasporta** — a coordinate (precompilate con la posizione attuale), verso un altro giocatore online, oppure portando un altro giocatore da lui.
+- **Modalità di gioco** — sopravvivenza, creativa, avventura, spettatore.
+- **Punto di rinascita** — imposta lo spawn del giocatore sulla sua posizione attuale.
+- **Permessi** — whitelist aggiungi/rimuovi, op/deop.
+- **Moderazione** — espelli e banna (entrambi con motivo facoltativo), rimuovi il ban.
+
+Le voci che richiedono il giocatore in gioco (teletrasporto, modalità, espulsione) sono
+disattivate quando è offline.
+
+### Come vengono lette le chat
+
+`zgrep` sui log in `serverfiles/logs`: `latest.log` più i `.log.gz` dei giorni precedenti,
+filtrando le righe `<Nome>` e `Nome issued server command`. La data viene dal nome del file
+compresso, l'ora dalla riga. Senza `zgrep` (pacchetto gzip) l'app legge solo `latest.log`.
+
+## RCON (consigliato)
+
+Senza RCON l'app pilota il server scrivendo nella console tmux e rileggendo il log: ogni
+aggiornamento lascia righe di servizio in `latest.log`. Con RCON i comandi tornano la
+risposta del server, subito e senza sporcare il log.
+
+Nella sezione **RCON** delle Impostazioni:
+
+1. **Genera password** — 20 caratteri casuali. Sono ammessi solo lettere, cifre, `.`, `-` e `_`: finisce in un file di configurazione sul server, e i simboli con significato per la shell restano fuori.
+2. **Attiva RCON sul server e riavvia** — dopo una conferma esplicita l'app fa cinque passi, mostrandoli mentre procede:
+   - copia di sicurezza di `server.properties` (`.mcmonitor.bak.<data>`) e scrittura di `enable-rcon=true`, `rcon.port`, `rcon.password`, `broadcast-rcon-to-ops=false`
+   - riavvio LinuxGSM (**i giocatori online cadono**)
+   - attesa fino a 60 s che la porta risulti in ascolto (`ss`/`netstat`)
+   - salvataggio della configurazione nell'app
+   - prova di autenticazione reale
+3. **Prova RCON** — riverifica in qualsiasi momento, mostrando la risposta a `list`.
+
+**Tunnel SSH (attivo di default).** La porta RCON viene inoltrata dentro la connessione SSH
+già aperta (`127.0.0.1:25575` sul server → porta locale sul telefono). Non devi aprire
+niente sul firewall e la password RCON, che il protocollo manda in chiaro, non esce mai
+dal tunnel. Disattiva l'interruttore solo se vuoi collegarti direttamente alla porta.
+
+Quando RCON è attivo lo usano la console, l'elenco giocatori e il tracciamento posizioni;
+log e chat restano su SSH, perché RCON non legge file.
+
+### Come vengono lette le posizioni
+
+L'app invia alla console `list`, poi `data get entity <nome> Pos` e `Dimension` per ogni
+giocatore online, e rilegge la risposta dal log. Serve quindi un server **vanilla/Paper/Spigot**
+recente (il comando `data` esiste da 1.13). Le scie sono ricostruite lato app campionando
+la posizione all'intervallo impostato (default 6 s).
+
+I comandi vengono inviati di default con `tmux send-keys -t <sessione>`, che funziona con
+qualsiasi versione di LinuxGSM (tmux è già un suo requisito: nessun pacchetto extra da
+installare). La sessione tmux ha il nome dello script, ma puoi cambiarla in Impostazioni —
+`tmux ls` nella diagnostica mostra quelle davvero attive. Se la tua versione di LinuxGSM ha
+il comando `send`, l'interruttore in Impostazioni lo attiva; se poi risultasse assente,
+l'app torna da sola a tmux.
+
+Importante: `tmux ls` mostra solo le sessioni **dell'utente con cui ti colleghi**. Se
+LinuxGSM gira come utente `mcserver`, l'SSH dell'app deve usare quell'utente.
+
+## Ricompilare
+
+Serve JDK 17+ e l'Android SDK (platform 35, build-tools 35).
+
+```bash
+./gradlew assembleRelease
+```
+
+I parser dei log (giocatori online, posizioni, chat) hanno test su righe reali di un
+server vanilla 1.21.10, e il client RCON è testato contro un finto server che parla il
+protocollo Source:
+
+```bash
+./gradlew testReleaseUnitTest
+```
+
+L'APK esce in `app/build/outputs/apk/release/`.
+
+La firma richiede un keystore, **che non fa parte di questo repository**: `mcmonitor.jks` e
+`keystore.properties` sono credenziali personali e restano fuori dal versionamento. Senza
+di essi la build produce comunque un APK, ma non firmato. Per firmarne uno tuo:
+
+```bash
+keytool -genkeypair -v -keystore mcmonitor.jks -storetype JKS -keyalg RSA -keysize 2048 \
+  -validity 10000 -alias mcmonitor
+```
+
+e affianca un `keystore.properties` con `storeFile`, `storePassword`, `keyAlias`, `keyPassword`.
+
+## Font
+
+Il titolo usa **Press Start 2P** (Google Fonts, licenza SIL Open Font License 1.1 — testo
+completo in `OFL-PressStart2P.txt`). Il font originale di Minecraft non è ridistribuibile,
+quindi è stato scelto un font pixel libero dallo stesso spirito.
+
+## Sicurezza
+
+Le credenziali SSH stanno in `SharedPreferences` privata dell'app (accessibile solo
+all'app su un dispositivo non rootato, non cifrata da password). Consigliato: utente SSH
+dedicato, autenticazione a chiave, permessi limitati alla sola directory LinuxGSM.
