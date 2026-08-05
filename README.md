@@ -173,11 +173,23 @@ keytool -genkeypair -v -keystore mcmonitor.jks -storetype JKS -keyalg RSA -keysi
 
 e affianca un `keystore.properties` con `storeFile`, `storePassword`, `keyAlias`, `keyPassword`.
 
-## Font
+## Licenza
 
-Il titolo usa **Press Start 2P** (Google Fonts, licenza SIL Open Font License 1.1 — testo
-completo in `OFL-PressStart2P.txt`). Il font originale di Minecraft non è ridistribuibile,
-quindi è stato scelto un font pixel libero dallo stesso spirito.
+**Apache License 2.0** — testo completo in [LICENSE](LICENSE). Puoi usare, modificare e
+ridistribuire il codice, anche in progetti commerciali, mantenendo l'attribuzione e
+indicando le modifiche apportate. Rispetto a MIT aggiunge una concessione esplicita di
+brevetto, la stessa licenza di AndroidX e Material Components su cui l'app è costruita.
+
+Componenti di terze parti:
+
+| Componente | Licenza |
+|---|---|
+| AndroidX, Material Components, Kotlin Coroutines | Apache 2.0 |
+| [mwiede/jsch](https://github.com/mwiede/jsch) (client SSH) | BSD 3-Clause |
+| Font **Press Start 2P** (Google Fonts) | SIL Open Font License 1.1 — testo in `OFL-PressStart2P.txt` |
+
+Il font originale di Minecraft non è ridistribuibile, quindi è stato scelto un font pixel
+libero dallo stesso spirito. Questo progetto non è affiliato con Mojang o Microsoft.
 
 ## Sicurezza
 
