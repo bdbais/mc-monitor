@@ -83,6 +83,23 @@ Gli screenshot devono ritrarre l'app in funzione: vanno catturati dal telefono c
 collegata al tuo server. Consigliati, in quest'ordine: Stato, Mappa con le scie,
 Giocatori con la lista d'attesa, Console. Oscura host e nomi utente prima di caricarli.
 
+## Accesso all'app (istruzioni per il team di revisione)
+
+Sezione *Contenuti dell'app → Accesso all'app*. L'app non ha login né account, ma senza un
+server SSH non mostra nulla: senza questa spiegazione un revisore vedrebbe solo una
+schermata di configurazione e potrebbe respingere la pubblicazione.
+
+Scegli "Tutte le funzionalità sono disponibili senza credenziali particolari" e incolla
+nelle istruzioni:
+
+```
+L'app non ha account né login. È uno strumento di amministrazione che si collega, tramite SSH, a un server Minecraft posseduto dall'utente e installato con LinuxGSM.
+
+Senza un server da amministrare l'app mostra solo la schermata di configurazione: non esistono credenziali di prova da fornire, perché ogni utente usa il proprio server e le proprie chiavi SSH.
+
+Tutte le funzioni (stato, console, giocatori, mappa, RCON) diventano disponibili dopo aver inserito indirizzo, utente e password o chiave SSH di un server proprio, nella scheda Impostazioni.
+```
+
 ## Sicurezza dei dati — risposte proposte
 
 Il modulo va compilato e firmato da te; questa è la lettura tecnica di quello che l'app fa.
