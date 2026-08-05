@@ -17,3 +17,4 @@
 
 # Gli APK vengono pubblicati come release, non nel repository
 *.apk
+*.aab
