@@ -73,7 +73,9 @@ jobs:
         id: artefatti
         run: |
           versione=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          cp app/build/outputs/apk/release/app-release.apk "MC-Monitor-$versione.apk"
+          # Senza keystore l'APK si chiama app-release-unsigned.apk: si prende quello che c'è.
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          cp "$apk" "MC-Monitor-$versione.apk"
           cp app/build/outputs/bundle/release/app-release.aab "MC-Monitor-$versione.aab"
           echo "versione=$versione" >> "$GITHUB_OUTPUT"
 
