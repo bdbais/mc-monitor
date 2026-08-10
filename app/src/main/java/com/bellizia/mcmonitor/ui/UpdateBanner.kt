@@ -29,10 +29,7 @@ object UpdateBanner {
     private fun show(activity: AppCompatActivity, banner: ViewUpdateBannerBinding, update: Update) {
         banner.root.visible(true)
         banner.updateTitle.text = "Disponibile la versione ${update.version} · ${update.sizeLabel}"
-        banner.updateNotes.text = update.notes.lineSequence()
-            .filter { it.isNotBlank() && !it.startsWith("#") }
-            .take(3)
-            .joinToString(" ")
+        banner.updateNotes.text = plainText(update.notes)
             .ifBlank { "Tocca Aggiorna per scaricare e installare." }
 
         banner.updateDismiss.setOnClickListener {
@@ -58,6 +55,23 @@ object UpdateBanner {
             }
         }
     }
+
+    /**
+     * Le note di rilascio sono in Markdown: nel banner va mostrato testo semplice,
+     * altrimenti si leggono gli asterischi invece del grassetto.
+     */
+    fun plainText(notes: String): String = notes.lineSequence()
+        .map { it.trim() }
+        .filter { it.isNotBlank() && !it.startsWith("#") && !it.startsWith("---") }
+        .map { line ->
+            line.removePrefix("- ").removePrefix("* ")
+                .replace("**", "")
+                .replace("`", "")
+                .replace(Regex("\\[([^\\]]+)]\\([^)]+\\)"), "$1")
+        }
+        .take(3)
+        .joinToString(" ")
+        .trim()
 
     private fun problem(activity: AppCompatActivity, title: String, message: String) {
         MaterialAlertDialogBuilder(activity)
