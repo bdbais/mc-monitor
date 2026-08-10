@@ -18,6 +18,7 @@ import com.bellizia.mcmonitor.ui.PlayersFragment
 import com.bellizia.mcmonitor.ui.SettingsFragment
 import com.bellizia.mcmonitor.ui.StatusFragment
 import com.bellizia.mcmonitor.ui.UpdateBanner
+import com.bellizia.mcmonitor.update.UpdateChecker
 import com.google.android.material.tabs.TabLayoutMediator
 
 class MainActivity : AppCompatActivity() {
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity() {
         }.attach()
 
         binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.version.text = "v${UpdateChecker.currentVersion(this)}"
         UpdateBanner.attach(this, binding.updateBanner)
 
         // Si parte dalle Impostazioni quando si arriva da "Modifica" o quando la

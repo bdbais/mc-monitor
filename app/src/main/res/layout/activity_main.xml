@@ -23,14 +23,29 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:fontFamily="@font/press_start_2p"
-                    android:letterSpacing="0.02"
-                    android:text="@string/app_name"
-                    android:textColor="@color/grass"
-                    android:textSize="13sp" />
+                    android:baselineAligned="true"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/press_start_2p"
+                        android:letterSpacing="0.02"
+                        android:text="@string/app_name"
+                        android:textColor="@color/grass"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/version"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:textColor="@color/text_dim"
+                        android:textSize="11sp" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/serverName"

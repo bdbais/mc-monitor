@@ -1,6 +1,7 @@
 package com.bellizia.mcmonitor.ui
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -14,6 +15,7 @@ import com.bellizia.mcmonitor.databinding.ActivityServersBinding
 import com.bellizia.mcmonitor.databinding.ItemServerBinding
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.ssh.SshManager
+import com.bellizia.mcmonitor.update.UpdateChecker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
@@ -21,6 +23,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
  * Aprirne uno lo rende il server attivo per tutto il resto dell'app.
  */
 class ServersActivity : AppCompatActivity() {
+
+    private companion object {
+        const val MANUAL_URL = "https://github.com/bdbais/mc-monitor/blob/main/MANUALE.md"
+    }
 
     private lateinit var binding: ActivityServersBinding
     private var selectedId: String = ""
@@ -33,9 +39,11 @@ class ServersActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
         applyInsets()
 
+        binding.version.text = "v${UpdateChecker.currentVersion(this)}"
         UpdateBanner.attach(this, binding.updateBanner)
         selectedId = Prefs.activeId().ifBlank { Prefs.servers().firstOrNull()?.id.orEmpty() }
 
+        binding.btnManual.setOnClickListener { openManual() }
         binding.btnAdd.setOnClickListener { addServer() }
         binding.btnEdit.setOnClickListener { withSelection { open(it, editing = true) } }
         binding.btnOpen.setOnClickListener { withSelection { open(it, editing = false) } }
@@ -91,6 +99,13 @@ class ServersActivity : AppCompatActivity() {
         binding.btnOpen.isEnabled = hasSelection
         binding.btnClone.isEnabled = hasSelection
         binding.btnRemove.isEnabled = hasSelection
+    }
+
+    /** Il manuale sta nel repository: si apre nel browser, sempre aggiornato. */
+    private fun openManual() {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(MANUAL_URL))
+        runCatching { startActivity(intent) }
+            .onFailure { toastShort("Nessuna app per aprire i collegamenti") }
     }
 
     private fun addServer() {

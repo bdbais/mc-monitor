@@ -18,13 +18,28 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/press_start_2p"
-                android:text="@string/app_name"
-                android:textColor="@color/grass"
-                android:textSize="15sp" />
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/press_start_2p"
+                    android:text="@string/app_name"
+                    android:textColor="@color/grass"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/version"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textColor="@color/text_dim"
+                    android:textSize="12sp" />
+            </LinearLayout>
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -32,13 +47,31 @@
         android:id="@+id/updateBanner"
         layout="@layout/view_update_banner" />
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="14dp"
-        android:text="I tuoi server. Tocca per selezionare, poi Apri."
-        android:textColor="@color/text_dim"
-        android:textSize="13sp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="14dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="6dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="I tuoi server. Tocca per selezionare, poi Apri."
+            android:textColor="@color/text_dim"
+            android:textSize="13sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnManual"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Manuale d'uso" />
+    </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
