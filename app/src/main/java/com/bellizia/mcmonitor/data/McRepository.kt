@@ -226,6 +226,53 @@ object McRepository {
         return Lgsm.parseRequirements(r.text) to Lgsm.parseJavaVersion(r.text)
     }
 
+    /**
+     * Cambia la password dell'utente SSH e, se il profilo si autentica con
+     * password, aggiorna subito quella salvata: altrimenti il collegamento
+     * successivo fallirebbe. La verifica finale riapre davvero la connessione.
+     */
+    suspend fun changeSshPassword(current: String, new: String): String {
+        val c = cfg()
+        val result = SshManager.changePassword(c, current, new)
+        val text = Lgsm.clean(result.text).trim()
+
+        if (result.exitCode != 0) {
+            val reason = when {
+                text.contains("Authentication token manipulation", true) ->
+                    "il server ha rifiutato la modifica (password attuale errata?)"
+                text.contains("BAD PASSWORD", true) || text.contains("too short", true) ->
+                    "la nuova password non rispetta i criteri del server"
+                text.contains("do not match", true) || text.contains("non corrispondono", true) ->
+                    "le due nuove password non coincidono"
+                result.exitCode == -1 -> "nessuna risposta da passwd entro 30 secondi"
+                else -> "uscita ${result.exitCode}"
+            }
+            throw SshException("Password non cambiata: $reason.\n\n$text")
+        }
+
+        // Da qui la password sul server è nuova: salvarla è la parte da non sbagliare.
+        if (c.password.isNotBlank()) {
+            Prefs.save(Prefs.load().copy(password = new))
+        }
+        SshManager.disconnect()
+
+        val verify = runCatching { SshManager.test(Prefs.load()) }
+        return buildString {
+            append("Password cambiata sul server.\n")
+            if (c.password.isNotBlank()) {
+                append("La password salvata nel profilo è stata aggiornata.\n")
+            } else {
+                append("Il profilo usa la chiave SSH: non c'era una password da aggiornare.\n")
+            }
+            append("\nVerifica del nuovo accesso: ")
+            append(verify.fold(
+                onSuccess = { "riuscita.\n$it" },
+                onFailure = { "FALLITA.\n${it.message}\n\nRiapri le Impostazioni e correggi la password prima di chiudere l'app." }
+            ))
+            if (text.isNotBlank()) append("\n\n$text")
+        }
+    }
+
     // ------------------------------------------------ preparazione da zero
 
     suspend fun inspectServer(): ServerInspection {

@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.ServerConfig
+import com.bellizia.mcmonitor.databinding.DialogPasswordBinding
 import com.bellizia.mcmonitor.databinding.FragmentSettingsBinding
 import com.bellizia.mcmonitor.lgsm.Lgsm
 import com.bellizia.mcmonitor.lgsm.Provision
@@ -93,6 +94,7 @@ class SettingsFragment : Fragment() {
 
         b.btnRconSetup.setOnClickListener { setupRcon() }
 
+        b.btnChangePassword.setOnClickListener { changePassword() }
         b.btnPrepare.setOnClickListener { prepareServer() }
 
         b.btnDiagnose.setOnClickListener {
@@ -118,6 +120,70 @@ class SettingsFragment : Fragment() {
             Prefs.clearHostKey()
             SshManager.disconnect()
             toast("Fingerprint host dimenticato: verrà riappreso al prossimo collegamento")
+        }
+    }
+
+    /** Esegue `passwd` sul server per l'utente con cui l'app si collega. */
+    private fun changePassword() {
+        val cfg = collect()
+        Prefs.save(cfg)
+        if (!cfg.isComplete) {
+            toast("Completa prima i dati di connessione SSH")
+            return
+        }
+        val form = DialogPasswordBinding.inflate(layoutInflater)
+        form.currentPassword.setText(cfg.password)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Cambia password di ${cfg.user}")
+            .setView(form.root)
+            .setNegativeButton("Annulla", null)
+            .setPositiveButton("Cambia", null)
+            .show()
+            .also { dialog ->
+                // Il pulsante non chiude il dialogo finché i campi non sono coerenti.
+                dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                    val current = form.currentPassword.text?.toString().orEmpty()
+                    val fresh = form.newPassword.text?.toString().orEmpty()
+                    val repeat = form.repeatPassword.text?.toString().orEmpty()
+                    when {
+                        current.isBlank() -> toast("Serve la password attuale")
+                        fresh.length < 8 -> toast("La nuova password è troppo corta (minimo 8)")
+                        fresh != repeat -> toast("Le due nuove password non coincidono")
+                        fresh == current -> toast("La nuova password è uguale a quella attuale")
+                        else -> {
+                            dialog.dismiss()
+                            runChangePassword(current, fresh)
+                        }
+                    }
+                }
+            }
+    }
+
+    private fun runChangePassword(current: String, fresh: String) {
+        val view = TextView(requireContext()).apply {
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            setTextIsSelectable(true)
+            setPadding(40, 30, 40, 10)
+            text = "Eseguo passwd sul server…"
+        }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Cambio password")
+            .setView(ScrollView(requireContext()).apply { addView(view) })
+            .setCancelable(false)
+            .setPositiveButton("Chiudi", null)
+            .show()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val report = runCatching { McRepository.changeSshPassword(current, fresh) }
+                .getOrElse { it.userMessage() }
+            view.text = report
+            dialog.setCancelable(true)
+            _b?.let {
+                fill(Prefs.load())
+                it.testResult.text = report
+            }
         }
     }
 

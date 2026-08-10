@@ -62,6 +62,11 @@ riporta all'elenco. Cambiare server chiude sessione SSH, RCON e azzera le scie s
 
 Poi **Prova connessione** e **Salva**.
 
+**Cambia la password dell'utente SSH** esegue passwd sul server. Se il profilo si
+collega con la password, quella salvata viene aggiornata subito e il nuovo accesso
+verificato riaprendo davvero la connessione: se la verifica fallisce l'app te lo dice
+prima che tu chiuda l'applicazione.
+
 L'utente SSH è il punto critico: LinuxGSM gira dentro una sessione `tmux` che appartiene
 a un utente preciso, e i comandi alla console funzionano solo collegandosi con quello.
 

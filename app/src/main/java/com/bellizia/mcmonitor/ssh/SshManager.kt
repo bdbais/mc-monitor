@@ -81,6 +81,77 @@ object SshManager {
     }
 
     /**
+     * Cambia la password dell'utente SSH eseguendo `passwd`.
+     *
+     * `passwd` legge le risposte dal terminale e non dallo standard input: senza
+     * PTY rifiuta di partire. Per questo il canale viene aperto con pseudo-terminale
+     * e le tre risposte vengono scritte quando compaiono i rispettivi prompt.
+     */
+    suspend fun changePassword(
+        cfg: ServerConfig,
+        current: String,
+        new: String
+    ): ExecResult = withContext(Dispatchers.IO) {
+        lock.withLock {
+            val (s, _) = try {
+                obtain(cfg)
+            } catch (e: Exception) {
+                close()
+                throw SshException(friendly(e), e)
+            }
+            val channel = s.openChannel("exec") as ChannelExec
+            val output = ByteArrayOutputStream()
+            try {
+                channel.setCommand("passwd")
+                channel.setPty(true)
+                channel.setOutputStream(output)
+                channel.setErrStream(output)
+                val input = channel.outputStream
+                channel.connect(20_000)
+
+                // Una risposta per prompt: la vecchia password, poi due volte la nuova.
+                listOf(current, new, new).forEach { answer ->
+                    awaitPrompt(output)
+                    input.write((answer + "\n").toByteArray(StandardCharsets.UTF_8))
+                    input.flush()
+                }
+
+                val deadline = System.currentTimeMillis() + 30_000
+                while (!channel.isClosed && System.currentTimeMillis() < deadline) {
+                    Thread.sleep(150)
+                }
+                ExecResult(
+                    exitCode = if (channel.isClosed) channel.exitStatus else -1,
+                    stdout = redact(output.toString(StandardCharsets.UTF_8.name()), current, new),
+                    stderr = ""
+                )
+            } catch (e: Exception) {
+                throw SshException("Cambio password non riuscito: ${e.message}", e)
+            } finally {
+                runCatching { channel.disconnect() }
+            }
+        }
+    }
+
+    /** Attende che `passwd` abbia scritto il prompt successivo. */
+    private fun awaitPrompt(output: ByteArrayOutputStream) {
+        val before = output.size()
+        val deadline = System.currentTimeMillis() + 8_000
+        while (System.currentTimeMillis() < deadline) {
+            Thread.sleep(150)
+            if (output.size() > before) {
+                Thread.sleep(250) // lascia arrivare il resto della riga
+                return
+            }
+        }
+    }
+
+    /** Le password non devono comparire nel resoconto mostrato a schermo. */
+    private fun redact(text: String, vararg secrets: String): String =
+        secrets.filter { it.isNotBlank() }
+            .fold(text) { acc, secret -> acc.replace(secret, "********") }
+
+    /**
      * Copia un file sul server via SFTP, sullo stesso canale SSH già autenticato.
      * Serve per i modpack: il .mrpack sta sul telefono, non su una CDN.
      */
