@@ -23,6 +23,18 @@ data class ChatMessage(
     val stamp: String get() = "$date $time".trim()
 }
 
+/** Uno strumento richiesto sul server. */
+data class Requirement(
+    val command: String,
+    val why: String,
+    val required: Boolean,
+    val alternative: String? = null
+)
+
+data class RequirementResult(val requirement: Requirement, val present: Boolean) {
+    val blocking: Boolean get() = requirement.required && !present
+}
+
 /** Tentativo di accesso di un giocatore, ricavato dai log del server. */
 data class JoinAttempt(
     val name: String,
@@ -64,7 +76,21 @@ object Lgsm {
 
     fun sq(value: String): String = "'" + value.replace("'", "'\\''") + "'"
 
-    private fun cd(cfg: ServerConfig) = "cd ${sq(cfg.lgsmDir)}"
+    /**
+     * Percorso pronto per la shell. Dentro apici singoli la tilde non viene
+     * espansa, quindi `~/server1` diventa `"$HOME"/'server1'`: così la home
+     * resta quella dell'utente SSH, qualunque sia.
+     */
+    fun path(value: String): String {
+        val p = value.trim().trimEnd('/')
+        return when {
+            p == "~" || p.isEmpty() -> "\"\$HOME\""
+            p.startsWith("~/") -> "\"\$HOME\"/" + sq(p.removePrefix("~/").trimStart('/'))
+            else -> sq(p)
+        }
+    }
+
+    private fun cd(cfg: ServerConfig) = "cd ${path(cfg.lgsmDir)}"
 
     private fun script(cfg: ServerConfig) = "./${sq(cfg.script)}"
 
@@ -85,7 +111,7 @@ object Lgsm {
     private fun logPicker(cfg: ServerConfig): String {
         val mc = "${cfg.serverFiles.trimEnd('/')}/logs/latest.log"
         val lgsm = "${cfg.lgsmDir.trimEnd('/')}/log/console/${cfg.script}-console.log"
-        return "f=${sq(mc)}; [ -f \"\$f\" ] || f=${sq(lgsm)}"
+        return "f=${path(mc)}; [ -f \"\$f\" ] || f=${path(lgsm)}"
     }
 
     fun tailLog(cfg: ServerConfig, lines: Int = 400) =
@@ -151,19 +177,51 @@ object Lgsm {
 
     /** Legge la configurazione RCON attualmente scritta nel file del server. */
     fun readRconConfig(cfg: ServerConfig): String =
-        "grep -E '^(enable-rcon|rcon\\.port)=' ${sq("${cfg.serverFiles.trimEnd('/')}/server.properties")} " +
+        "grep -E '^(enable-rcon|rcon\\.port)=' ${path("${cfg.serverFiles.trimEnd('/')}/server.properties")} " +
                 "2>/dev/null || echo 'server.properties non leggibile'"
+
+    /** Strumenti che devono esistere sul server, con il motivo per cui servono. */
+    val REQUIREMENTS = listOf(
+        Requirement("java", "esegue il server Minecraft", required = true),
+        Requirement("tmux", "console del server: LinuxGSM ci gira dentro", required = true),
+        Requirement("curl", "scarica mod e modpack", required = true, alternative = "wget"),
+        Requirement("unzip", "legge i modpack .mrpack", required = true),
+        Requirement("sha1sum", "verifica i file scaricati", required = true),
+        Requirement("zgrep", "cronologia chat dei giorni scorsi", required = false)
+    )
+
+    fun checkRequirements(): String {
+        val tools = (REQUIREMENTS.map { it.command } + REQUIREMENTS.mapNotNull { it.alternative })
+            .distinct()
+        return tools.joinToString("; ") { tool ->
+            "if command -v $tool >/dev/null 2>&1; then echo '$tool=ok'; else echo '$tool=no'; fi"
+        } + "; java -version 2>&1 | head -1"
+    }
+
+    fun parseRequirements(raw: String): List<RequirementResult> {
+        val text = clean(raw)
+        fun present(tool: String) = Regex("(?m)^$tool=ok$").containsMatchIn(text)
+        return REQUIREMENTS.map { requirement ->
+            val ok = present(requirement.command) ||
+                    (requirement.alternative?.let { present(it) } == true)
+            RequirementResult(requirement, ok)
+        }
+    }
+
+    /** Versione di Java dichiarata dal server, utile perché 1.21 ne pretende almeno la 21. */
+    fun parseJavaVersion(raw: String): String? =
+        Regex("(?i)(openjdk|java) version \"?([0-9._]+)").find(clean(raw))?.groupValues?.get(2)
 
     /** Comandi usati dalla diagnostica per capire com'è fatto il server. */
     fun probes(cfg: ServerConfig): List<Pair<String, String>> = listOf(
         "utente / shell" to "id -un; echo \$SHELL",
         "tmux installato" to "command -v tmux && tmux -V || echo 'tmux ASSENTE'",
         "sessioni tmux" to "tmux ls 2>&1 || echo '(nessuna sessione per questo utente)'",
-        "script LinuxGSM" to "ls -l ${sq("${cfg.lgsmDir.trimEnd('/')}/${cfg.script}")} 2>&1",
+        "script LinuxGSM" to "ls -l ${path("${cfg.lgsmDir.trimEnd('/')}/${cfg.script}")} 2>&1",
         "supporto 'send'" to "${cd(cfg)} && ./${sq(cfg.script)} 2>&1 | grep -iE '^\\s*send' || " +
                 "echo \"comando 'send' NON disponibile: usa la modalita' tmux\"",
-        "log di gioco" to "ls -l ${sq("${cfg.serverFiles.trimEnd('/')}/logs/latest.log")} " +
-                "${sq("${cfg.lgsmDir.trimEnd('/')}/log/console/${cfg.script}-console.log")} 2>&1",
+        "log di gioco" to "ls -l ${path("${cfg.serverFiles.trimEnd('/')}/logs/latest.log")} " +
+                "${path("${cfg.lgsmDir.trimEnd('/')}/log/console/${cfg.script}-console.log")} 2>&1",
         "RCON in server.properties" to readRconConfig(cfg),
         "porta RCON ${cfg.rconPort}" to rconListening(cfg.rconPort)
     )
@@ -187,7 +245,7 @@ object Lgsm {
         val logs = "${cfg.serverFiles.trimEnd('/')}/logs"
         val chat = sq("<$name>")
         val command = sq("$name issued server command")
-        return "cd ${sq(logs)} 2>/dev/null || { echo 'CARTELLA LOG NON TROVATA'; exit 0; }; " +
+        return "cd ${path(logs)} 2>/dev/null || { echo 'CARTELLA LOG NON TROVATA'; exit 0; }; " +
                 "if command -v zgrep >/dev/null 2>&1; then " +
                 "zgrep -aHF -e $chat -e $command latest.log *.log.gz 2>/dev/null; " +
                 "else grep -aHF -e $chat -e $command latest.log 2>/dev/null; fi | tail -n $lines"
@@ -200,7 +258,7 @@ object Lgsm {
      */
     fun readJoinAttempts(cfg: ServerConfig, lines: Int = 400): String {
         val logs = "${cfg.serverFiles.trimEnd('/')}/logs"
-        return "cd ${sq(logs)} 2>/dev/null || { echo 'CARTELLA LOG NON TROVATA'; exit 0; }; " +
+        return "cd ${path(logs)} 2>/dev/null || { echo 'CARTELLA LOG NON TROVATA'; exit 0; }; " +
                 "if command -v zgrep >/dev/null 2>&1; then " +
                 "zgrep -aHF -e 'UUID of player' -e 'joined the game' -e 'white-listed' " +
                 "latest.log *.log.gz 2>/dev/null; " +
@@ -210,14 +268,14 @@ object Lgsm {
 
     /** Dice se il server sta davvero applicando la whitelist (`white-list=true`). */
     fun readWhitelistMode(cfg: ServerConfig) =
-        "grep -E '^white-list=' ${sq("${cfg.serverFiles.trimEnd('/')}/server.properties")} 2>/dev/null " +
+        "grep -E '^white-list=' ${path("${cfg.serverFiles.trimEnd('/')}/server.properties")} 2>/dev/null " +
                 "|| echo 'white-list=?'"
 
     fun readWhitelist(cfg: ServerConfig) =
-        "cat ${sq("${cfg.serverFiles.trimEnd('/')}/whitelist.json")} 2>/dev/null || echo '[]'"
+        "cat ${path("${cfg.serverFiles.trimEnd('/')}/whitelist.json")} 2>/dev/null || echo '[]'"
 
     fun readBanlist(cfg: ServerConfig) =
-        "cat ${sq("${cfg.serverFiles.trimEnd('/')}/banned-players.json")} 2>/dev/null || echo '[]'"
+        "cat ${path("${cfg.serverFiles.trimEnd('/')}/banned-players.json")} 2>/dev/null || echo '[]'"
 
     // --------------------------------------------------------------- parsing
 

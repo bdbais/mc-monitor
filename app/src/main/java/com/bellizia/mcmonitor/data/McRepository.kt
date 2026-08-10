@@ -7,6 +7,9 @@ import com.bellizia.mcmonitor.lgsm.Lgsm
 import com.bellizia.mcmonitor.lgsm.VersionConfig
 import com.bellizia.mcmonitor.lgsm.PlayerEntry
 import com.bellizia.mcmonitor.lgsm.PlayerPos
+import com.bellizia.mcmonitor.lgsm.Provision
+import com.bellizia.mcmonitor.lgsm.RequirementResult
+import com.bellizia.mcmonitor.lgsm.ServerInspection
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.ssh.SshException
 import com.bellizia.mcmonitor.ssh.SshManager
@@ -213,6 +216,91 @@ object McRepository {
             onSuccess = { "     OK · risposta del server: $it" },
             onFailure = { "     FALLITA: ${it.message}" }
         ))
+        return report.toString()
+    }
+
+    /** Strumenti presenti sul server, con la versione di Java quando disponibile. */
+    suspend fun requirements(): Pair<List<RequirementResult>, String?> {
+        val c = cfg()
+        val r = SshManager.exec(c, Lgsm.checkRequirements(), 30_000)
+        return Lgsm.parseRequirements(r.text) to Lgsm.parseJavaVersion(r.text)
+    }
+
+    // ------------------------------------------------ preparazione da zero
+
+    suspend fun inspectServer(): ServerInspection {
+        val c = cfg()
+        return Provision.parseInspection(SshManager.exec(c, Provision.inspect(c), 30_000).text)
+    }
+
+    /**
+     * Installa LinuxGSM su una home vuota, scarica il server e applica le
+     * impostazioni di sicurezza. Ogni passo viene riportato mentre procede:
+     * l'auto-install richiede minuti e senza riscontro sembra bloccato.
+     */
+    suspend fun prepareServer(harden: Boolean, onStep: (String) -> Unit): String {
+        val c = cfg()
+        val report = StringBuilder()
+        fun log(line: String) {
+            report.append(line).append('\n')
+            onStep(report.toString())
+        }
+
+        log("1/5 · Controllo dei requisiti…")
+        val (requirements, java) = requirements()
+        val missing = requirements.filter { it.blocking }
+        if (missing.isNotEmpty()) {
+            log("     mancano: ${missing.joinToString(", ") { it.requirement.command }}")
+            log("\nSenza questi pacchetti l'installazione non può proseguire, e servono i")
+            log("privilegi di amministratore per aggiungerli:")
+            log("sudo apt install " + missing.joinToString(" ") { it.requirement.command })
+            return report.toString()
+        }
+        log("     tutto presente" + (java?.let { " · Java $it" } ?: ""))
+
+        log("\n2/5 · Ispezione della directory…")
+        val inspection = inspectServer()
+        log("     utente ${inspection.user ?: "?"} · home ${inspection.home ?: "?"}")
+        log("     spazio libero: ${inspection.freeMegabytes ?: "?"} MB")
+        if (!inspection.isEmpty) {
+            log("\nLinuxGSM è già installato in ${c.lgsmDir}: preparazione annullata.")
+            return report.toString()
+        }
+        if (!inspection.enoughSpace) {
+            log("\nSpazio insufficiente: servono almeno 2 GB liberi.")
+            return report.toString()
+        }
+
+        log("\n3/5 · Installazione di LinuxGSM…")
+        val install = SshManager.exec(c, Provision.installLinuxGsm(c), 300_000)
+        Lgsm.clean(install.text).trim().lines().takeLast(8).forEach { log("     $it") }
+        if (!install.ok) {
+            log("\nInstallazione interrotta (uscita ${install.exitCode}).")
+            return report.toString()
+        }
+
+        log("\n4/5 · auto-install: scarico del server, può richiedere diversi minuti…")
+        val auto = runCatching { SshManager.exec(c, Provision.autoInstall(c), 1_800_000) }
+        auto.getOrNull()?.let {
+            Lgsm.clean(it.text).trim().lines().takeLast(12).forEach { line -> log("     $line") }
+        } ?: log("     ERRORE: ${auto.exceptionOrNull()?.message}")
+
+        if (!harden) {
+            log("\nFatto. Le impostazioni di sicurezza non sono state applicate.")
+            return report.toString()
+        }
+
+        log("\n5/5 · Impostazioni di sicurezza…")
+        val hardened = runCatching { SshManager.exec(c, Provision.harden(c), 60_000) }.getOrNull()
+        val text = hardened?.let { Lgsm.clean(it.text).trim() }.orEmpty()
+        if (hardened?.ok == true) {
+            text.lineSequence().forEach { log("     $it") }
+            log("\nIl server è pronto. La whitelist è attiva: aggiungi i giocatori dalla")
+            log("scheda Giocatori prima che possano entrare.")
+        } else {
+            log("     non applicate: $text")
+            log("\nRiprova dopo il primo avvio del server, quando server.properties esiste.")
+        }
         return report.toString()
     }
 

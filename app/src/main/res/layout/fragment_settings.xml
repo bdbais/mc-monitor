@@ -29,6 +29,19 @@
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nome tecnico (sottocartella nella home)">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/slug"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
         <TextView
             style="@style/CardTitle"
             android:layout_width="wrap_content"
@@ -346,6 +359,14 @@
                 android:layout_weight="1"
                 android:text="Prova connessione" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPrepare"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Prepara un server vuoto" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDiagnose"

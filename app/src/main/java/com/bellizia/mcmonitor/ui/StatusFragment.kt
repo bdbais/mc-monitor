@@ -72,7 +72,10 @@ class StatusFragment : Fragment() {
         loadVersion()
         viewLifecycleOwner.lifecycleScope.launch {
             runCatching { McRepository.details() }
-                .onSuccess { render(it) }
+                .onSuccess {
+                    render(it)
+                    checkRequirementsOnce()
+                }
                 .onFailure {
                     setStatus("ERRORE", Color.parseColor("#EF5350"))
                     b.output.text = it.userMessage()
@@ -96,6 +99,56 @@ class StatusFragment : Fragment() {
             b.fields.addView(row.root)
         }
         b.output.text = details.trim().ifBlank { "(nessun output)" }
+    }
+
+    /**
+     * Al primo collegamento a un server verifica che gli strumenti necessari ci siano.
+     * Senza java o tmux non parte niente, e conviene dirlo subito invece di far
+     * fallire i comandi uno per uno.
+     */
+    private fun checkRequirementsOnce() {
+        if (Prefs.load().requirementsChecked) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = runCatching { McRepository.requirements() }.getOrNull() ?: return@launch
+            if (!isAdded) return@launch
+            val (results, java) = result
+
+            // Segnato come fatto in ogni caso: l'avviso non deve diventare assillante.
+            Prefs.save(Prefs.load().copy(requirementsChecked = true))
+
+            val missing = results.filter { !it.present }
+            if (missing.isEmpty()) return@launch
+
+            val blocking = missing.filter { it.blocking }
+            val message = buildString {
+                append("Sul server mancano alcuni strumenti che servono all'app.\n\n")
+                missing.forEach {
+                    append(if (it.blocking) "· " else "· (facoltativo) ")
+                    append(it.requirement.command)
+                    it.requirement.alternative?.let { alt -> append(" (né $alt)") }
+                    append(" — ${it.requirement.why}\n")
+                }
+                if (blocking.isNotEmpty()) {
+                    append("\nPer installarli serve un utente con privilegi di amministratore:\n")
+                    append("sudo apt install ")
+                    append(blocking.joinToString(" ") { packageFor(it.requirement.command) })
+                }
+                if (java != null) append("\n\nJava rilevato: $java")
+            }
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(if (blocking.isEmpty()) "Manca qualcosa di facoltativo" else "Requisiti mancanti sul server")
+                .setMessage(message)
+                .setPositiveButton("Ho capito", null)
+                .show()
+        }
+    }
+
+    /** Il nome del pacchetto non sempre coincide con quello del comando. */
+    private fun packageFor(command: String) = when (command) {
+        "java" -> "openjdk-21-jre-headless"
+        "sha1sum" -> "coreutils"
+        "zgrep" -> "gzip"
+        else -> command
     }
 
     /** Versione impostata in LinuxGSM: è quella che il server scaricherà con `update`. */

@@ -15,13 +15,16 @@ import java.util.UUID
 data class ServerConfig(
     val id: String = "",
     val name: String = "",
+    /** Nome tecnico: identifica il server e dà il nome alla sua sottocartella. */
+    val slug: String = "server1",
     val host: String = "",
     val port: Int = 22,
     val user: String = "mcserver",
     val password: String = "",
     val privateKey: String = "",
     val keyPassphrase: String = "",
-    val lgsmDir: String = "/home/mcserver",
+    // Relativo alla home dell'utente SSH: ogni server sta in una cartella sua.
+    val lgsmDir: String = "~/server1",
     val script: String = "mcserver",
     val serverFilesDir: String = "",
     val useLgsmSend: Boolean = false,
@@ -32,7 +35,9 @@ data class ServerConfig(
     val rconTunnel: Boolean = true,
     val webMapUrl: String = "",
     val mapPollSeconds: Int = 6,
-    val hostKeyFingerprint: String = ""
+    val hostKeyFingerprint: String = "",
+    /** I requisiti del server si controllano una volta sola, al primo collegamento. */
+    val requirementsChecked: Boolean = false
 ) {
     val isComplete: Boolean
         get() = host.isNotBlank() && user.isNotBlank() &&
@@ -61,6 +66,7 @@ data class ServerConfig(
     fun toJson(): JSONObject = JSONObject().apply {
         put("id", id)
         put("name", name)
+        put("slug", slug)
         put("host", host)
         put("port", port)
         put("user", user)
@@ -79,19 +85,21 @@ data class ServerConfig(
         put("webMapUrl", webMapUrl)
         put("mapPollSeconds", mapPollSeconds)
         put("hostKeyFingerprint", hostKeyFingerprint)
+        put("requirementsChecked", requirementsChecked)
     }
 
     companion object {
         fun fromJson(o: JSONObject) = ServerConfig(
             id = o.optString("id", UUID.randomUUID().toString()),
             name = o.optString("name"),
+            slug = o.optString("slug", "server1").ifBlank { "server1" },
             host = o.optString("host"),
             port = o.optInt("port", 22),
             user = o.optString("user", "mcserver"),
             password = o.optString("password"),
             privateKey = o.optString("privateKey"),
             keyPassphrase = o.optString("keyPassphrase"),
-            lgsmDir = o.optString("lgsmDir", "/home/mcserver"),
+            lgsmDir = o.optString("lgsmDir", "~/server1"),
             script = o.optString("script", "mcserver"),
             serverFilesDir = o.optString("serverFilesDir"),
             useLgsmSend = o.optBoolean("useLgsmSend", false),
@@ -102,7 +110,8 @@ data class ServerConfig(
             rconTunnel = o.optBoolean("rconTunnel", true),
             webMapUrl = o.optString("webMapUrl"),
             mapPollSeconds = o.optInt("mapPollSeconds", 6),
-            hostKeyFingerprint = o.optString("hostKeyFingerprint")
+            hostKeyFingerprint = o.optString("hostKeyFingerprint"),
+            requirementsChecked = o.optBoolean("requirementsChecked", false)
         )
     }
 }
@@ -159,8 +168,18 @@ object Prefs {
         if (activeId().isBlank() || activeId() == config.id) setActive(config.id)
     }
 
+    /**
+     * Ogni nuovo server prende un nome tecnico libero (server1, server2, …) e la
+     * sua sottocartella nella home: due istanze non possono pestarsi i piedi.
+     */
     fun add(cfg: ServerConfig = ServerConfig()): ServerConfig {
-        val fresh = cfg.copy(id = UUID.randomUUID().toString())
+        val used = servers().map { it.slug }.toSet()
+        val slug = generateSequence(1) { it + 1 }.map { "server$it" }.first { it !in used }
+        val fresh = cfg.copy(
+            id = UUID.randomUUID().toString(),
+            slug = slug,
+            lgsmDir = "~/$slug"
+        )
         val all = servers().toMutableList().apply { add(fresh) }
         writeAll(all)
         return fresh

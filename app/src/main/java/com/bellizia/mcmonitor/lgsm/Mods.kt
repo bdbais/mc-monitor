@@ -82,7 +82,7 @@ object Mods {
      * Il log è la fonte più attendibile: la riga la scrive il server stesso.
      */
     fun detectEnvironment(cfg: ServerConfig): String {
-        val sf = Lgsm.sq(cfg.serverFiles.trimEnd('/'))
+        val sf = Lgsm.path(cfg.serverFiles.trimEnd('/'))
         return """
             sf=$sf
             ver=${'$'}(grep -aho 'server version [0-9][0-9.]*' "${'$'}sf/logs/latest.log" 2>/dev/null | tail -1 | awk '{print ${'$'}NF}')
@@ -100,7 +100,7 @@ object Mods {
 
     /** Elenco dei file di mod: nome, dimensione ed epoca di modifica separati da tab. */
     fun listMods(cfg: ServerConfig): String {
-        val d = Lgsm.sq(modsDir(cfg))
+        val d = Lgsm.path(modsDir(cfg))
         return "d=$d; [ -d \"\$d\" ] || { echo 'NO_MODS_DIR'; exit 0; }; " +
                 "cd \"\$d\" && for f in *.jar *.jar.disabled; do [ -e \"\$f\" ] || continue; " +
                 "printf '%s\\t%s\\t%s\\n' \"\$f\" \"\$(stat -c %s \"\$f\" 2>/dev/null || echo 0)\" " +
@@ -117,7 +117,7 @@ object Mods {
         require(safeFileName(fileName)) { "nome file non valido: $fileName" }
         require(sha1.matches(Regex("^[a-fA-F0-9]{40}$"))) { "hash sha1 non valido" }
 
-        val d = Lgsm.sq(modsDir(cfg))
+        val d = Lgsm.path(modsDir(cfg))
         val u = Lgsm.sq(url)
         val f = Lgsm.sq(fileName)
         return "d=$d; mkdir -p \"\$d\" || exit 1; tmp=\"\$d/.mcmonitor.part\"; " +
@@ -148,7 +148,7 @@ object Mods {
      */
     fun installLoader(cfg: ServerConfig, url: String): String {
         require(isFabricUrl(url)) { "URL non attendibile: $url" }
-        val sf = Lgsm.sq(cfg.serverFiles.trimEnd('/'))
+        val sf = Lgsm.path(cfg.serverFiles.trimEnd('/'))
         val u = Lgsm.sq(url)
         return "cd $sf || exit 1; tmp='.$LAUNCH_JAR.part'; " +
                 "if command -v curl >/dev/null 2>&1; then curl -fsSL --max-time 600 -o \"\$tmp\" $u; " +
@@ -166,7 +166,7 @@ object Mods {
      * della riga startparameters, lasciando intatto il resto (memoria, nogui, ecc.).
      */
     fun useLoaderInConfig(cfg: ServerConfig): String {
-        val f = Lgsm.sq(GameVersion.configPath(cfg))
+        val f = Lgsm.path(GameVersion.configPath(cfg))
         return "[ -f $f ] || { echo 'CONFIG NON TROVATA'; exit ${GameVersion.EXIT_NO_CONFIG}; }; " +
                 "cp $f \"$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
                 "if grep -qE '^[[:space:]]*startparameters=' $f; then " +
@@ -187,7 +187,7 @@ object Mods {
     fun packDir(cfg: ServerConfig) = "${cfg.lgsmDir.trimEnd('/')}/tmp-mcmonitor"
 
     fun preparePackDir(cfg: ServerConfig): String {
-        val d = Lgsm.sq(packDir(cfg))
+        val d = Lgsm.path(packDir(cfg))
         return "command -v unzip >/dev/null 2>&1 || " +
                 "{ echo 'SUL SERVER MANCA unzip: installalo per gestire i modpack'; exit $EXIT_NO_TOOL; }; " +
                 "mkdir -p $d && echo pronto"
@@ -195,7 +195,7 @@ object Mods {
 
     /** L'indice del pacchetto si legge senza estrarre nulla. */
     fun readPackIndex(cfg: ServerConfig, packFileName: String): String {
-        val pack = Lgsm.sq("${packDir(cfg)}/$packFileName")
+        val pack = Lgsm.path("${packDir(cfg)}/$packFileName")
         return "unzip -p $pack modrinth.index.json 2>/dev/null || " +
                 "{ echo 'INDICE NON TROVATO: il file non sembra un .mrpack'; exit 95; }"
     }
@@ -206,7 +206,7 @@ object Mods {
         require(safeRelativePath(relativePath)) { "percorso non valido: $relativePath" }
 
         val target = "${cfg.serverFiles.trimEnd('/')}/$relativePath"
-        val t = Lgsm.sq(target)
+        val t = Lgsm.path(target)
         val u = Lgsm.sq(url)
         val hashCheck = if (sha1.matches(Regex("^[a-fA-F0-9]{40}$"))) {
             "got=\$(sha1sum \"\$tmp\" 2>/dev/null | cut -d' ' -f1); " +
@@ -229,9 +229,9 @@ object Mods {
      */
     fun extractOverrides(cfg: ServerConfig, packFileName: String): String {
         val dir = packDir(cfg)
-        val pack = Lgsm.sq("$dir/$packFileName")
-        val work = Lgsm.sq("$dir/estratto")
-        val sf = Lgsm.sq(cfg.serverFiles.trimEnd('/'))
+        val pack = Lgsm.path("$dir/$packFileName")
+        val work = Lgsm.path("$dir/estratto")
+        val sf = Lgsm.path(cfg.serverFiles.trimEnd('/'))
         return "rm -rf $work && mkdir -p $work && " +
                 "unzip -o -q $pack 'overrides/*' -d $work 2>/dev/null; " +
                 "if [ -d $work/overrides ]; then " +
@@ -241,11 +241,11 @@ object Mods {
     }
 
     fun cleanupPack(cfg: ServerConfig): String =
-        "rm -rf ${Lgsm.sq(packDir(cfg))} && echo 'file temporanei rimossi'"
+        "rm -rf ${Lgsm.path(packDir(cfg))} && echo 'file temporanei rimossi'"
 
     fun remove(cfg: ServerConfig, fileName: String): String {
         require(safeFileName(fileName.removeSuffix(".disabled"))) { "nome file non valido" }
-        val target = Lgsm.sq("${modsDir(cfg)}/$fileName")
+        val target = Lgsm.path("${modsDir(cfg)}/$fileName")
         return "rm -f -- $target && echo 'rimosso $fileName'"
     }
 
@@ -255,9 +255,9 @@ object Mods {
         val dir = modsDir(cfg)
         return if (fileName.endsWith(".disabled")) {
             val to = fileName.removeSuffix(".disabled")
-            "mv -- ${Lgsm.sq("$dir/$fileName")} ${Lgsm.sq("$dir/$to")} && echo 'attivato $to'"
+            "mv -- ${Lgsm.path("$dir/$fileName")} ${Lgsm.path("$dir/$to")} && echo 'attivato $to'"
         } else {
-            "mv -- ${Lgsm.sq("$dir/$fileName")} ${Lgsm.sq("$dir/$fileName.disabled")} && echo 'disattivato $fileName'"
+            "mv -- ${Lgsm.path("$dir/$fileName")} ${Lgsm.path("$dir/$fileName.disabled")} && echo 'disattivato $fileName'"
         }
     }
 

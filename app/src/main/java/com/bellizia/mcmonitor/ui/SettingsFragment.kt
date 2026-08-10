@@ -17,6 +17,7 @@ import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.ServerConfig
 import com.bellizia.mcmonitor.databinding.FragmentSettingsBinding
 import com.bellizia.mcmonitor.lgsm.Lgsm
+import com.bellizia.mcmonitor.lgsm.Provision
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.ssh.SshManager
 import kotlinx.coroutines.launch
@@ -92,6 +93,8 @@ class SettingsFragment : Fragment() {
 
         b.btnRconSetup.setOnClickListener { setupRcon() }
 
+        b.btnPrepare.setOnClickListener { prepareServer() }
+
         b.btnDiagnose.setOnClickListener {
             val cfg = collect()
             Prefs.save(cfg)
@@ -115,6 +118,67 @@ class SettingsFragment : Fragment() {
             Prefs.clearHostKey()
             SshManager.disconnect()
             toast("Fingerprint host dimenticato: verrà riappreso al prossimo collegamento")
+        }
+    }
+
+    /**
+     * Installa LinuxGSM su una home vuota. Scarica ed esegue software sul server,
+     * quindi va spiegato per intero e confermato.
+     */
+    private fun prepareServer() {
+        val cfg = collect()
+        Prefs.save(cfg)
+        if (!cfg.isComplete) {
+            toast("Completa prima i dati di connessione SSH")
+            return
+        }
+        val settings = Provision.SECURITY_SETTINGS.joinToString("\n") { (key, value, why) ->
+            "· $key=$value — $why"
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Preparare il server?")
+            .setMessage(
+                "In ${cfg.lgsmDir}, come utente ${cfg.user}, verranno eseguiti:\n\n" +
+                        "1. controllo dei pacchetti necessari\n" +
+                        "2. download di linuxgsm.sh dal sito ufficiale\n" +
+                        "3. creazione dell'istanza ${cfg.script}\n" +
+                        "4. auto-install del server (diversi minuti)\n" +
+                        "5. impostazioni di sicurezza in server.properties:\n\n$settings\n\n" +
+                        "Tutto gira senza privilegi di amministratore, dentro la home. " +
+                        "Se LinuxGSM è già installato l'operazione si ferma senza toccare nulla."
+            )
+            .setNegativeButton("Annulla", null)
+            .setNeutralButton("Senza sicurezza") { _, _ -> runPrepare(false) }
+            .setPositiveButton("Prepara") { _, _ -> runPrepare(true) }
+            .show()
+    }
+
+    private fun runPrepare(harden: Boolean) {
+        val view = TextView(requireContext()).apply {
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            setTextIsSelectable(true)
+            setPadding(40, 30, 40, 10)
+            text = "Avvio…"
+        }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Preparazione del server")
+            .setView(ScrollView(requireContext()).apply { addView(view) })
+            .setCancelable(false)
+            .setPositiveButton("Chiudi", null)
+            .show()
+
+        b.btnPrepare.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val report = runCatching {
+                McRepository.prepareServer(harden) { progress -> view.text = progress }
+            }.getOrElse { "Preparazione interrotta:\n${it.userMessage()}" }
+            view.text = report
+            dialog.setCancelable(true)
+            _b?.let {
+                it.btnPrepare.isEnabled = true
+                it.testResult.text = report
+            }
         }
     }
 
@@ -229,6 +293,7 @@ class SettingsFragment : Fragment() {
 
     private fun fill(cfg: ServerConfig) {
         b.name.setText(cfg.name)
+        b.slug.setText(cfg.slug)
         b.host.setText(cfg.host)
         b.port.setText(cfg.port.toString())
         b.user.setText(cfg.user)
@@ -263,6 +328,9 @@ class SettingsFragment : Fragment() {
         // id e fingerprint appartengono al profilo, non ai campi del modulo.
         id = Prefs.load().id,
         name = b.name.text?.toString()?.trim().orEmpty(),
+        // Il nome tecnico finisce in un percorso: solo caratteri innocui.
+        slug = b.slug.text?.toString()?.trim()?.filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+            ?.ifBlank { null } ?: Prefs.load().slug,
         host = host,
         port = port,
         user = b.user.text?.toString()?.trim().orEmpty(),

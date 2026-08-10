@@ -25,7 +25,7 @@ object GameVersion {
         "${cfg.lgsmDir.trimEnd('/')}/lgsm/config-lgsm/${cfg.script}/${cfg.script}.cfg"
 
     fun readConfig(cfg: ServerConfig): String {
-        val f = Lgsm.sq(configPath(cfg))
+        val f = Lgsm.path(configPath(cfg))
         return "[ -f $f ] || { echo 'CONFIG NON TROVATA'; exit $EXIT_NO_CONFIG; }; " +
                 "grep -E '^[[:space:]]*mc(version|branc[h]?)=' $f || echo '(nessuna riga mcversion)'"
     }
@@ -39,7 +39,7 @@ object GameVersion {
         require(isValidVersion(branch)) { "ramo non valido: $branch" }
         require(branchKey == "mcbranch" || branchKey == "mcbranc") { "chiave ramo non valida" }
 
-        val f = Lgsm.sq(configPath(cfg))
+        val f = Lgsm.path(configPath(cfg))
         return "[ -f $f ] || { echo 'CONFIG NON TROVATA'; exit $EXIT_NO_CONFIG; }; " +
                 "cp $f \"$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
                 "if grep -qE '^[[:space:]]*mcversion=' $f; then " +
