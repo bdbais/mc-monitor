@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.8.
+Versione 1.10.
 
 - [1. Installazione](#1-installazione)
 - [2. Elenco dei server](#2-elenco-dei-server)
@@ -49,12 +49,13 @@ riporta all'elenco. Cambiare server chiude sessione SSH, RCON e azzera le scie s
 | Campo | Esempio | Note |
 |---|---|---|
 | Nome | `Server di casa` | come lo vedi nell'elenco |
+| Nome tecnico | `server1` | dà il nome alla sottocartella |
 | Host o IP | `mc.miodominio.it` | accetta anche `host:2222` |
 | Porta | `22` | porta SSH |
 | Utente SSH | `mcserver` | **deve essere l'utente che esegue LinuxGSM** |
 | Password | | vuota se usi la chiave |
 | Chiave privata | `-----BEGIN OPENSSH PRIVATE KEY-----…` | incolla il file intero |
-| Directory LinuxGSM | `/home/mcserver` | dove sta lo script |
+| Directory LinuxGSM | `~/server1` | sottocartella nella home dell'utente SSH |
 | Script LinuxGSM | `mcserver` | nome dello script |
 | serverfiles | *(vuoto)* | default `<dir>/serverfiles` |
 | Sessione tmux | *(vuoto)* | default: nome dello script |
