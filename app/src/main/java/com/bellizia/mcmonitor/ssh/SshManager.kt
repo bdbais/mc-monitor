@@ -4,6 +4,7 @@ import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.ServerConfig
 import com.bellizia.mcmonitor.lgsm.Lgsm
 import com.jcraft.jsch.ChannelExec
+import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Logger
 import com.jcraft.jsch.Session
@@ -12,6 +13,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.net.ConnectException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -77,6 +79,33 @@ object SshManager {
     fun disconnect() {
         synchronized(this) { close() }
     }
+
+    /**
+     * Copia un file sul server via SFTP, sullo stesso canale SSH già autenticato.
+     * Serve per i modpack: il .mrpack sta sul telefono, non su una CDN.
+     */
+    suspend fun upload(cfg: ServerConfig, input: InputStream, remotePath: String): Long =
+        withContext(Dispatchers.IO) {
+            lock.withLock {
+                val (s, _) = try {
+                    obtain(cfg)
+                } catch (e: Exception) {
+                    close()
+                    throw SshException(friendly(e), e)
+                }
+                val channel = s.openChannel("sftp") as ChannelSftp
+                try {
+                    channel.connect(20_000)
+                    val counter = CountingInputStream(input)
+                    channel.put(counter, remotePath, ChannelSftp.OVERWRITE)
+                    counter.count
+                } catch (e: Exception) {
+                    throw SshException("Caricamento sul server fallito: ${e.message}", e)
+                } finally {
+                    runCatching { channel.disconnect() }
+                }
+            }
+        }
 
     /**
      * Inoltra una porta remota (tipicamente RCON su 127.0.0.1) dentro il tunnel SSH
@@ -304,6 +333,19 @@ object SshManager {
         e.message?.contains("timeout", true) == true || e is SocketTimeoutException ->
             "Timeout durante la connessione SSH. Usa \"Diagnostica\" per vedere a che punto si ferma."
         else -> "${e.javaClass.simpleName}: ${e.message ?: "errore sconosciuto"}"
+    }
+
+    /** Conta i byte trasferiti: JSch non lo dice e serve per il resoconto. */
+    private class CountingInputStream(private val delegate: InputStream) : InputStream() {
+        var count: Long = 0
+            private set
+
+        override fun read(): Int = delegate.read().also { if (it >= 0) count++ }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int =
+            delegate.read(b, off, len).also { if (it > 0) count += it }
+
+        override fun close() = delegate.close()
     }
 
     /** Raccoglie i messaggi interni di JSch per mostrarli nella diagnostica. */

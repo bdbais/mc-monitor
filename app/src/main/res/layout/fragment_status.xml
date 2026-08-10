@@ -116,6 +116,65 @@
                         style="@style/CardTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="Versione di Minecraft" />
+
+                    <TextView
+                        android:id="@+id/versionConfig"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="lettura della configurazione LinuxGSM…"
+                        android:textColor="@color/text"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnChangeVersion"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="10dp"
+                        android:text="Cambia versione" />
+
+                    <TextView
+                        android:id="@+id/modsTitle"
+                        style="@style/CardTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Mod installati" />
+
+                    <TextView
+                        android:id="@+id/modsEnvironment"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:textColor="@color/text_dim"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:id="@+id/modsList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        style="@style/CardTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:text="Output LinuxGSM" />
 
                     <HorizontalScrollView

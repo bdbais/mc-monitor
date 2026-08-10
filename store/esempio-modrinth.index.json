@@ -1,0 +1,268 @@
+{
+  "game": "minecraft",
+  "formatVersion": 1,
+  "versionId": "1.0.0",
+  "name": "zebby",
+  "summary": "",
+  "files": [
+    {
+      "path": "mods/lithostitched-fabric-1.20.1-1.4.11.jar",
+      "hashes": {
+        "sha1": "c5e75450633aa9f79f2023e897c2726ba5f8d808",
+        "sha512": "d8e840907e3f7326c1e6605b65c46eb4e920e4790ab4074884ad21913f0c097dcacf4b813091239eb58bd65b7c75b96d04bb4df6eec830f89a21e217e3c0fdec"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/XaDC71GB/versions/9bbVphAR/lithostitched-fabric-1.20.1-1.4.11.jar"
+      ],
+      "fileSize": 487655
+    },
+    {
+      "path": "mods/cloth-config-11.1.136-fabric.jar",
+      "hashes": {
+        "sha512": "2da85c071c854223cc30c8e46794391b77e53f28ecdbbde59dc83b3dbbdfc74be9e68da9ed464e7f98b4361033899ba4f681ebff1f35edc2c60e599a59796f1c",
+        "sha1": "d5fe84a0cc9ed5c7290a76ba570e1f8716afecab"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/9s6osm5g/versions/2xQdCMyG/cloth-config-11.1.136-fabric.jar"
+      ],
+      "fileSize": 1172214
+    },
+    {
+      "path": "mods/fabric-api-0.92.11+1.20.1.jar",
+      "hashes": {
+        "sha1": "2824689367eec2b52c6085e968343751137e66bf",
+        "sha512": "fb8d9d5c5ee387b12770fcef1cb4327f1575bd21606f1a268c9eff43fd3697cf0a3af55dd688cdc913f1423737f8905e13282eb69dd69f0995c32d6e620efb3f"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/P7dR8mSH/versions/xhLT3C5f/fabric-api-0.92.11%2B1.20.1.jar"
+      ],
+      "fileSize": 2137144
+    },
+    {
+      "path": "mods/architectury-9.2.14-fabric.jar",
+      "hashes": {
+        "sha1": "4fa65e32dbf63a871a30fe8ec6fbff9a4b8d007d",
+        "sha512": "4cb8f009fd522d68a795d2cf5a657bdbe248b32ba7c33cd968f5ab521e9d60e198f8a3f6c50e7d960a2b8f50375116be0db1fd44b5710ea758697d8ea70d15de"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/lhGA9TYQ/versions/WbL7MStR/architectury-9.2.14-fabric.jar"
+      ],
+      "fileSize": 585207
+    },
+    {
+      "path": "mods/resourcefullib-fabric-1.20.1-2.1.29.jar",
+      "hashes": {
+        "sha512": "d3fcf5440c9359ee84cdec6ab198a6b2e10e5b1939995d2b12837ffdaa1f82d3caa80b14107cf02380718c65f20672b1faca3a498d2b41d79c79de34b2f7189b",
+        "sha1": "e1d85a3100c2f3683a65dca20518e3914d82b0f0"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/G1hIVOrD/versions/UOdaYbhh/resourcefullib-fabric-1.20.1-2.1.29.jar"
+      ],
+      "fileSize": 431646
+    },
+    {
+      "path": "mods/athena-fabric-1.20.1-3.1.2.jar",
+      "hashes": {
+        "sha512": "e55d49348a9d944bbd19390c64a4f42a1375eaaf0cbd4d69b4f523e441d9d23ce9498c912db724260cde32a43b776832cb867161e0989995d974de7e19e12389",
+        "sha1": "53014ceff1e10085609c16adbe246df51113bfe9"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/b1ZV3DIJ/versions/mXJWSwbJ/athena-fabric-1.20.1-3.1.2.jar"
+      ],
+      "fileSize": 74370
+    },
+    {
+      "path": "mods/worldedit-mod-7.2.15.jar",
+      "hashes": {
+        "sha1": "9c52765ca56f917ef8cbafc20e9a4f45c346508f",
+        "sha512": "2c41dcd9a622f948ed5409eecc485018fbf274945bdd1a9c0fdf4c4954f9a47dc311e6e0f9e445180d8b771e4a40947533d67bd66feb4ab8c8f87c2880dba7ef"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/1u6JkXh5/versions/Wrlqaul6/worldedit-mod-7.2.15.jar"
+      ],
+      "fileSize": 5825402
+    },
+    {
+      "path": "mods/lithosphere-1.8.1.jar",
+      "hashes": {
+        "sha1": "a0bd45404969c245c0e9bde5d8d26c1e46afea9b",
+        "sha512": "bc5b3960ca2a2d7e3fa1e18c3d207b3ac0188fc409e60bf59514f63e51c021782f63ccd8f789939033367632e15a3aa98539a61a06bae7454cbca0b8b1e2bb82"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/iv9jp2k9/versions/Cu9qQGut/lithosphere-1.8.1.jar"
+      ],
+      "fileSize": 983289
+    },
+    {
+      "path": "mods/[fabric]ctov-3.4.14.jar",
+      "hashes": {
+        "sha1": "398954d32ba01fe63e2ae8a49c5921089f7e3eb7",
+        "sha512": "d5717ee8a7984cdfd3d839120fc62add33eb7ca755edc4ee828007e32fd8a44c7b91432a2df120dc5feff89802ce0dc7367dbe6f9441d214cb0ba6e22d557975"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/fgmhI8kH/versions/xaqkr8Ey/%5Bfabric%5Dctov-3.4.14.jar"
+      ],
+      "fileSize": 6734661
+    },
+    {
+      "path": "mods/chipped-fabric-1.20.1-3.0.7.jar",
+      "hashes": {
+        "sha1": "add35e79f6a930825e4dbe77d5d0468fb96c533f",
+        "sha512": "5e12cc2ac7aec827a06fb9358fa53a25040428ae0f192a96305b129b084073154a6ae862d6875f6a02fe89a7a11d253049ce90b292f4c4ab2c72a9c94b93c9b0"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/BAscRYKm/versions/pwyEaKDs/chipped-fabric-1.20.1-3.0.7.jar"
+      ],
+      "fileSize": 15057458
+    },
+    {
+      "path": "mods/Essential_1-4-1-1_fabric_1-20-1.jar",
+      "hashes": {
+        "sha512": "2ff3248e424dbac255fdf0d458b23bb985b5dbc203a557202138b2ded04b40a4f87222c7605046fae7e0dd4c39c054304cecc89d5a7699cc62a7103c902d12dd",
+        "sha1": "506ccfa8de3a7744ca9adcf64e971a023f98e1bd"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/k2ZPuTBm/versions/btCD1TAt/Essential_1-4-1-1_fabric_1-20-1.jar"
+      ],
+      "fileSize": 53003710
+    },
+    {
+      "path": "mods/create-fabric-6.0.8.1+build.1744-mc1.20.1.jar",
+      "hashes": {
+        "sha1": "f750d019bc1230c8c7a8a4ccf549d1db192d7a69",
+        "sha512": "6edaddb93bc87bf8204376d3ceddd3e3dfec1d716556a5925802f2ade59ce5a660ded50088fa94188842ff83fc29445363dfa5d423e425b1574092833b6fa896"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/Xbc0uyRg/versions/HAqwA6X1/create-fabric-6.0.8.1%2Bbuild.1744-mc1.20.1.jar"
+      ],
+      "fileSize": 32189889
+    },
+    {
+      "path": "mods/letsdo-bakery-fabric-2.0.6.jar",
+      "hashes": {
+        "sha512": "129d664e0e9e05eab2ea6e8aef27f7cf741ba419d90617e9943d2db254c73d549b0632a2ee821a3b80c4455d918773fc3becbb9019c2a572c9d727726de525ca",
+        "sha1": "203dd030920eda073520f0fe9c3de47259234480"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/oNB5jhlA/versions/KEv4JeEB/letsdo-bakery-fabric-2.0.6.jar"
+      ],
+      "fileSize": 2236226
+    },
+    {
+      "path": "mods/letsdo-farm_and_charm-fabric-1.0.14.jar",
+      "hashes": {
+        "sha1": "bbb387d12c3b6e14dee74062bf84a99d2a7047da",
+        "sha512": "21ac172f64e88d4f942375bbcddae0a76bec483b15694f88bc816874434d4f385161b9a05e113da626159350a1e4806b3e4113121d6f170536f65a15f7fc661f"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/HJetCzWo/versions/sMjnKy5B/letsdo-farm_and_charm-fabric-1.0.14.jar"
+      ],
+      "fileSize": 3331230
+    },
+    {
+      "path": "mods/letsdo-bakery-fabric-1.1.15.jar",
+      "hashes": {
+        "sha1": "e48ea2a659e0f57a7d1b1cc055a1451bd354898f",
+        "sha512": "c66a30ca9c3d2ad3808bfb0b9e2258b2b7f417c9231fbaf95f8daa631331319dc5df2b47a14ebf0629b86599ffd2d9963a7436140d4336c0188ba9838199cdec"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/WFwYiVoG/versions/Fywe1lBT/letsdo-bakery-fabric-1.1.15.jar"
+      ],
+      "fileSize": 1529233
+    },
+    {
+      "path": "mods/letsdo-API-fabric-1.2.14-fabric.jar",
+      "hashes": {
+        "sha1": "047bc030f4e0ae40b1439fb33a852e44fbdcb505",
+        "sha512": "12ba0eace23ddc2512ee35e5eaeab9b1fddd04589740542c72d4c65114fffc400bbcaad3fa3f990730b6e7c4ff31a8e2f6e37966c22bdc84e9c1355912c2d8c4"
+      },
+      "env": {
+        "client": "required",
+        "server": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/4XJZeZbM/versions/UXpmGhse/letsdo-API-fabric-1.2.14-fabric.jar"
+      ],
+      "fileSize": 1702807
+    },
+    {
+      "path": "mods/Steam_Rails-1.7.2+fabric-mc1.20.1.jar",
+      "hashes": {
+        "sha1": "6ec6a54541176cff06dba3e4d6ab5daf4d412bc3",
+        "sha512": "dacd75c3461f014f2a7caae77075b36c189e38eb23d887bfbd6f6ad66b27eeb699ee72908a4c973f8abbf32f35c0110bbb37d54e71dbdccbd676bc5c781339ec"
+      },
+      "env": {
+        "server": "required",
+        "client": "required"
+      },
+      "downloads": [
+        "https://cdn.modrinth.com/data/ZzjhlDgM/versions/PEA8dAwJ/Steam_Rails-1.7.2%2Bfabric-mc1.20.1.jar"
+      ],
+      "fileSize": 16863902
+    }
+  ],
+  "dependencies": {
+    "fabric-loader": "0.19.3",
+    "minecraft": "1.20.1"
+  }
+}

@@ -1,17 +1,23 @@
 package com.bellizia.mcmonitor.ui
 
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.data.McRepository
+import com.bellizia.mcmonitor.data.ModRepository
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.databinding.FragmentStatusBinding
 import com.bellizia.mcmonitor.databinding.ItemKeyValueBinding
 import com.bellizia.mcmonitor.lgsm.Lgsm
+import com.bellizia.mcmonitor.lgsm.VersionConfig
+import com.bellizia.mcmonitor.mods.MojangVersions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 
@@ -20,6 +26,7 @@ class StatusFragment : Fragment() {
 
     private var _b: FragmentStatusBinding? = null
     private val b get() = _b!!
+    private var versionConfig: VersionConfig? = null
 
     private val interesting = listOf(
         "Status", "Server name", "Server IP", "Internet IP", "Game port",
@@ -33,6 +40,7 @@ class StatusFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.swipe.setOnRefreshListener { refresh() }
+        b.btnChangeVersion.setOnClickListener { chooseVersion() }
         b.btnStart.setOnClickListener { control("Avvio del server…") { McRepository.start() } }
         b.btnStop.setOnClickListener {
             confirm("Fermare il server?", "I giocatori online verranno disconnessi.") {
@@ -60,6 +68,8 @@ class StatusFragment : Fragment() {
             return
         }
         b.swipe.isRefreshing = true
+        loadMods()
+        loadVersion()
         viewLifecycleOwner.lifecycleScope.launch {
             runCatching { McRepository.details() }
                 .onSuccess { render(it) }
@@ -86,6 +96,155 @@ class StatusFragment : Fragment() {
             b.fields.addView(row.root)
         }
         b.output.text = details.trim().ifBlank { "(nessun output)" }
+    }
+
+    /** Versione impostata in LinuxGSM: è quella che il server scaricherà con `update`. */
+    private fun loadVersion() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = runCatching { McRepository.versionConfig() }
+            val bind = _b ?: return@launch
+            versionConfig = result.getOrNull()
+            bind.versionConfig.text = result.fold(
+                onSuccess = { "mcversion = ${it.version ?: "?"} · ramo ${it.branch ?: "release"}" },
+                onFailure = { "configurazione non leggibile" }
+            )
+            bind.btnChangeVersion.isEnabled = result.isSuccess
+        }
+    }
+
+    private fun chooseVersion() {
+        val current = versionConfig ?: return
+        b.swipe.isRefreshing = true
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = runCatching { MojangVersions.list(includeSnapshots = false) }
+            val bind = _b ?: return@launch
+            bind.swipe.isRefreshing = false
+            val versions = result.getOrElse {
+                showText("Elenco versioni non disponibile", it.userMessage())
+                return@launch
+            }
+            val labels = versions.take(60).map { "${it.id}  ·  ${it.dateLabel}" }
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Versioni ufficiali (attuale: ${current.version ?: "?"})")
+                .setItems(labels.toTypedArray()) { _, which ->
+                    confirmVersion(versions[which].id, current)
+                }
+                .setNegativeButton("Annulla", null)
+                .show()
+        }
+    }
+
+    private fun confirmVersion(version: String, current: VersionConfig) {
+        val downgrade = current.version != null &&
+                compareVersions(version, current.version) < 0
+        val message = buildString {
+            append("Verrà scritto mcversion=\"$version\" nella configurazione LinuxGSM, ")
+            append("poi lanciato ./${Prefs.load().script} update: il server si ferma, scarica ")
+            append("il jar e riparte.\n\n")
+            if (downgrade) {
+                append("ATTENZIONE: stai tornando a una versione più vecchia di ")
+                append("${current.version}. Un mondo salvato con una versione recente ")
+                append("spesso non si apre con una precedente. Fai il backup.")
+            } else {
+                append("Il mondo verrà convertito al primo avvio e non sarà più apribile ")
+                append("con la versione precedente. Un backup resta consigliato.")
+            }
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Passare a Minecraft $version?")
+            .setMessage(message)
+            .setNegativeButton("Annulla", null)
+            .setNeutralButton("Solo cambio") { _, _ -> applyVersion(version, current, false) }
+            .setPositiveButton("Backup e cambio") { _, _ -> applyVersion(version, current, true) }
+            .show()
+    }
+
+    private fun applyVersion(version: String, current: VersionConfig, backup: Boolean) {
+        val view = TextView(requireContext()).apply {
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            setTextIsSelectable(true)
+            setPadding(40, 30, 40, 10)
+            text = "Avvio…"
+        }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Passaggio a $version")
+            .setView(ScrollView(requireContext()).apply { addView(view) })
+            .setCancelable(false)
+            .setPositiveButton("Chiudi", null)
+            .show()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val report = runCatching {
+                McRepository.changeVersion(
+                    version = version,
+                    branch = current.branch ?: "release",
+                    branchKey = current.branchKey,
+                    withBackup = backup
+                ) { progress -> view.text = progress }
+            }.getOrElse { "Operazione interrotta: ${it.userMessage()}" }
+            view.text = report
+            dialog.setCancelable(true)
+            refresh()
+        }
+    }
+
+    /** Confronto numerico fra versioni tipo 1.21.10 e 1.20.1. */
+    private fun compareVersions(a: String, b: String): Int {
+        val x = a.split('.').map { it.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
+        val y = b.split('.').map { it.takeWhile(Char::isDigit).toIntOrNull() ?: 0 }
+        for (i in 0 until maxOf(x.size, y.size)) {
+            val d = x.getOrElse(i) { 0 } - y.getOrElse(i) { 0 }
+            if (d != 0) return d
+        }
+        return 0
+    }
+
+    private fun showText(title: String, message: String) {
+        if (!isAdded) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Chiudi", null)
+            .show()
+    }
+
+    /** Riepilogo dei mod: il dettaglio e le operazioni stanno nella scheda Mod. */
+    private fun loadMods() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val env = runCatching { ModRepository.environment() }.getOrNull()
+            val mods = runCatching { ModRepository.installed() }.getOrDefault(emptyList())
+            val bind = _b ?: return@launch
+
+            bind.modsTitle.text = "Mod installati (${mods.count { it.enabled }})"
+            bind.modsEnvironment.text = env?.let {
+                "Minecraft ${it.minecraftVersion ?: "?"} · ${it.loaderLabel}"
+            } ?: "ambiente non rilevato"
+
+            bind.modsList.removeAllViews()
+            if (mods.isEmpty()) {
+                val row = ItemKeyValueBinding.inflate(layoutInflater, bind.modsList, false)
+                row.key.text = "nessun mod"
+                row.value.text = if (env?.hasModsDir == true) "cartella mods vuota" else "cartella mods assente"
+                bind.modsList.addView(row.root)
+                return@launch
+            }
+            mods.take(12).forEach { mod ->
+                val row = ItemKeyValueBinding.inflate(layoutInflater, bind.modsList, false)
+                row.key.text = mod.name
+                row.value.text = buildString {
+                    mod.version?.let { append("v$it ") }
+                    append(if (mod.enabled) "" else "· disattivato")
+                }
+                bind.modsList.addView(row.root)
+            }
+            if (mods.size > 12) {
+                val row = ItemKeyValueBinding.inflate(layoutInflater, bind.modsList, false)
+                row.key.text = "…"
+                row.value.text = "e altri ${mods.size - 12}"
+                bind.modsList.addView(row.root)
+            }
+        }
     }
 
     private fun setStatus(text: String, color: Int) {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Solo la cartella degli aggiornamenti viene condivisa con l'installer. -->
+    <external-files-path
+        name="updates"
+        path="updates/" />
+</paths>

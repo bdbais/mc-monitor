@@ -1,8 +1,10 @@
 package com.bellizia.mcmonitor.data
 
 import com.bellizia.mcmonitor.lgsm.ChatMessage
+import com.bellizia.mcmonitor.lgsm.GameVersion
 import com.bellizia.mcmonitor.lgsm.JoinAttempt
 import com.bellizia.mcmonitor.lgsm.Lgsm
+import com.bellizia.mcmonitor.lgsm.VersionConfig
 import com.bellizia.mcmonitor.lgsm.PlayerEntry
 import com.bellizia.mcmonitor.lgsm.PlayerPos
 import com.bellizia.mcmonitor.rcon.RconManager
@@ -210,6 +212,62 @@ object McRepository {
         log(test.fold(
             onSuccess = { "     OK · risposta del server: $it" },
             onFailure = { "     FALLITA: ${it.message}" }
+        ))
+        return report.toString()
+    }
+
+    // -------------------------------------------------- versione di Minecraft
+
+    suspend fun versionConfig(): VersionConfig {
+        val c = cfg()
+        val r = SshManager.exec(c, GameVersion.readConfig(c), 30_000)
+        if (r.exitCode == GameVersion.EXIT_NO_CONFIG) {
+            throw SshException(
+                "File di configurazione LinuxGSM non trovato:\n${GameVersion.configPath(c)}\n\n" +
+                        "Controlla directory e nome dello script nelle Impostazioni."
+            )
+        }
+        return GameVersion.parseConfig(r.text)
+    }
+
+    /**
+     * Cambia versione: scrive mcversion nella configurazione e lancia `update`,
+     * che scarica il jar richiesto e riavvia il server.
+     */
+    suspend fun changeVersion(
+        version: String,
+        branch: String,
+        branchKey: String,
+        withBackup: Boolean,
+        onStep: (String) -> Unit
+    ): String {
+        val c = cfg()
+        val report = StringBuilder()
+        fun log(line: String) {
+            report.append(line).append('\n')
+            onStep(report.toString())
+        }
+
+        if (withBackup) {
+            log("1/3 · Backup del mondo con LinuxGSM (può richiedere minuti)…")
+            val backup = runCatching { SshManager.exec(c, GameVersion.backup(c), 900_000) }.getOrNull()
+            log("     " + (backup?.let { Lgsm.clean(it.text).trim().lines().lastOrNull() } ?: "backup non riuscito"))
+        }
+
+        log("${if (withBackup) "2/3" else "1/2"} · Scrittura di mcversion=$version…")
+        val write = SshManager.exec(c, GameVersion.setVersion(c, version, branch, branchKey), 45_000)
+        val writeText = Lgsm.clean(write.text).trim()
+        if (!write.ok) {
+            log("     FALLITO: $writeText")
+            return report.toString()
+        }
+        writeText.lineSequence().forEach { log("     $it") }
+
+        log("\n${if (withBackup) "3/3" else "2/2"} · ./${c.script} update — scarica e riavvia…")
+        val update = runCatching { SshManager.exec(c, GameVersion.update(c), 900_000) }
+        log(update.fold(
+            onSuccess = { Lgsm.clean(it.text).trim().lines().takeLast(12).joinToString("\n") { l -> "     $l" } },
+            onFailure = { "     ERRORE: ${it.message}" }
         ))
         return report.toString()
     }

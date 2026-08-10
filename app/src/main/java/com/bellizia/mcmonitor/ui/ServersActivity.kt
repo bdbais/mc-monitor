@@ -33,6 +33,7 @@ class ServersActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(false)
         applyInsets()
 
+        UpdateBanner.attach(this, binding.updateBanner)
         selectedId = Prefs.activeId().ifBlank { Prefs.servers().firstOrNull()?.id.orEmpty() }
 
         binding.btnAdd.setOnClickListener { addServer() }

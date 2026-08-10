@@ -18,3 +18,7 @@
 # Gli APK vengono pubblicati come release, non nel repository
 *.apk
 *.aab
+
+# Modpack e mod di terzi: restano locali, non si ridistribuiscono
+/mods/
+*.mrpack

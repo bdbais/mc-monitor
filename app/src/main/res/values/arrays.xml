@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="mod_loaders">
+        <item>fabric</item>
+        <item>forge</item>
+        <item>neoforge</item>
+        <item>quilt</item>
+        <item>paper</item>
+    </string-array>
+</resources>

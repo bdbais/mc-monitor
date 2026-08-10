@@ -28,6 +28,10 @@
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
+    <include
+        android:id="@+id/updateBanner"
+        layout="@layout/view_update_banner" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

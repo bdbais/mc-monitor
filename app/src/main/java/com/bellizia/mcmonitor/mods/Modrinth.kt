@@ -1,0 +1,178 @@
+package com.bellizia.mcmonitor.mods
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+
+/** Un progetto trovato su Modrinth. */
+data class ModProject(
+    val id: String,
+    val slug: String,
+    val title: String,
+    val description: String,
+    val author: String,
+    val downloads: Long,
+    val categories: List<String>
+) {
+    val downloadsLabel: String
+        get() = when {
+            downloads >= 1_000_000 -> "%.1fM".format(downloads / 1_000_000.0)
+            downloads >= 1_000 -> "%.0fk".format(downloads / 1_000.0)
+            else -> downloads.toString()
+        }
+}
+
+/** Una versione pubblicata, con il file da scaricare. */
+data class ModFile(
+    val versionId: String,
+    val versionNumber: String,
+    val name: String,
+    val datePublished: String,
+    val gameVersions: List<String>,
+    val loaders: List<String>,
+    val fileName: String,
+    val url: String,
+    val sha1: String,
+    val requiredDependencies: List<String>
+) {
+    val dateLabel: String get() = datePublished.take(10)
+}
+
+class ModrinthException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+/**
+ * Client dell'API pubblica di Modrinth (v2). Nessuna chiave necessaria: serve
+ * però uno User-Agent che identifichi l'applicazione, come chiede la loro documentazione.
+ */
+object Modrinth {
+
+    private const val BASE = "https://api.modrinth.com/v2"
+    private const val USER_AGENT = "github.com/bdbais/mc-monitor/1.8 (app Android MC Monitor)"
+
+    /**
+     * Ricerca filtrata per versione di gioco e loader: senza quei vincoli si
+     * finirebbe per installare mod che il server non caricherà mai.
+     */
+    suspend fun search(
+        query: String,
+        gameVersion: String?,
+        loader: String?,
+        limit: Int = 25
+    ): List<ModProject> = withContext(Dispatchers.IO) {
+        val facets = buildList {
+            add(listOf("project_type:mod"))
+            gameVersion?.takeIf { it.isNotBlank() }?.let { add(listOf("versions:$it")) }
+            loader?.takeIf { it.isNotBlank() && it != "vanilla" }?.let { add(listOf("categories:$it")) }
+        }
+        val url = "$BASE/search?limit=$limit&index=relevance" +
+                "&query=${enc(query)}&facets=${enc(facetsJson(facets))}"
+
+        val hits = JSONObject(get(url)).optJSONArray("hits") ?: JSONArray()
+        (0 until hits.length()).mapNotNull { i ->
+            val o = hits.optJSONObject(i) ?: return@mapNotNull null
+            ModProject(
+                id = o.optString("project_id"),
+                slug = o.optString("slug"),
+                title = o.optString("title"),
+                description = o.optString("description"),
+                author = o.optString("author"),
+                downloads = o.optLong("downloads"),
+                categories = o.optJSONArray("categories").toStringList()
+            )
+        }
+    }
+
+    /** Versioni compatibili di un progetto, dalla più recente. */
+    suspend fun versions(
+        projectId: String,
+        gameVersion: String?,
+        loader: String?
+    ): List<ModFile> = withContext(Dispatchers.IO) {
+        val params = buildList {
+            gameVersion?.takeIf { it.isNotBlank() }?.let { add("game_versions=${enc("[\"$it\"]")}") }
+            loader?.takeIf { it.isNotBlank() && it != "vanilla" }?.let { add("loaders=${enc("[\"$it\"]")}") }
+        }
+        val url = "$BASE/project/$projectId/version" + if (params.isEmpty()) "" else "?${params.joinToString("&")}"
+        parseVersions(get(url))
+    }
+
+    suspend fun projectTitle(projectId: String): String = withContext(Dispatchers.IO) {
+        runCatching { JSONObject(get("$BASE/project/$projectId")).optString("title") }
+            .getOrDefault(projectId)
+            .ifBlank { projectId }
+    }
+
+    fun parseVersions(json: String): List<ModFile> {
+        val array = JSONArray(json)
+        return (0 until array.length()).mapNotNull { i ->
+            val o = array.optJSONObject(i) ?: return@mapNotNull null
+            val files = o.optJSONArray("files") ?: return@mapNotNull null
+            // Un rilascio può contenere sorgenti o javadoc: si prende il file primario.
+            val file = (0 until files.length())
+                .mapNotNull { files.optJSONObject(it) }
+                .let { list -> list.firstOrNull { it.optBoolean("primary") } ?: list.firstOrNull() }
+                ?: return@mapNotNull null
+
+            val deps = o.optJSONArray("dependencies") ?: JSONArray()
+            val required = (0 until deps.length())
+                .mapNotNull { deps.optJSONObject(it) }
+                .filter { it.optString("dependency_type") == "required" }
+                .mapNotNull { it.optString("project_id").takeIf { id -> id.isNotBlank() } }
+
+            ModFile(
+                versionId = o.optString("id"),
+                versionNumber = o.optString("version_number"),
+                name = o.optString("name"),
+                datePublished = o.optString("date_published"),
+                gameVersions = o.optJSONArray("game_versions").toStringList(),
+                loaders = o.optJSONArray("loaders").toStringList(),
+                fileName = file.optString("filename"),
+                url = file.optString("url"),
+                sha1 = file.optJSONObject("hashes")?.optString("sha1").orEmpty(),
+                requiredDependencies = required
+            )
+        }
+    }
+
+    // ---------------------------------------------------------------- interno
+
+    private fun facetsJson(facets: List<List<String>>): String =
+        facets.joinToString(",", "[", "]") { group ->
+            group.joinToString(",", "[", "]") { "\"$it\"" }
+        }
+
+    private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
+
+    private fun get(url: String): String {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 15_000
+            readTimeout = 20_000
+            setRequestProperty("User-Agent", USER_AGENT)
+            setRequestProperty("Accept", "application/json")
+        }
+        try {
+            val code = connection.responseCode
+            if (code == 429) throw ModrinthException("Troppe richieste a Modrinth: riprova fra un minuto.")
+            if (code !in 200..299) {
+                throw ModrinthException("Modrinth ha risposto $code ${connection.responseMessage ?: ""}".trim())
+            }
+            return connection.inputStream.bufferedReader().use { it.readText() }
+        } catch (e: ModrinthException) {
+            throw e
+        } catch (e: Exception) {
+            throw ModrinthException("Modrinth non raggiungibile: ${e.message}", e)
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun JSONArray?.toStringList(): List<String> {
+        if (this == null) return emptyList()
+        return (0 until length()).mapNotNull { optString(it).takeIf { s -> s.isNotBlank() } }
+    }
+}

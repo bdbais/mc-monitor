@@ -13,9 +13,11 @@ import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.databinding.ActivityMainBinding
 import com.bellizia.mcmonitor.ui.ConsoleFragment
 import com.bellizia.mcmonitor.ui.MapFragment
+import com.bellizia.mcmonitor.ui.ModsFragment
 import com.bellizia.mcmonitor.ui.PlayersFragment
 import com.bellizia.mcmonitor.ui.SettingsFragment
 import com.bellizia.mcmonitor.ui.StatusFragment
+import com.bellizia.mcmonitor.ui.UpdateBanner
 import com.google.android.material.tabs.TabLayoutMediator
 
 class MainActivity : AppCompatActivity() {
@@ -31,6 +33,7 @@ class MainActivity : AppCompatActivity() {
         "Console" to { ConsoleFragment() as Fragment },
         "Giocatori" to { PlayersFragment() as Fragment },
         "Mappa" to { MapFragment() as Fragment },
+        "Mod" to { ModsFragment() as Fragment },
         "Impostazioni" to { SettingsFragment() as Fragment }
     )
 
@@ -55,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         }.attach()
 
         binding.toolbar.setNavigationOnClickListener { finish() }
+        UpdateBanner.attach(this, binding.updateBanner)
 
         // Si parte dalle Impostazioni quando si arriva da "Modifica" o quando la
         // configurazione è incompleta; altrimenti direttamente dallo stato del server.
