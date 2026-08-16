@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sfondo dell app: mattoni di pietra molto scuri. La texture resta visibile
+     attorno ai pannelli, mentre testi e liste stanno sempre su fondo pieno. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <bitmap
+            android:src="@drawable/tile_stone"
+            android:tileModeX="repeat"
+            android:tileModeY="repeat" />
+    </item>
+    <item>
+        <color android:color="#D9080C0A" />
+    </item>
+</layer-list>

@@ -20,6 +20,7 @@ import com.bellizia.mcmonitor.data.PlayerTracker
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.ServerConfig
 import com.bellizia.mcmonitor.databinding.ActivityServersBinding
+import com.bellizia.mcmonitor.databinding.DialogAboutBinding
 import com.bellizia.mcmonitor.databinding.ItemServerBinding
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.ssh.SshManager
@@ -177,17 +178,11 @@ class ServersActivity : AppCompatActivity() {
             Font Press Start 2P (SIL Open Font License 1.1)
         """.trimIndent()
 
-        val view = TextView(this).apply {
-            setText(text)
-            textSize = 13f
-            setTextIsSelectable(true)
-            autoLinkMask = Linkify.WEB_URLS
-            setLinkTextColor(getColor(R.color.grass))
-            setPadding(48, 32, 48, 16)
-        }
+        val about = DialogAboutBinding.inflate(layoutInflater)
+        about.credits.text = text
         MaterialAlertDialogBuilder(this)
             .setTitle("Informazioni")
-            .setView(ScrollView(this).apply { addView(view) })
+            .setView(about.root)
             .setPositiveButton("Chiudi", null)
             .show()
     }

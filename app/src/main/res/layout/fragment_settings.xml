@@ -113,7 +113,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnChangePassword"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/McButton.Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Cambia la password dell'utente SSH" />
@@ -245,7 +245,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnExport"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
@@ -254,7 +254,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnImport"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -283,7 +283,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnBackupFolder"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/McButton.Text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -291,7 +291,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnBackupNow"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/McButton.Text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -436,7 +436,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRconPassword"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/McButton.Text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -444,7 +444,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRconTest"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/McButton.Text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -453,7 +453,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRconSetup"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Attiva RCON sul server e riavvia" />
@@ -507,7 +507,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnTest"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -516,7 +516,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPrepare"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -524,7 +524,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDiagnose"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
@@ -532,7 +532,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnForgetHostKey"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/McButton.Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Dimentica fingerprint host" />

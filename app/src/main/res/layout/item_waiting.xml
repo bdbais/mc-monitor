@@ -30,7 +30,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnWhitelist"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
@@ -39,7 +39,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBan"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            style="@style/McButton.Outlined"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"

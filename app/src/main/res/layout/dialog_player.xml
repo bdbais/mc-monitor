@@ -35,7 +35,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMap"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -43,7 +43,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnChat"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -51,7 +51,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTeleport"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -59,7 +59,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGamemode"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -67,7 +67,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSpawnpoint"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/McButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -87,7 +87,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnWhitelistAdd"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
@@ -96,7 +96,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnWhitelistRemove"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -110,7 +110,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnOp"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
@@ -119,7 +119,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDeop"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -140,7 +140,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnKick"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
@@ -149,7 +149,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnBan"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                style="@style/McButton.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -158,7 +158,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPardon"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/McButton.Text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Rimuovi il ban" />

@@ -6,7 +6,7 @@
     android:layout_margin="10dp"
     android:visibility="gone"
     app:cardBackgroundColor="@color/surface_high"
-    app:cardCornerRadius="12dp"
+    app:cardCornerRadius="0dp"
     app:strokeColor="@color/grass"
     app:strokeWidth="1dp">
 
@@ -41,7 +41,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/updateDismiss"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/McButton.Text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Più tardi" />

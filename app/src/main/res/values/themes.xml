@@ -15,6 +15,22 @@
         <item name="colorOnSurfaceVariant">@color/text_dim</item>
         <item name="android:statusBarColor" tools:targetApi="l">@color/surface</item>
         <item name="android:navigationBarColor" tools:targetApi="l">@color/bg</item>
+
+        <!-- Stile a blocchi applicato una volta sola, dal tema: niente angoli
+             arrotondati, pulsanti in pietra con testo scuro, sfondo a mattoni. -->
+        <item name="android:windowBackground">@drawable/bg_window_stone</item>
+        <item name="materialButtonStyle">@style/McButton</item>
+        <item name="materialButtonOutlinedStyle">@style/McButton.Outlined</item>
+        <item name="materialCardViewStyle">@style/McCard</item>
+        <item name="shapeAppearanceSmallComponent">@style/McShape</item>
+        <item name="shapeAppearanceMediumComponent">@style/McShape</item>
+        <item name="shapeAppearanceLargeComponent">@style/McShape</item>
+    </style>
+
+    <!-- Angoli vivi: è ciò che rende "a blocchi" l'interfaccia. -->
+    <style name="McShape" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">0dp</item>
     </style>
 
     <style name="CardTitle">

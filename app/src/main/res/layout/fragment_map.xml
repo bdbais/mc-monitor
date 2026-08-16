@@ -80,7 +80,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomIn"
-                style="@style/Widget.Material3.Button.TonalButton"
+                style="@style/McButton"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:insetTop="0dp"
@@ -91,7 +91,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnZoomOut"
-                style="@style/Widget.Material3.Button.TonalButton"
+                style="@style/McButton"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_marginTop="6dp"
@@ -121,7 +121,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnUnfollow"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/McButton.Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Smetti di seguire"
@@ -153,14 +153,14 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRefresh"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/McButton.Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Aggiorna" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnFit"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/McButton.Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Inquadra" />
@@ -181,7 +181,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnClearTrails"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            style="@style/McButton.Outlined"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"

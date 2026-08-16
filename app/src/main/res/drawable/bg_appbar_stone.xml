@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Barra in pietra: texture ripetuta, velo scuro per tenere leggibile il testo,
+     e una riga scura in basso che stacca dalla pagina. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <bitmap
+            android:src="@drawable/tile_stone"
+            android:tileModeX="repeat"
+            android:tileModeY="repeat" />
+    </item>
+
+    <item>
+        <color android:color="#66000000" />
+    </item>
+
+    <item android:gravity="bottom">
+        <shape android:shape="rectangle">
+            <size android:height="3dp" />
+            <solid android:color="#22262A" />
+        </shape>
+    </item>
+</layer-list>

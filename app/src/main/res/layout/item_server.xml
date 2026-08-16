@@ -9,7 +9,7 @@
     android:clickable="true"
     android:focusable="true"
     app:cardBackgroundColor="@color/surface"
-    app:cardCornerRadius="14dp"
+    app:cardCornerRadius="0dp"
     app:checkedIcon="@null"
     app:strokeColor="@color/grass"
     app:strokeWidth="0dp">
