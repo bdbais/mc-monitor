@@ -7,6 +7,8 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
 import android.text.util.Linkify
+import java.text.DateFormat
+import java.util.Date
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -54,6 +56,8 @@ class ServersActivity : AppCompatActivity() {
         selectedId = Prefs.activeId().ifBlank { Prefs.servers().firstOrNull()?.id.orEmpty() }
 
         binding.btnManual.setOnClickListener { openManual() }
+        binding.btnSortCreated.setOnClickListener { sortBy("creazione") }
+        binding.btnSortUsed.setOnClickListener { sortBy("recenti") }
         binding.btnHelp.setOnClickListener { showHelp(Help.SERVERS) }
         binding.btnInfo.setOnClickListener { showAbout() }
         binding.btnAdd.setOnClickListener { addServer() }
@@ -82,8 +86,17 @@ class ServersActivity : AppCompatActivity() {
         render()
     }
 
+    /** Ordina l'elenco e ricorda la scelta. */
+    private fun sortBy(mode: String) {
+        Prefs.sortMode = mode
+        render()
+    }
+
     private fun render() {
-        val servers = Prefs.servers()
+        val servers = sorted(Prefs.servers())
+        // L'icona attiva si distingue: senza, non si capisce quale ordine è in uso.
+        binding.btnSortCreated.alpha = if (Prefs.sortMode == "creazione") 1f else 0.45f
+        binding.btnSortUsed.alpha = if (Prefs.sortMode == "recenti") 1f else 0.45f
         if (servers.none { it.id == selectedId }) selectedId = servers.firstOrNull()?.id.orEmpty()
 
         binding.list.removeAllViews()
@@ -95,6 +108,13 @@ class ServersActivity : AppCompatActivity() {
                 append(if (server.isComplete) "pronto" else "configurazione incompleta")
                 append(" · LinuxGSM ${server.script}")
                 if (server.rconUsable) append(" · RCON ${server.rconPort}")
+                // La data mostrata è quella su cui stai ordinando: così l'ordine si spiega da sé.
+                val date = DateFormat.getDateInstance(DateFormat.SHORT)
+                if (Prefs.sortMode == "recenti") {
+                    append(if (server.lastUsedAt > 0) " · aperto il ${date.format(Date(server.lastUsedAt))}" else " · mai aperto")
+                } else if (server.createdAt > 0) {
+                    append(" · creato il ${date.format(Date(server.createdAt))}")
+                }
             }
             row.card.isChecked = server.id == selectedId
             row.card.strokeWidth = if (server.id == selectedId) 3 else 0
@@ -194,6 +214,20 @@ class ServersActivity : AppCompatActivity() {
             .onFailure { toastShort("Nessuna app per aprire i collegamenti") }
     }
 
+    /**
+     * Per creazione: dal più vecchio, cioè l'ordine in cui li hai fatti.
+     * Per ultimo utilizzo: dal più recente, con i mai aperti in fondo.
+     */
+    private fun sorted(servers: List<ServerConfig>): List<ServerConfig> =
+        when (Prefs.sortMode) {
+            "recenti" -> servers.sortedWith(
+                compareByDescending<ServerConfig> { it.lastUsedAt }.thenBy { it.displayName.lowercase() }
+            )
+            else -> servers.sortedWith(
+                compareBy<ServerConfig> { it.createdAt }.thenBy { it.displayName.lowercase() }
+            )
+        }
+
     private fun addServer() {
         val fresh = Prefs.add(ServerConfig(name = "Nuovo server"))
         selectedId = fresh.id
@@ -223,6 +257,7 @@ class ServersActivity : AppCompatActivity() {
             disconnectAll()
             Prefs.setActive(server.id)
         }
+        Prefs.markUsed(server.id)
         startActivity(
             Intent(this, MainActivity::class.java)
                 .putExtra(MainActivity.EXTRA_OPEN_SETTINGS, editing || !server.isComplete)

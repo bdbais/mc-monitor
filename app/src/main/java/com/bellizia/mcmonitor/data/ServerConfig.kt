@@ -43,6 +43,9 @@ data class ServerConfig(
     val notifyLeave: Boolean = false,
     val notifySeconds: Int = 60,
     val hostKeyFingerprint: String = "",
+    /** Servono a ordinare l'elenco: quando è nato il profilo e quando l'hai aperto. */
+    val createdAt: Long = 0L,
+    val lastUsedAt: Long = 0L,
     /** I requisiti del server si controllano una volta sola, al primo collegamento. */
     val requirementsChecked: Boolean = false
 ) {
@@ -104,6 +107,8 @@ data class ServerConfig(
         put("notifySeconds", notifySeconds)
         put("hostKeyFingerprint", hostKeyFingerprint)
         put("requirementsChecked", requirementsChecked)
+        put("createdAt", createdAt)
+        put("lastUsedAt", lastUsedAt)
     }
 
     companion object {
@@ -135,7 +140,9 @@ data class ServerConfig(
             notifyLeave = o.optBoolean("notifyLeave", false),
             notifySeconds = o.optInt("notifySeconds", 60),
             hostKeyFingerprint = o.optString("hostKeyFingerprint"),
-            requirementsChecked = o.optBoolean("requirementsChecked", false)
+            requirementsChecked = o.optBoolean("requirementsChecked", false),
+            createdAt = o.optLong("createdAt", 0L),
+            lastUsedAt = o.optLong("lastUsedAt", 0L)
         )
     }
 }
@@ -203,6 +210,19 @@ object Prefs {
             sp.edit().putLong("backupLast", value).apply()
         }
 
+    /** Come ordinare l elenco: "creazione" oppure "recenti". */
+    var sortMode: String
+        get() = sp.getString("sortMode", "creazione") ?: "creazione"
+        set(value) {
+            sp.edit().putString("sortMode", value).apply()
+        }
+
+    /** Segna l apertura di un server: serve all ordinamento per ultimo utilizzo. */
+    fun markUsed(id: String) {
+        val server = servers().firstOrNull { it.id == id } ?: return
+        save(server.copy(lastUsedAt = System.currentTimeMillis()))
+    }
+
     var privacyMode: Boolean
         get() = sp.getBoolean("privacyMode", true)
         set(value) {
@@ -239,7 +259,8 @@ object Prefs {
         val fresh = cfg.copy(
             id = UUID.randomUUID().toString(),
             slug = slug,
-            lgsmDir = "~/$slug"
+            lgsmDir = "~/$slug",
+            createdAt = System.currentTimeMillis()
         )
         val all = servers().toMutableList().apply { add(fresh) }
         writeAll(all)

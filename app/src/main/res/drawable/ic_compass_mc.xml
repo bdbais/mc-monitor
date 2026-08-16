@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Bussola a pixel: ghiera di ferro, quadrante chiaro e ago rosso grande,
+         perché a 30 pixel un ago sottile su fondo scuro non si distingue. -->
+    <path
+        android:fillColor="#5E6266"
+        android:pathData="M5,2h6v1h-6zM4,3h1v1h-1zM11,3h1v1h-1zM3,4h1v8h-1zM12,4h1v8h-1zM4,12h1v1h-1zM11,12h1v1h-1zM5,13h6v1h-6z" />
+    <path
+        android:fillColor="#A8AEB4"
+        android:pathData="M5,3h6v1h-6zM4,4h8v1h-8z" />
+    <path
+        android:fillColor="#4A5866"
+        android:pathData="M4,5h8v7h-8z" />
+    <path
+        android:fillColor="#E8ECEF"
+        android:pathData="M5,6h6v5h-6z" />
+    <path
+        android:fillColor="#D63B2F"
+        android:pathData="M7,6h2v3h-2zM6,7h1v2h-1z" />
+    <path
+        android:fillColor="#3B4753"
+        android:pathData="M7,9h2v2h-2zM9,8h1v2h-1z" />
+</vector>

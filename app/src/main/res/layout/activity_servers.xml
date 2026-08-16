@@ -105,6 +105,30 @@
             android:textSize="13sp" />
 
         <ImageButton
+            android:id="@+id/btnSortCreated"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Ordina per data di creazione"
+            android:padding="7dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_clock_mc"
+            android:tooltipText="Per creazione" />
+
+        <ImageButton
+            android:id="@+id/btnSortUsed"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Ordina per ultimo utilizzo"
+            android:padding="7dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_compass_mc"
+            android:tooltipText="Usati di recente" />
+
+        <ImageButton
             android:id="@+id/btnManual"
             android:layout_width="44dp"
             android:layout_height="44dp"

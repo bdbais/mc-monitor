@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Orologio a pixel: ghiera dorata, quadrante chiaro, lancette scure. -->
+    <path
+        android:fillColor="#C79A28"
+        android:pathData="M5,2h6v1h-6zM4,3h1v1h-1zM11,3h1v1h-1zM3,4h1v8h-1zM12,4h1v8h-1zM4,12h1v1h-1zM11,12h1v1h-1zM5,13h6v1h-6z" />
+    <path
+        android:fillColor="#E8C860"
+        android:pathData="M5,3h6v1h-6zM4,4h8v1h-8z" />
+    <path
+        android:fillColor="#DCE4EC"
+        android:pathData="M4,5h8v7h-8z" />
+    <path
+        android:fillColor="#7C8CA0"
+        android:pathData="M4,11h8v1h-8z" />
+    <path
+        android:fillColor="#2A3340"
+        android:pathData="M7,6h1v3h-1zM8,8h3v1h-3z" />
+</vector>
