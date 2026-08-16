@@ -104,12 +104,16 @@
             android:textColor="@color/text_dim"
             android:textSize="13sp" />
 
-        <com.google.android.material.button.MaterialButton
+        <ImageButton
             android:id="@+id/btnManual"
-            style="@style/McButton.Text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Manuale d'uso" />
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Manuale d'uso"
+            android:padding="7dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_book"
+            android:tooltipText="Manuale d'uso" />
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
