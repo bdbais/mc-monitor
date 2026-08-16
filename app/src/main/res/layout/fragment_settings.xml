@@ -221,6 +221,153 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
+            android:text="Privacy e backup" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/privacyMode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Modalità privacy" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="Nasconde a schermo indirizzo del server, nomi dei giocatori e password: puoi fare uno screenshot e mandarlo senza pensieri. Copia e Condividi usano comunque il valore vero."
+            android:textColor="@color/text_dim"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExport"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:text="Esporta" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnImport"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Importa" />
+        </LinearLayout>
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/backupEnabled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Backup automatico cifrato" />
+
+        <TextView
+            android:id="@+id/backupFolder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nessuna cartella scelta"
+            android:textColor="@color/text_dim"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBackupFolder"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Scegli cartella" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBackupNow"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Backup ora" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/CardTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Notifiche" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="L'app controlla il server a intervalli e avvisa quando succede qualcosa. Resta una notifica fissa mentre il monitoraggio è attivo: Android la richiede per il lavoro in background, e consuma batteria."
+            android:textColor="@color/text_dim"
+            android:textSize="12sp" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/notifyEnabled"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Monitora questo server" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/notifyOffline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:checked="true"
+            android:text="Server offline o irraggiungibile" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/notifyOnline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:checked="true"
+            android:text="Server tornato online" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/notifyJoin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:checked="true"
+            android:text="Un giocatore entra" />
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/notifyLeave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="Un giocatore esce" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ogni quanti secondi controllare (minimo 30)">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/notifySeconds"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            style="@style/CardTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:text="RCON" />
 
         <TextView

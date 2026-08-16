@@ -35,6 +35,13 @@ data class ServerConfig(
     val rconTunnel: Boolean = true,
     val webMapUrl: String = "",
     val mapPollSeconds: Int = 6,
+    /** Notifiche: attivazione e scelta degli eventi, server per server. */
+    val notifyEnabled: Boolean = false,
+    val notifyOffline: Boolean = true,
+    val notifyOnline: Boolean = true,
+    val notifyJoin: Boolean = true,
+    val notifyLeave: Boolean = false,
+    val notifySeconds: Int = 60,
     val hostKeyFingerprint: String = "",
     /** I requisiti del server si controllano una volta sola, al primo collegamento. */
     val requirementsChecked: Boolean = false
@@ -47,6 +54,11 @@ data class ServerConfig(
     /** Cartella dei file di gioco, con default derivato dalla directory LinuxGSM. */
     val serverFiles: String
         get() = serverFilesDir.ifBlank { "${lgsmDir.trimEnd('/')}/serverfiles" }
+
+    /** Il monitoraggio ha senso solo se c'è almeno un evento scelto. */
+    val watching: Boolean
+        get() = notifyEnabled && isComplete &&
+                (notifyOffline || notifyOnline || notifyJoin || notifyLeave)
 
     /** RCON utilizzabile solo se attivo e con una password impostata. */
     val rconUsable: Boolean
@@ -84,6 +96,12 @@ data class ServerConfig(
         put("rconTunnel", rconTunnel)
         put("webMapUrl", webMapUrl)
         put("mapPollSeconds", mapPollSeconds)
+        put("notifyEnabled", notifyEnabled)
+        put("notifyOffline", notifyOffline)
+        put("notifyOnline", notifyOnline)
+        put("notifyJoin", notifyJoin)
+        put("notifyLeave", notifyLeave)
+        put("notifySeconds", notifySeconds)
         put("hostKeyFingerprint", hostKeyFingerprint)
         put("requirementsChecked", requirementsChecked)
     }
@@ -110,6 +128,12 @@ data class ServerConfig(
             rconTunnel = o.optBoolean("rconTunnel", true),
             webMapUrl = o.optString("webMapUrl"),
             mapPollSeconds = o.optInt("mapPollSeconds", 6),
+            notifyEnabled = o.optBoolean("notifyEnabled", false),
+            notifyOffline = o.optBoolean("notifyOffline", true),
+            notifyOnline = o.optBoolean("notifyOnline", true),
+            notifyJoin = o.optBoolean("notifyJoin", true),
+            notifyLeave = o.optBoolean("notifyLeave", false),
+            notifySeconds = o.optInt("notifySeconds", 60),
             hostKeyFingerprint = o.optString("hostKeyFingerprint"),
             requirementsChecked = o.optBoolean("requirementsChecked", false)
         )
@@ -147,6 +171,43 @@ object Prefs {
     }
 
     fun activeId(): String = sp.getString(KEY_ACTIVE, "") ?: ""
+
+    /**
+     * Impostazione dell'app, non del singolo server: attiva per default, perché
+     * uno screenshot con l'indirizzo o la password in chiaro si condivide una
+     * volta sola e non si può più riprendere.
+     */
+    /** Cartella scelta con il selettore di sistema (Drive, OneDrive, Dropbox, locale). */
+    var backupFolder: String
+        get() = sp.getString("backupFolder", "") ?: ""
+        set(value) {
+            sp.edit().putString("backupFolder", value).apply()
+        }
+
+    var backupEnabled: Boolean
+        get() = sp.getBoolean("backupEnabled", false)
+        set(value) {
+            sp.edit().putBoolean("backupEnabled", value).apply()
+        }
+
+    /** Serve per rifare il backup senza chiederla ogni volta; il file resta cifrato. */
+    var backupPassword: String
+        get() = sp.getString("backupPassword", "") ?: ""
+        set(value) {
+            sp.edit().putString("backupPassword", value).apply()
+        }
+
+    var backupLast: Long
+        get() = sp.getLong("backupLast", 0L)
+        set(value) {
+            sp.edit().putLong("backupLast", value).apply()
+        }
+
+    var privacyMode: Boolean
+        get() = sp.getBoolean("privacyMode", true)
+        set(value) {
+            sp.edit().putBoolean("privacyMode", value).apply()
+        }
 
     fun setActive(id: String) {
         sp.edit().putString(KEY_ACTIVE, id).apply()

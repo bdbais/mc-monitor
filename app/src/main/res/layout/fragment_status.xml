@@ -59,6 +59,66 @@
                         android:textSize="13sp" />
 
                     <LinearLayout
+                        android:id="@+id/addressBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@color/surface_high"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingTop="6dp"
+                        android:paddingEnd="4dp"
+                        android:paddingBottom="6dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Indirizzo per i giocatori"
+                                android:textColor="@color/text_dim"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/address"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:textColor="@color/grass"
+                                android:textIsSelectable="true"
+                                android:textSize="17sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnCopyAddress"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:contentDescription="Copia l'indirizzo"
+                            android:tooltipText="Copia"
+                            app:icon="@drawable/ic_copy"
+                            app:iconGravity="textStart"
+                            app:iconPadding="0dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnShareAddress"
+                            style="@style/Widget.Material3.Button.IconButton"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:contentDescription="Condividi l'indirizzo"
+                            android:tooltipText="Condividi"
+                            app:icon="@drawable/ic_share"
+                            app:iconGravity="textStart"
+                            app:iconPadding="0dp" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:id="@+id/fields"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

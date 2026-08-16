@@ -76,8 +76,24 @@ object SshManager {
         return r.text.trim()
     }
 
+    /**
+     * Chiude la sessione senza bloccare chi chiama.
+     *
+     * `Session.disconnect()` scrive un pacchetto di chiusura e aspetta i thread di
+     * JSch: è I/O di rete, e sul thread principale Android lo punisce con
+     * NetworkOnMainThreadException. Il riferimento viene azzerato subito, così la
+     * prossima operazione apre una sessione nuova, e la chiusura vera avviene a parte.
+     */
     fun disconnect() {
-        synchronized(this) { close() }
+        val stale = synchronized(this) {
+            val current = session
+            session = null
+            sessionKey = null
+            current
+        }
+        if (stale != null) {
+            Thread { runCatching { stale.disconnect() } }.apply { isDaemon = true }.start()
+        }
     }
 
     /**

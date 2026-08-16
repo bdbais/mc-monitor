@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.databinding.FragmentConsoleBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -99,8 +100,10 @@ class ConsoleFragment : Fragment() {
             val result = runCatching { McRepository.log(400) }
             busy = false
             val bind = _b ?: return@launch
-            bind.log.text = result.getOrElse { "Errore lettura log:\n${it.userMessage()}" }
-                .trim().ifBlank { "(log vuoto)" }
+            bind.log.text = Privacy.text(
+                result.getOrElse { "Errore lettura log:\n${it.userMessage()}" }.trim().ifBlank { "(log vuoto)" },
+                Prefs.load()
+            )
             bind.swipe.isRefreshing = false
             bind.scroll.post { bind.scroll.fullScroll(View.FOCUS_DOWN) }
         }
@@ -121,6 +124,9 @@ class ConsoleFragment : Fragment() {
                 delay(1_200)
                 load()
             }.onFailure { error ->
+                // Cambiando server il fragment può essere già staccato: senza questo
+                // controllo il dialogo cercherebbe un contesto che non esiste più.
+                if (!isAdded) return@onFailure
                 // I messaggi di errore dell'invio sono lunghi e vanno letti per intero.
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Comando non inviato")

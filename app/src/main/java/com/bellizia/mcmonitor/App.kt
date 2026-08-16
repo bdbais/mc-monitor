@@ -6,6 +6,7 @@ import com.bellizia.mcmonitor.data.Prefs
 class App : Application() {
     override fun onCreate() {
         super.onCreate()
+        CrashReporter.install(this)
         Prefs.init(this)
     }
 }

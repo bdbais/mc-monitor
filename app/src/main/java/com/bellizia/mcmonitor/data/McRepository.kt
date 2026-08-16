@@ -121,8 +121,13 @@ object McRepository {
      * Chiede alla console chi è online e dove si trova.
      * Sono due giri: prima `list`, poi una `data get entity` per ogni giocatore.
      */
-    suspend fun online(withPositions: Boolean = true): OnlineSnapshot {
-        val c = cfg()
+    suspend fun online(withPositions: Boolean = true): OnlineSnapshot = online(cfg(), withPositions)
+
+    /**
+     * Variante con il server esplicito: il servizio di notifica controlla anche
+     * profili diversi da quello attivo e non deve cambiarlo sotto l'interfaccia.
+     */
+    suspend fun online(c: ServerConfig, withPositions: Boolean): OnlineSnapshot {
         if (c.rconUsable) return onlineViaRcon(c, withPositions)
 
         val listLog = Lgsm.clean(SshManager.exec(c, Lgsm.sendAndRead(c, listOf("list"), 60)).text)

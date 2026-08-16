@@ -12,6 +12,8 @@ import com.bellizia.mcmonitor.data.PlayerTracker
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.databinding.ActivityMainBinding
 import com.bellizia.mcmonitor.ui.ConsoleFragment
+import com.bellizia.mcmonitor.ui.Help
+import com.bellizia.mcmonitor.ui.HelpDialog
 import com.bellizia.mcmonitor.ui.MapFragment
 import com.bellizia.mcmonitor.ui.ModsFragment
 import com.bellizia.mcmonitor.ui.PlayersFragment
@@ -61,6 +63,10 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener { finish() }
         binding.version.text = "v${UpdateChecker.currentVersion(this)}"
         UpdateBanner.attach(this, binding.updateBanner)
+        // L'aiuto segue la scheda aperta: chi lo tocca vuole sapere di questa pagina.
+        binding.btnHelp.setOnClickListener {
+            HelpDialog.show(this, Help.forTab(binding.pager.currentItem))
+        }
 
         // Si parte dalle Impostazioni quando si arriva da "Modifica" o quando la
         // configurazione è incompleta; altrimenti direttamente dallo stato del server.

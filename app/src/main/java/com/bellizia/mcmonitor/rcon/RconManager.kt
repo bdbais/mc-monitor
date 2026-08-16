@@ -41,8 +41,17 @@ object RconManager {
         return reply.ifBlank { "connesso (il server ha risposto senza testo)" }
     }
 
+    /** Come per SSH: chiudere un socket è I/O e non deve stare sul thread principale. */
     fun disconnect() {
-        synchronized(this) { close() }
+        val stale = synchronized(this) {
+            val current = client
+            client = null
+            clientKey = null
+            current
+        }
+        if (stale != null) {
+            Thread { runCatching { stale.close() } }.apply { isDaemon = true }.start()
+        }
     }
 
     private suspend fun obtain(cfg: ServerConfig): RconClient {

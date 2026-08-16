@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.MainActivity
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.databinding.FragmentPlayersBinding
 import com.bellizia.mcmonitor.databinding.ItemPlayerBinding
 import com.bellizia.mcmonitor.databinding.ItemWaitingBinding
@@ -125,7 +126,7 @@ class PlayersFragment : Fragment() {
         list.removeAllViews()
         waiting.forEach { attempt ->
             val row = ItemWaitingBinding.inflate(layoutInflater, list, false)
-            row.name.text = attempt.name
+            row.name.text = Privacy.name(attempt.name)
             row.subtitle.text = buildString {
                 append(attempt.description)
                 if (attempt.stamp.isNotBlank()) append(" · ultimo tentativo ${attempt.stamp}")
@@ -153,7 +154,7 @@ class PlayersFragment : Fragment() {
         names.forEach { name ->
             val row = ItemPlayerBinding.inflate(layoutInflater, list, false)
             val pos = byName[name]
-            row.name.text = name
+            row.name.text = Privacy.name(name)
             row.subtitle.text = if (pos == null) {
                 "posizione non disponibile"
             } else {
@@ -180,7 +181,7 @@ class PlayersFragment : Fragment() {
         }
         entries.forEach { entry ->
             val row = ItemPlayerBinding.inflate(layoutInflater, list, false)
-            row.name.text = entry.name
+            row.name.text = Privacy.name(entry.name)
             row.subtitle.text = listOfNotNull(
                 entry.reason.takeIf { it.isNotBlank() && it != "Banned by an operator." },
                 entry.created.takeIf { it.isNotBlank() },
@@ -204,6 +205,7 @@ class PlayersFragment : Fragment() {
     }
 
     private fun playerActions(name: String) {
+        if (!isAdded) return
         PlayerActions(
             fragment = this,
             name = name,

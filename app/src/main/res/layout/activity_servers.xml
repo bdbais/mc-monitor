@@ -40,6 +40,33 @@
                     android:textColor="@color/text_dim"
                     android:textSize="12sp" />
             </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnInfo"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="Informazioni sull'applicazione"
+                    android:tooltipText="Informazioni"
+                    app:icon="@drawable/ic_info"
+                    app:iconPadding="0dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnHelp"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="Aiuto su questa pagina"
+                    android:tooltipText="Aiuto"
+                    app:icon="@drawable/ic_help"
+                    app:iconPadding="0dp" />
+            </LinearLayout>
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 

@@ -1,20 +1,35 @@
 package com.bellizia.mcmonitor.ui
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Typeface
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.bellizia.mcmonitor.notify.ServerWatchService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.lifecycle.lifecycleScope
+import androidx.core.content.FileProvider
+import androidx.documentfile.provider.DocumentFile
+import com.bellizia.mcmonitor.data.BackupManager
+import com.bellizia.mcmonitor.data.ConfigTransfer
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.ServerConfig
+import java.io.File
+import java.text.DateFormat
+import java.util.Date
 import com.bellizia.mcmonitor.databinding.DialogPasswordBinding
 import com.bellizia.mcmonitor.databinding.FragmentSettingsBinding
 import com.bellizia.mcmonitor.lgsm.Lgsm
@@ -30,6 +45,13 @@ class SettingsFragment : Fragment() {
     private var _b: FragmentSettingsBinding? = null
     private val b get() = _b!!
 
+    private val notificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (!granted) {
+                toast("Senza il permesso alle notifiche il monitoraggio non può avvisarti")
+            }
+        }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, s: Bundle?): View {
         _b = FragmentSettingsBinding.inflate(inflater, container, false)
         return b.root
@@ -38,11 +60,25 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         fill(Prefs.load())
 
+        b.notifyEnabled.setOnCheckedChangeListener { _, checked ->
+            updateNotifyFields(checked)
+            if (checked) askNotificationPermission()
+        }
+
         b.btnSave.setOnClickListener {
             Prefs.save(collect())
             SshManager.disconnect()
             RconManager.disconnect()
-            toast("Impostazioni salvate")
+            // Il servizio parte o si ferma da solo in base ai server da monitorare.
+            ServerWatchService.sync(requireContext())
+            // Il backup segue le modifiche senza che l'utente debba ricordarsene.
+            viewLifecycleOwner.lifecycleScope.launch {
+                BackupManager.backupIfEnabled(requireContext())?.let { showBackupFolder() }
+            }
+            toast(
+                if (Prefs.load().watching) "Impostazioni salvate, monitoraggio attivo"
+                else "Impostazioni salvate"
+            )
         }
 
         b.btnTest.setOnClickListener {
@@ -94,6 +130,19 @@ class SettingsFragment : Fragment() {
 
         b.btnRconSetup.setOnClickListener { setupRcon() }
 
+        b.privacyMode.isChecked = Prefs.privacyMode
+        b.privacyMode.setOnCheckedChangeListener { _, checked ->
+            Prefs.privacyMode = checked
+            toast(if (checked) "Modalità privacy attiva" else "Modalità privacy disattivata")
+        }
+        b.backupEnabled.isChecked = Prefs.backupEnabled
+        b.backupEnabled.setOnCheckedChangeListener { _, checked -> Prefs.backupEnabled = checked }
+        b.btnExport.setOnClickListener { exportConfig() }
+        b.btnImport.setOnClickListener { pickImportFile.launch(arrayOf("*/*")) }
+        b.btnBackupFolder.setOnClickListener { pickBackupFolder.launch(null) }
+        b.btnBackupNow.setOnClickListener { backupNow() }
+        showBackupFolder()
+
         b.btnChangePassword.setOnClickListener { changePassword() }
         b.btnPrepare.setOnClickListener { prepareServer() }
 
@@ -121,6 +170,192 @@ class SettingsFragment : Fragment() {
             SshManager.disconnect()
             toast("Fingerprint host dimenticato: verrà riappreso al prossimo collegamento")
         }
+    }
+
+    // ------------------------------------------- privacy, esporta, importa, backup
+
+    private val pickBackupFolder =
+        registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            // Il permesso va reso duraturo, altrimenti si perde al riavvio.
+            requireContext().contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            Prefs.backupFolder = uri.toString()
+            showBackupFolder()
+            toast("Cartella di backup scelta")
+        }
+
+    private val pickImportFile =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) askImportPassword(uri)
+        }
+
+    private fun showBackupFolder() {
+        val bind = _b ?: return
+        val folder = Prefs.backupFolder
+        bind.backupFolder.text = when {
+            folder.isBlank() -> "Nessuna cartella scelta"
+            else -> {
+                val name = runCatching {
+                    DocumentFile.fromTreeUri(requireContext(), Uri.parse(folder))?.name
+                }.getOrNull() ?: "cartella scelta"
+                val last = Prefs.backupLast
+                if (last > 0) {
+                    "In $name · ultimo backup ${DateFormat.getDateTimeInstance().format(Date(last))}"
+                } else {
+                    "In $name · nessun backup ancora"
+                }
+            }
+        }
+    }
+
+    /** Chiede una password e produce il file cifrato da condividere. */
+    private fun exportConfig() {
+        val servers = Prefs.servers()
+        if (servers.isEmpty()) {
+            toast("Non c'è nessun server da esportare")
+            return
+        }
+        askPassword(
+            title = "Esporta ${servers.size} server",
+            message = "Il file conterrà le credenziali SSH e RCON, protette da questa password. " +
+                    "Chi lo riceve potrà aprirlo solo conoscendola: mandagliela per un'altra via.",
+            confirm = true
+        ) { password ->
+            val result = runCatching { ConfigTransfer.export(servers, password) }
+            result.onSuccess { content ->
+                val file = File(requireContext().cacheDir, "mcmonitor-configurazione.mcm")
+                file.writeText(content)
+                val uri = FileProvider.getUriForFile(
+                    requireContext(), "${requireContext().packageName}.updates", file
+                )
+                startActivity(
+                    Intent.createChooser(
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "application/octet-stream"
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            putExtra(Intent.EXTRA_SUBJECT, "Configurazione MC Monitor")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        },
+                        "Invia la configurazione"
+                    )
+                )
+            }.onFailure { showText("Esportazione fallita", it.message.orEmpty()) }
+        }
+    }
+
+    private fun askImportPassword(uri: Uri) {
+        askPassword(
+            title = "Importa configurazione",
+            message = "Inserisci la password che ti ha dato chi ha esportato il file.",
+            confirm = false
+        ) { password ->
+            val result = runCatching {
+                val content = requireContext().contentResolver.openInputStream(uri)
+                    ?.bufferedReader()?.use { it.readText() } ?: error("file illeggibile")
+                ConfigTransfer.import(content, password)
+            }
+            result.onSuccess { servers -> confirmImport(servers) }
+                .onFailure { showText("Importazione fallita", it.message.orEmpty()) }
+        }
+    }
+
+    private fun confirmImport(servers: List<ServerConfig>) {
+        val elenco = servers.joinToString("\n") { "· ${it.displayName} (${it.user}@${it.host})" }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Importare ${servers.size} server?")
+            .setMessage("$elenco\n\nVerranno aggiunti ai tuoi, senza sostituire quelli esistenti.")
+            .setNegativeButton("Annulla", null)
+            .setPositiveButton("Importa") { _, _ ->
+                servers.forEach { Prefs.add(it.copy(id = "")) }
+                toast("Importati ${servers.size} server")
+                fill(Prefs.load())
+            }
+            .show()
+    }
+
+    private fun backupNow() {
+        val folder = Prefs.backupFolder
+        if (folder.isBlank()) {
+            toast("Scegli prima una cartella")
+            return
+        }
+        askPassword(
+            title = "Password del backup",
+            message = "Serve a cifrare il file. Verrà ricordata per i backup automatici.",
+            confirm = true,
+            initial = Prefs.backupPassword
+        ) { password ->
+            Prefs.backupPassword = password
+            viewLifecycleOwner.lifecycleScope.launch {
+                val result = runCatching {
+                    BackupManager.backupNow(requireContext(), Uri.parse(folder), password)
+                }
+                if (!isAdded) return@launch
+                result.onSuccess {
+                    showBackupFolder()
+                    toast("Backup salvato: $it")
+                }.onFailure { showText("Backup non riuscito", it.message.orEmpty()) }
+            }
+        }
+    }
+
+    /** Dialogo per una password, con eventuale conferma. */
+    private fun askPassword(
+        title: String,
+        message: String,
+        confirm: Boolean,
+        initial: String = "",
+        onReady: (String) -> Unit
+    ) {
+        val form = DialogPasswordBinding.inflate(layoutInflater)
+        form.currentPassword.setText(initial)
+        form.currentPassword.hint = "Password"
+        form.newPassword.visible(false)
+        form.repeatPassword.visible(confirm)
+        (form.repeatPassword.parent.parent as? View)?.visible(confirm)
+        (form.newPassword.parent.parent as? View)?.visible(false)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setMessage(message)
+            .setView(form.root)
+            .setNegativeButton("Annulla", null)
+            .setPositiveButton("Continua", null)
+            .show()
+            .also { dialog ->
+                dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                    val password = form.currentPassword.text?.toString().orEmpty()
+                    val repeat = form.repeatPassword.text?.toString().orEmpty()
+                    when {
+                        password.length < 8 -> toast("Almeno 8 caratteri")
+                        confirm && password != repeat -> toast("Le due password non coincidono")
+                        else -> {
+                            dialog.dismiss()
+                            onReady(password)
+                        }
+                    }
+                }
+            }
+    }
+
+    /** Le scelte sui singoli eventi hanno senso solo a monitoraggio acceso. */
+    private fun updateNotifyFields(enabled: Boolean) {
+        val bind = _b ?: return
+        listOf(bind.notifyOffline, bind.notifyOnline, bind.notifyJoin, bind.notifyLeave)
+            .forEach { it.isEnabled = enabled }
+        bind.notifySeconds.isEnabled = enabled
+    }
+
+    /** Da Android 13 le notifiche vanno concesse dall'utente. */
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(
+            requireContext(), Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     /** Esegue `passwd` sul server per l'utente con cui l'app si collega. */
@@ -326,6 +561,16 @@ class SettingsFragment : Fragment() {
         return (1..20).map { alphabet[random.nextInt(alphabet.size)] }.joinToString("")
     }
 
+    /** Messaggio breve in un dialogo, per errori che vanno letti per intero. */
+    private fun showText(title: String, message: String) {
+        if (!isAdded) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setMessage(message.ifBlank { "Nessun dettaglio disponibile." })
+            .setPositiveButton("Chiudi", null)
+            .show()
+    }
+
     private fun showReport(report: String) {
         val view = TextView(requireContext()).apply {
             text = report
@@ -370,6 +615,13 @@ class SettingsFragment : Fragment() {
         b.script.setText(cfg.script)
         b.serverFiles.setText(cfg.serverFilesDir)
         b.tmuxSession.setText(cfg.tmuxSession)
+        b.notifyEnabled.isChecked = cfg.notifyEnabled
+        b.notifyOffline.isChecked = cfg.notifyOffline
+        b.notifyOnline.isChecked = cfg.notifyOnline
+        b.notifyJoin.isChecked = cfg.notifyJoin
+        b.notifyLeave.isChecked = cfg.notifyLeave
+        b.notifySeconds.setText(cfg.notifySeconds.toString())
+        updateNotifyFields(cfg.notifyEnabled)
         b.rconEnabled.isChecked = cfg.rconEnabled
         b.rconTunnel.isChecked = cfg.rconTunnel
         b.rconPort.setText(cfg.rconPort.toString())
@@ -407,6 +659,13 @@ class SettingsFragment : Fragment() {
         script = b.script.text?.toString()?.trim().orEmpty(),
         serverFilesDir = b.serverFiles.text?.toString()?.trim().orEmpty(),
         tmuxSession = b.tmuxSession.text?.toString()?.trim().orEmpty(),
+        notifyEnabled = b.notifyEnabled.isChecked,
+        notifyOffline = b.notifyOffline.isChecked,
+        notifyOnline = b.notifyOnline.isChecked,
+        notifyJoin = b.notifyJoin.isChecked,
+        notifyLeave = b.notifyLeave.isChecked,
+        // Sotto i 30 secondi si tempesterebbe il server senza guadagnare nulla.
+        notifySeconds = (b.notifySeconds.text?.toString()?.trim()?.toIntOrNull() ?: 60).coerceIn(30, 3600),
         rconEnabled = b.rconEnabled.isChecked,
         rconPort = b.rconPort.text?.toString()?.trim()?.toIntOrNull() ?: 25575,
         rconPassword = b.rconPassword.text?.toString()?.trim().orEmpty(),

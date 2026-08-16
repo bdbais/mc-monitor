@@ -1,13 +1,21 @@
 package com.bellizia.mcmonitor.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
+import android.text.util.Linkify
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import com.bellizia.mcmonitor.CrashReporter
 import com.bellizia.mcmonitor.MainActivity
+import com.bellizia.mcmonitor.R
 import com.bellizia.mcmonitor.data.PlayerTracker
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.ServerConfig
@@ -40,10 +48,13 @@ class ServersActivity : AppCompatActivity() {
         applyInsets()
 
         binding.version.text = "v${UpdateChecker.currentVersion(this)}"
+        showLastCrash()
         UpdateBanner.attach(this, binding.updateBanner)
         selectedId = Prefs.activeId().ifBlank { Prefs.servers().firstOrNull()?.id.orEmpty() }
 
         binding.btnManual.setOnClickListener { openManual() }
+        binding.btnHelp.setOnClickListener { showHelp(Help.SERVERS) }
+        binding.btnInfo.setOnClickListener { showAbout() }
         binding.btnAdd.setOnClickListener { addServer() }
         binding.btnEdit.setOnClickListener { withSelection { open(it, editing = true) } }
         binding.btnOpen.setOnClickListener { withSelection { open(it, editing = false) } }
@@ -99,6 +110,86 @@ class ServersActivity : AppCompatActivity() {
         binding.btnOpen.isEnabled = hasSelection
         binding.btnClone.isEnabled = hasSelection
         binding.btnRemove.isEnabled = hasSelection
+    }
+
+    /**
+     * Se l'avvio precedente è finito con un crash, la traccia viene mostrata qui:
+     * è l'unico modo perché arrivi a chi può correggerla.
+     */
+    private fun showLastCrash() {
+        val report = CrashReporter.lastCrash(this) ?: return
+        val view = TextView(this).apply {
+            typeface = Typeface.MONOSPACE
+            textSize = 10f
+            setTextIsSelectable(true)
+            setPadding(40, 24, 40, 8)
+            text = report
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("L'app si è chiusa in modo anomalo")
+            .setView(ScrollView(this).apply { addView(view) })
+            .setNeutralButton("Copia") { _, _ ->
+                getSystemService(ClipboardManager::class.java)
+                    ?.setPrimaryClip(ClipData.newPlainText("crash MC Monitor", report))
+                toastShort("Rapporto copiato")
+                CrashReporter.clear(this)
+            }
+            .setPositiveButton("Chiudi") { _, _ -> CrashReporter.clear(this) }
+            .show()
+    }
+
+    private fun showHelp(page: Help.Page) = HelpDialog.show(this, page)
+
+    /**
+     * Riconoscimenti: l'app sta in piedi sul lavoro di altri, e i collegamenti
+     * servono anche a chi volesse capire come funziona il proprio server.
+     */
+    private fun showAbout() {
+        val text = """
+            MC Monitor ${UpdateChecker.currentVersion(this)}
+            Licenza Apache 2.0
+
+            Codice sorgente, release e manuale
+            https://github.com/bdbais/mc-monitor
+
+            Costruita insieme a Claude di Anthropic
+            https://claude.com/claude-code
+
+            Minecraft è di Mojang Studios. Questa app non è affiliata né approvata da Mojang o Microsoft.
+            https://www.minecraft.net
+
+            LinuxGSM, il sistema che gestisce il server di gioco
+            https://linuxgsm.com
+
+            Modrinth, da cui arrivano mod e modpack
+            https://modrinth.com
+
+            FabricMC, il mod loader installabile dall'app
+            https://fabricmc.net
+
+            Elenco ufficiale delle versioni di Minecraft
+            https://piston-meta.mojang.com
+
+            Componenti di terze parti
+            mwiede/jsch (client SSH, BSD 3-Clause)
+            https://github.com/mwiede/jsch
+            AndroidX e Material Components (Apache 2.0)
+            Font Press Start 2P (SIL Open Font License 1.1)
+        """.trimIndent()
+
+        val view = TextView(this).apply {
+            setText(text)
+            textSize = 13f
+            setTextIsSelectable(true)
+            autoLinkMask = Linkify.WEB_URLS
+            setLinkTextColor(getColor(R.color.grass))
+            setPadding(48, 32, 48, 16)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Informazioni")
+            .setView(ScrollView(this).apply { addView(view) })
+            .setPositiveButton("Chiudi", null)
+            .show()
     }
 
     /** Il manuale sta nel repository: si apre nel browser, sempre aggiornato. */

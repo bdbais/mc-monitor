@@ -11,6 +11,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
+import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.lgsm.PlayerPos
 import kotlin.math.abs
 import kotlin.math.floor
@@ -251,7 +252,7 @@ class WorldMapView @JvmOverloads constructor(
             canvas.drawCircle(sx, sy, if (selected == player.name) 16f else 12f, dotPaint)
             canvas.drawCircle(sx, sy, if (selected == player.name) 16f else 12f, dotStroke)
             namePaint.alpha = if (faded) 110 else 255
-            canvas.drawText(player.name, sx + 20f, sy - 10f, namePaint)
+            canvas.drawText(Privacy.name(player.name), sx + 20f, sy - 10f, namePaint)
             if (selected == player.name) {
                 canvas.drawText(
                     "X ${player.x.roundToInt()} Y ${player.y.roundToInt()} Z ${player.z.roundToInt()}",

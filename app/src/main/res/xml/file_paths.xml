@@ -4,4 +4,8 @@
     <external-files-path
         name="updates"
         path="updates/" />
+    <!-- File temporaneo della configurazione esportata, condiviso e poi dimenticato -->
+    <cache-path
+        name="esportazioni"
+        path="." />
 </paths>

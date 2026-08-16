@@ -1,5 +1,8 @@
 package com.bellizia.mcmonitor.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -13,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.ModRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.databinding.FragmentStatusBinding
 import com.bellizia.mcmonitor.databinding.ItemKeyValueBinding
 import com.bellizia.mcmonitor.lgsm.Lgsm
@@ -27,6 +31,11 @@ class StatusFragment : Fragment() {
     private var _b: FragmentStatusBinding? = null
     private val b get() = _b!!
     private var versionConfig: VersionConfig? = null
+    private var gameAddress: String = ""
+
+    private companion object {
+        val IP = Regex("^\\d{1,3}(\\.\\d{1,3}){3}$")
+    }
 
     private val interesting = listOf(
         "Status", "Server name", "Server IP", "Internet IP", "Game port",
@@ -40,6 +49,8 @@ class StatusFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.swipe.setOnRefreshListener { refresh() }
+        b.btnCopyAddress.setOnClickListener { copyAddress() }
+        b.btnShareAddress.setOnClickListener { shareAddress() }
         b.btnChangeVersion.setOnClickListener { chooseVersion() }
         b.btnStart.setOnClickListener { control("Avvio del server…") { McRepository.start() } }
         b.btnStop.setOnClickListener {
@@ -60,7 +71,9 @@ class StatusFragment : Fragment() {
     }
 
     private fun refresh() {
-        b.subtitle.text = Prefs.load().label
+        val cfg = Prefs.load()
+        b.subtitle.text = if (cfg.host.isBlank()) cfg.label
+        else Privacy.account(cfg.user, "${cfg.host}:${cfg.port}")
         if (!Prefs.load().isComplete) {
             b.swipe.isRefreshing = false
             setStatus("NON CONFIGURATO", Color.parseColor("#9E9E9E"))
@@ -90,6 +103,7 @@ class StatusFragment : Fragment() {
         setStatus(status.uppercase(), colorFor(status))
 
         val parsed = Lgsm.parseDetails(details)
+        showAddress(parsed)
         b.fields.removeAllViews()
         interesting.forEach { key ->
             val value = parsed[key] ?: return@forEach
@@ -98,7 +112,47 @@ class StatusFragment : Fragment() {
             row.value.text = value
             b.fields.addView(row.root)
         }
-        b.output.text = details.trim().ifBlank { "(nessun output)" }
+        b.output.text = Privacy.text(details.trim().ifBlank { "(nessun output)" }, Prefs.load())
+    }
+
+    /**
+     * L'indirizzo che serve ai giocatori, non quello SSH: nome host se ne esiste
+     * uno, altrimenti l'IP pubblico riportato da LinuxGSM, con la porta di gioco.
+     */
+    private fun showAddress(details: Map<String, String>) {
+        val cfg = Prefs.load()
+        val host = when {
+            cfg.host.isNotBlank() && !cfg.host.matches(IP) -> cfg.host
+            else -> details["Internet IP"] ?: details["Server IP"]?.substringBefore(':') ?: cfg.host
+        }
+        val port = details["Game port"]
+            ?: details["Server IP"]?.substringAfter(':', "")?.takeIf { it.isNotBlank() }
+            ?: "25565"
+
+        // L'indirizzo vero resta in memoria per copia e condivisione; a schermo,
+        // in modalità privacy, se ne vede solo l'inizio.
+        gameAddress = if (port == "25565") host else "$host:$port"
+        val bind = _b ?: return
+        bind.addressBox.visible(host.isNotBlank())
+        bind.address.text = Privacy.host(gameAddress)
+    }
+
+    private fun copyAddress() {
+        val address = gameAddress.ifBlank { return }
+        val clipboard = requireContext().getSystemService(ClipboardManager::class.java) ?: return
+        clipboard.setPrimaryClip(ClipData.newPlainText("indirizzo server", address))
+        toast("Indirizzo copiato: $address")
+    }
+
+    private fun shareAddress() {
+        val address = gameAddress.ifBlank { return }
+        val name = Prefs.load().displayName
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Server Minecraft $name")
+            putExtra(Intent.EXTRA_TEXT, "Server Minecraft \"$name\": $address")
+        }
+        startActivity(Intent.createChooser(intent, "Condividi l'indirizzo"))
     }
 
     /**

@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.10.
+Versione 1.11.
 
 - [1. Installazione](#1-installazione)
 - [2. Elenco dei server](#2-elenco-dei-server)

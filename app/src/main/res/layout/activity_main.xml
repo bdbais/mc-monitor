@@ -56,6 +56,17 @@
                     android:textColor="@color/text_dim"
                     android:textSize="12sp" />
             </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnHelp"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end"
+                android:contentDescription="Aiuto su questa pagina"
+                android:tooltipText="Aiuto"
+                app:icon="@drawable/ic_help"
+                app:iconPadding="0dp" />
         </com.google.android.material.appbar.MaterialToolbar>
 
         <com.google.android.material.tabs.TabLayout
