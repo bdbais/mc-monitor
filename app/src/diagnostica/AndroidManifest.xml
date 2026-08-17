@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Variante di prova: toglie tutto ciò che è stato aggiunto dopo la 1.7 e che un
+  installer potrebbe rifiutare. Se questa si installa e quella normale no,
+  sappiamo dove guardare invece di tirare a indovinare.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.RECEIVE_BOOT_COMPLETED"
+        tools:node="remove" />
+
+    <application
+        android:label="MC Monitor prova"
+        tools:replace="android:label">
+        <service
+            android:name=".notify.ServerWatchService"
+            tools:node="remove" />
+        <receiver
+            android:name=".notify.BootReceiver"
+            tools:node="remove" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.updates"
+            tools:node="remove" />
+    </application>
+</manifest>

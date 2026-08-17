@@ -18,8 +18,8 @@ android {
         applicationId = "com.bellizia.mcmonitor"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.15"
+        versionCode = 19
+        versionName = "1.16"
     }
 
     signingConfigs {
@@ -30,10 +30,9 @@ android {
                 keyAlias = keystoreProps.getProperty("keyAlias")
                 keyPassword = keystoreProps.getProperty("keyPassword")
 
-                // Tutti gli schemi di firma: alcuni installer OEM rifiutano come
-                // "app corrotta" un pacchetto che non trova firmato come si aspettano.
-                // v1 non servirebbe con minSdk 26, ma non costa nulla e toglie un dubbio.
-                enableV1Signing = true
+                // v1 non serve con minSdk 26 e lascerebbe nell'archivio file di
+                // firma inutilizzati: meglio v2 e v3 puliti.
+                enableV1Signing = false
                 enableV2Signing = true
                 enableV3Signing = true
                 enableV4Signing = false
@@ -62,6 +61,25 @@ android {
 
     buildFeatures {
         viewBinding = true
+    }
+
+    /*
+     * "diagnostica" è una copia dell'app senza i componenti aggiunti dopo la 1.7:
+     * servizio in primo piano, ricevitore all'avvio, FileProvider e permesso di
+     * installare pacchetti. Ha un identificativo diverso, quindi convive con
+     * l'app normale e serve solo a capire quale componente un telefono rifiuta.
+     */
+    flavorDimensions += "tipo"
+    productFlavors {
+        create("normale") {
+            dimension = "tipo"
+            isDefault = true
+        }
+        create("diagnostica") {
+            dimension = "tipo"
+            applicationIdSuffix = ".diag"
+            versionNameSuffix = "-diag"
+        }
     }
 
     packaging {
