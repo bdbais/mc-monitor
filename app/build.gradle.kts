@@ -18,8 +18,8 @@ android {
         applicationId = "com.bellizia.mcmonitor"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "1.14"
+        versionCode = 18
+        versionName = "1.15"
     }
 
     signingConfigs {
@@ -29,6 +29,14 @@ android {
                 storePassword = keystoreProps.getProperty("storePassword")
                 keyAlias = keystoreProps.getProperty("keyAlias")
                 keyPassword = keystoreProps.getProperty("keyPassword")
+
+                // Tutti gli schemi di firma: alcuni installer OEM rifiutano come
+                // "app corrotta" un pacchetto che non trova firmato come si aspettano.
+                // v1 non servirebbe con minSdk 26, ma non costa nulla e toglie un dubbio.
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = false
             }
         }
     }
