@@ -73,9 +73,16 @@ jobs:
         id: artefatti
         run: |
           versione=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          # Senza keystore l'APK si chiama app-release-unsigned.apk: si prende quello che c'è.
           apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
-          cp "$apk" "MC-Monitor-$versione.apk"
+          # Un APK non firmato si scarica benissimo e non si installa da nessuna
+          # parte: il telefono dice solo "pacchetto non valido". Se il keystore
+          # non c'è, il nome lo deve gridare invece di sembrare quello buono.
+          if [ "$HAS_KEYSTORE" = "true" ]; then
+            cp "$apk" "MC-Monitor-$versione.apk"
+          else
+            echo "::warning::Nessun keystore: l APK resta senza firma e non è installabile"
+            cp "$apk" "MC-Monitor-$versione-NON-FIRMATO.apk"
+          fi
           cp app/build/outputs/bundle/release/app-release.aab "MC-Monitor-$versione.aab"
           echo "versione=$versione" >> "$GITHUB_OUTPUT"
 
@@ -86,8 +93,11 @@ jobs:
             MC-Monitor-*.apk
             MC-Monitor-*.aab
 
+      # Senza keystore non si pubblica niente: fino alla 1.15 questo passo ha
+      # sovrascritto gli APK firmati a mano con quelli non firmati usciti dalla
+      # build, e per cinque versioni la release è rimasta non installabile.
       - name: Pubblica la release su GitHub
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && env.HAS_KEYSTORE == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
