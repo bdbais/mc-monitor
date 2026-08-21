@@ -5,6 +5,20 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+/*
+ * Il progetto vive dentro una cartella sincronizzata su Google Drive. Il client
+ * tiene aperti i file mentre li copia, e Gradle non riesce più a cancellare le
+ * cartelle intermedie: il merge delle risorse fallisce a metà. Lo stesso difetto
+ * ha già prodotto APK troncati, caricati mentre la sincronizzazione era in corso.
+ *
+ * Le cartelle di lavoro vanno quindi su disco locale. In CI, dove il percorso di
+ * Drive non esiste, resta il default e i workflow non cambiano.
+ */
+val onCloudFolder = rootDir.invariantSeparatorsPath.contains("/googledrive/", ignoreCase = true)
+if (onCloudFolder) {
+    layout.buildDirectory.set(File(System.getProperty("java.io.tmpdir"), "mcmonitor-build/app"))
+}
+
 val keystorePropsFile = rootProject.file("keystore.properties")
 val keystoreProps = Properties().apply {
     if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
@@ -18,8 +32,8 @@ android {
         applicationId = "com.bellizia.mcmonitor"
         minSdk = 26
         targetSdk = 35
-        versionCode = 19
-        versionName = "1.16"
+        versionCode = 20
+        versionName = "1.17"
     }
 
     signingConfigs {

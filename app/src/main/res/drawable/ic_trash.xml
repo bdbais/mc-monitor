@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Cestino a pixel: coperchio chiaro, corpo scuro con due scanalature. -->
+    <path
+        android:fillColor="#C8CDD2"
+        android:pathData="M6,2h4v1h-4zM3,3h10v2h-10z" />
+    <path
+        android:fillColor="#7A2F2A"
+        android:pathData="M4,5h8v9h-8z" />
+    <path
+        android:fillColor="#D63B2F"
+        android:pathData="M5,6h2v7h-2zM9,6h2v7h-2z" />
+</vector>

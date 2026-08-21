@@ -269,7 +269,9 @@ class SettingsFragment : Fragment() {
             .setMessage("$elenco\n\nVerranno aggiunti ai tuoi, senza sostituire quelli esistenti.")
             .setNegativeButton("Annulla", null)
             .setPositiveButton("Importa") { _, _ ->
-                servers.forEach { Prefs.add(it.copy(id = "")) }
+                // add() rimpiazzerebbe nome tecnico e cartella LinuxGSM: qui i
+                // dati arrivano già completi e vanno tenuti come sono.
+                servers.forEach { Prefs.save(it.copy(id = "")) }
                 toast("Importati ${servers.size} server")
                 fill(Prefs.load())
             }

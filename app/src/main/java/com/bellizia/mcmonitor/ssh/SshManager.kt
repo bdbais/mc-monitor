@@ -298,8 +298,10 @@ object SshManager {
     // ---------------------------------------------------------------- interno
 
     private fun obtain(cfg: ServerConfig): Pair<Session, Boolean> {
-        if (!cfg.isComplete) {
-            throw SshException("Configurazione incompleta: apri la scheda Impostazioni.")
+        // Per aprire una sessione bastano le credenziali: dove stia il server
+        // interessa ai comandi, non al collegamento.
+        if (!cfg.hasCredentials) {
+            throw SshException("Mancano i dati del computer: aprili dal menu, voce Collegamento al server Linux.")
         }
         val key = "${cfg.user}@${cfg.host}:${cfg.port}/${cfg.password.hashCode()}/${cfg.privateKey.hashCode()}"
         val current = session
@@ -356,7 +358,7 @@ object SshManager {
         val fingerprint = fingerprintOf(s)
         val known = cfg.hostKeyFingerprint
         if (known.isBlank()) {
-            if (fingerprint.isNotBlank()) Prefs.saveHostKey(fingerprint)
+            if (fingerprint.isNotBlank()) Prefs.saveHostKey(cfg.host, fingerprint)
         } else if (fingerprint.isNotBlank() && !known.equals(fingerprint, ignoreCase = true)) {
             s.disconnect()
             throw SshException(

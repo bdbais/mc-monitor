@@ -1,10 +1,10 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.11.
+Versione 1.17.
 
 - [1. Installazione](#1-installazione)
-- [2. Elenco dei server](#2-elenco-dei-server)
+- [2. I due passi: il computer e i mondi](#2-i-due-passi-il-computer-e-i-mondi)
 - [3. Configurare un server](#3-configurare-un-server)
 - [4. Stato e controllo](#4-stato-e-controllo)
 - [5. Console](#5-console)
@@ -25,26 +25,94 @@ gestore file che usi e apri il file. Serve Android 8 o successivo.
 
 L'app non richiede account, non usa servizi intermedi e parla solo con il tuo server.
 
-## 2. Elenco dei server
+## 2. I due passi: il computer e i mondi
 
-<img src="store/screenshots/01-elenco-server.png" width="320" alt="Elenco dei server">
+L'app si apre con un menu a sinistra (l'icona con le tre righe, in alto) diviso nei due
+passi che servono davvero, nell'ordine in cui si fanno.
 
-La schermata iniziale. Tocca una scheda per selezionarla, poi:
+### Passo 1 — Collegamento al server Linux
 
-| Comando | Effetto |
+<img src="store/screenshots/collegamento.png" width="320" alt="Collegamento al server Linux">
+
+Qui si inseriscono solo i dati per entrare nel computer dove vivono i mondi:
+
+| Campo | Esempio | Note |
+|---|---|---|
+| Indirizzo del computer | `mc.miodominio.it` | oppure un IP, tipo `192.168.1.10` |
+| Porta | `22` | lasciala così se non ti dicono altro |
+| Nome utente | `mcserver` | **deve essere l'utente che esegue LinuxGSM** |
+| Password | | oppure una chiave, con "Uso una chiave al posto della password" |
+
+**Collegati** prova davvero il collegamento e, se riesce, passa da solo al secondo passo.
+**Non funziona** avvia la diagnostica: prova un pezzo alla volta (rete, porta, utente,
+password, LinuxGSM) e dice a quale punto si ferma, con un rapporto da copiare.
+
+**Cambia la password di questa utenza** esegue `passwd` sul computer; la password salvata
+nell'app viene aggiornata subito e il nuovo accesso verificato riaprendo la connessione.
+
+**Dopo una reinstallazione** — su un telefono senza niente dentro compare in cima
+**Riprendi una configurazione salvata**: si sceglie il file esportato (o l'ultimo backup
+automatico), si dà la sua password e tornano server, impostazioni e credenziali. Chi invece
+aggiorna l'app da una versione precedente non deve fare nulla: i dati del server che stava
+usando compaiono già compilati nel passo 1.
+
+### Passo 2 — Server installati
+
+<img src="store/screenshots/server-installati.png" width="320" alt="Server installati">
+
+L'app cerca da sola le istanze LinuxGSM dentro la home dell'utente: non serve sapere in
+quale cartella stanno né come si chiama lo script. Per ognuna mostra
+
+- il quadratino verde se è accesa in questo momento, grigio se è spenta,
+- la versione di Minecraft letta da `mcserver.cfg`,
+- la porta a cui si collegano i giocatori e, se attiva, quella di RCON — **in rosso** dal
+  secondo server in poi che usa lo stesso numero: due server sulla stessa porta non possono
+  stare accesi insieme, e il secondo muore appena parte senza spiegare perché. Vale anche
+  fra porta di gioco e RCON, perché il numero è lo stesso spazio,
+- la riga **mod**, se il server è moddato: quante sono e con quale loader (Fabric o Forge).
+  Toccandola si apre l'elenco completo delle mod installate,
+- la cartella, in piccolo, scritta come `~/nome`.
+
+**Apri** entra nel mondo scelto: da lì si accende, si spegne, si vedono giocatori, mappa
+e mod. Trascina l'elenco verso il basso per rifare la ricerca.
+
+Il **cestino** a destra cancella quel server dal computer: cartella, mondo, mod e backup.
+Prima lo spegne, e chiede due conferme — la seconda riscrivendo il nome a mano. Non si
+torna indietro, quindi se il mondo ti interessa fai prima una copia.
+
+Se l'elenco è vuoto, su quel computer non c'è ancora niente di installato: **Crea un
+nuovo server da zero** avvia l'installazione guidata (ci vuole tempo e banda).
+
+### Manutenzione: LinuxGSM da aggiornare
+
+Dopo la ricerca l'app confronta la versione degli script LinuxGSM installati con l'ultima
+pubblicata. Se qualcuno è rimasto indietro compare un riquadro giallo con **Aggiorna
+LinuxGSM**: un tocco lancia `update-lgsm` sulle istanze interessate e mostra cosa risponde.
+
+Riguarda solo gli script che gestiscono il server, non Minecraft: il mondo, le mod e la
+configurazione non vengono toccati. Vale la pena farlo, perché con LinuxGSM vecchio comandi
+come `update` o `details` iniziano a fallire con errori che non dicono qual è la causa.
+
+### Le altre voci del menu
+
+<img src="store/screenshots/menu.png" width="320" alt="Il menu laterale">
+
+| Voce | A cosa serve |
 |---|---|
-| **Aggiungi** | crea un profilo e apre le Impostazioni |
-| **Modifica** | apre il server selezionato sulle Impostazioni |
-| **Duplica** | copia il profilo (due istanze sullo stesso host) |
-| **Rimuovi** | cancella la configurazione dal telefono; il server non viene toccato |
-| **Apri** | entra nel server |
+| **Crea un nuovo server** | installa una nuova istanza LinuxGSM, staccata dai due passi |
+| **Profili salvati** | l'elenco classico dei profili, con Aggiungi, Modifica, Duplica, Rimuovi; utile se gestisci più computer |
+| **Manuale d'uso** | apre questa pagina |
+| **Informazioni** | versione, licenza e i progetti su cui l'app si appoggia |
 
-Con un solo server configurato l'app entra direttamente; la freccia in alto a sinistra
-riporta all'elenco. Cambiare server chiude sessione SSH, RCON e azzera le scie sulla mappa.
+Cambiare server chiude sessione SSH, RCON e azzera le scie sulla mappa: i dati di un
+server non possono mescolarsi con quelli di un altro.
 
 ## 3. Configurare un server
 
 <img src="store/screenshots/02-impostazioni.png" width="320" alt="Impostazioni">
+
+Le impostazioni sono divise in sette passi numerati, dal nome del server fino alla mappa:
+i primi tre servono sempre, gli altri sono facoltativi e si possono lasciare come sono.
 
 | Campo | Esempio | Note |
 |---|---|---|

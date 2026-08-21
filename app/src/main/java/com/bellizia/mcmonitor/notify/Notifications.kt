@@ -8,7 +8,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.bellizia.mcmonitor.R
-import com.bellizia.mcmonitor.ui.ServersActivity
+import com.bellizia.mcmonitor.ui.HomeActivity
 
 /**
  * Canali e costruzione delle notifiche. Stato del server e movimenti dei
@@ -82,7 +82,7 @@ object Notifications {
         PendingIntent.getActivity(
             context,
             0,
-            Intent(context, ServersActivity::class.java)
+            Intent(context, HomeActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP),
             PendingIntent.FLAG_IMMUTABLE
         )

@@ -24,21 +24,30 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.McMonitor">
 
+        <!-- I due passi con il menu a sinistra: è da qui che si entra. -->
         <activity
-            android:name=".ui.ServersActivity"
+            android:name=".ui.HomeActivity"
             android:exported="true"
-            android:label="@string/app_name">
+            android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <!-- L'elenco dei profili salvati resta per chi ne gestisce parecchi. -->
+        <activity
+            android:name=".ui.ServersActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:parentActivityName=".ui.HomeActivity" />
+
         <activity
             android:name=".MainActivity"
             android:exported="false"
             android:label="@string/app_name"
-            android:parentActivityName=".ui.ServersActivity"
+            android:parentActivityName=".ui.HomeActivity"
             android:windowSoftInputMode="adjustResize" />
 
         <activity

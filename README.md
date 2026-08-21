@@ -2,15 +2,15 @@
 
 App Android per gestire un server Minecraft installato con **LinuxGSM**, via **SSH**.
 
-APK pronto all'uso: **`MC-Monitor-1.16.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
+APK pronto all'uso: **`MC-Monitor-1.17.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
 
 **[Manuale d'uso completo](MANUALE.md)** · [Release e APK](https://github.com/bdbais/mc-monitor/releases)
 
 <p>
-<img src="store/screenshots/01-elenco-server.png" width="200">
+<img src="store/screenshots/collegamento.png" width="200">
+<img src="store/screenshots/server-installati.png" width="200">
 <img src="store/screenshots/07-stato.png" width="200">
 <img src="store/screenshots/04-mappa.png" width="200">
-<img src="store/screenshots/05-mod.png" width="200">
 </p>
 
 ## Installazione
@@ -19,25 +19,40 @@ APK pronto all'uso: **`MC-Monitor-1.16.apk`** (firmato, `minSdk 26` / Android 8+
 2. Abilita "Installa app sconosciute" per il gestore file / browser che usi.
 3. Apri l'APK e installa.
 
-## Elenco server
+## I due passi
 
-L'app si apre sull'elenco dei server configurati, con cinque comandi:
+L'app si apre su un menu laterale diviso in due sole voci, nell'ordine in cui servono.
 
-| Comando | Cosa fa |
-|---|---|
-| **Aggiungi** | crea un profilo nuovo e apre le Impostazioni per compilarlo |
-| **Modifica** | apre il server selezionato direttamente sulle Impostazioni |
-| **Duplica** | copia il profilo (utile per due istanze sullo stesso host) |
-| **Rimuovi** | cancella il profilo dal telefono, previa conferma; il server non viene toccato |
-| **Apri** | entra nel server selezionato |
+**1. Collegamento al server Linux** — indirizzo, porta, utente e password (o chiave) del
+computer. Nient'altro: dove stiano i mondi non lo chiede. "Collegati" prova davvero la
+connessione; "Non funziona" avvia la diagnostica a stadi e dice dove si ferma.
 
-Tocca una scheda per selezionarla; ogni riga mostra nome, `utente@host:porta`, se la
-configurazione è completa, lo script LinuxGSM e la porta RCON quando è attiva.
+**2. Server installati** — l'app cerca le istanze LinuxGSM nella home dell'utente
+(`lgsm/config-lgsm/<script>`) e le elenca con stato acceso/spento, versione di Minecraft,
+porta di gioco, mod installate e cartella. "Apri" entra in quella scelta; il profilo completo
+viene creato al primo accesso, e se esiste già viene riusato con le sue impostazioni di RCON,
+notifiche e mappa. Trascinando l'elenco verso il basso si rifà la ricerca.
 
-Con **un solo server già configurato** l'app entra direttamente, senza far passare
-dall'elenco, che resta comunque raggiungibile con la freccia indietro in alto a sinistra.
-Dentro un server si parte dalla scheda **Stato**; se la configurazione è incompleta o si
-è arrivati da "Modifica", si parte dalle **Impostazioni**.
+In questa schermata:
+
+- le **porte** vanno in rosso dal secondo server in poi che le usa — sia quella di gioco sia
+  quella di RCON, che pescano dallo stesso spazio di numeri: due istanze sulla stessa porta
+  non possono stare accese insieme, e la seconda muore appena parte;
+- la riga **mod** dice quante sono e con quale loader, e toccandola mostra l'elenco;
+- il **cestino** cancella l'istanza dal computer — spegnimento, due conferme di cui una con
+  il nome da riscrivere, poi `rm -rf` della cartella dopo che il server ha ricontrollato che
+  sia davvero un'istanza LinuxGSM;
+- un riquadro di **manutenzione** compare quando gli script LinuxGSM sono più vecchi
+  dell'ultima release pubblicata, con un pulsante che lancia `update-lgsm`.
+
+Su un telefono appena installato il passo 1 offre **Riprendi una configurazione salvata**:
+si sceglie il file esportato (o l'ultimo backup automatico), si dà la password e tornano
+server e impostazioni. Aggiornando da una versione precedente non serve fare niente: le
+credenziali del server in uso diventano da sole l'utenza del passo 1.
+
+Sotto "Altro" restano le voci per chi sa cosa sta facendo: **Crea un nuovo server**
+(installazione da zero), **Profili salvati** (l'elenco classico con Aggiungi, Modifica,
+Duplica, Rimuovi), **Manuale d'uso** e **Informazioni**.
 
 Cambiare server chiude sessione SSH, connessione RCON e azzera le scie in memoria: nessun
 dato di un server può finire mescolato con quelli di un altro.

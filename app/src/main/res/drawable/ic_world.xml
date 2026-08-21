@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Blocco di erba visto di tre quarti: è il simbolo che una ragazzina
+         riconosce come "il mondo" senza bisogno di leggere l'etichetta. -->
+    <path
+        android:fillColor="#4A7A28"
+        android:pathData="M2,4h12v3h-12z" />
+    <path
+        android:fillColor="#6ABE30"
+        android:pathData="M2,3h12v2h-12zM3,2h10v1h-10z" />
+    <path
+        android:fillColor="#8B6239"
+        android:pathData="M2,7h12v6h-12z" />
+    <path
+        android:fillColor="#6E4B2A"
+        android:pathData="M2,7h12v1h-12zM4,9h2v2h-2zM9,10h3v2h-3zM7,12h2v1h-2z" />
+    <path
+        android:fillColor="#2E1E10"
+        android:pathData="M2,13h12v1h-12zM2,4h1v9h-1zM13,4h1v9h-1z" />
+</vector>

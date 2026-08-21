@@ -10,10 +10,61 @@ object Help {
 
     data class Page(val title: String, val body: String)
 
-    val SERVERS = Page(
-        "I tuoi server",
+    val CONNECTION = Page(
+        "Passo 1: il computer",
         """
-        Questa è la lista dei server Minecraft che puoi comandare da qui.
+        Prima di vedere i mondi bisogna entrare nel computer dove stanno.
+
+        È un computer sempre acceso, da qualche parte: si chiama "server". Non è il tuo telefono e non è il computer di casa, a meno che non sia proprio quello ad essere acceso giorno e notte.
+
+        Ti servono quattro cose, e le sa chi ha acceso quel computer:
+        • Indirizzo — dove si trova. Può essere un nome tipo casa.miosito.it oppure una fila di numeri tipo 192.168.1.10
+        • Porta — quasi sempre 22, lasciala com'è se non ti dicono altro
+        • Nome utente — con che nome entri, per esempio mcserver
+        • Password — la parola segreta di quel nome utente
+
+        Poi tocca "Collegati". Se va tutto bene compare una scritta verde e l'app passa da sola a cercare i mondi.
+
+        Se compare una scritta rossa, tocca "Non funziona": l'app prova un pezzo alla volta e ti dice a quale punto si ferma. Le tre cause più comuni sono l'indirizzo scritto male, la password sbagliata e il computer spento.
+
+        La password resta solo dentro il telefono. Se fai vedere lo schermo a qualcuno, la modalità privacy nelle impostazioni la nasconde.
+
+        Se avevi già l'app e l'hai reinstallata, in cima trovi "Riprendi una configurazione salvata": scegli il file che avevi salvato, scrivi la sua password e ritrovi tutto senza ricopiare niente.
+        """.trimIndent()
+    )
+
+    val INSTALLED = Page(
+        "Passo 2: i mondi",
+        """
+        Fatto il collegamento, l'app guarda dentro il computer e ti mostra i mondi di Minecraft che ci trova già installati. Non devi sapere in quale cartella stanno: li cerca lei.
+
+        Per ognuno vedi:
+        • se in questo momento è acceso (quadratino verde) o spento (quadratino grigio)
+        • quale versione di Minecraft usa
+        • la porta a cui si collegano i giocatori
+        • una riga "mod" se il server è moddato: toccala e ti dice quali mod ha
+        • la cartella in cui vive, in piccolo sotto
+
+        Se una porta è scritta in ROSSO vuol dire che un altro server sta già usando quel numero. Due server sulla stessa porta non possono essere accesi insieme: il secondo si spegne da solo appena parte. Per sistemarlo bisogna cambiare la porta a uno dei due.
+
+        Tocca "Apri" su quello che ti interessa: da lì in poi puoi accenderlo, spegnerlo, vedere chi sta giocando, la mappa, le mod.
+
+        Il cestino a destra cancella quel server dal computer per sempre: il mondo, le costruzioni, le mod, tutto. Ti chiede due volte se sei sicura e la seconda volta devi riscrivere il nome. Se il mondo ti interessa, prima fatti fare una copia.
+
+        Se compare un riquadro giallo "Manutenzione del computer", vuol dire che il programma che fa funzionare i server (si chiama LinuxGSM) è vecchio. Il pulsante lo aggiorna: non tocca il mondo né le mod, e serve perché con quello vecchio ogni tanto le cose smettono di funzionare senza dire perché.
+
+        Se l'elenco è vuoto vuol dire che su quel computer non c'è ancora nessun mondo installato. Allora usa "Crea un nuovo server da zero": ci mette un po' e scarica parecchia roba, quindi fallo con calma e con una buona connessione.
+
+        Trascina l'elenco verso il basso per farlo cercare di nuovo, per esempio dopo aver installato un mondo nuovo.
+        """.trimIndent()
+    )
+
+    val SERVERS = Page(
+        "Profili salvati",
+        """
+        Questa è la lista dei profili salvati sul telefono: uno per ogni mondo che hai aperto almeno una volta.
+
+        Di solito non serve venire qui: si usano i due passi del menu, "Collegamento al server Linux" e "Server installati". Questa pagina serve quando gestisci più computer o vuoi mettere le mani nei dettagli.
 
         Un "server" è il computer sempre acceso dove vive il tuo mondo di Minecraft: quando tu e i tuoi amici giocate insieme, il mondo sta lì, non sul telefono.
 

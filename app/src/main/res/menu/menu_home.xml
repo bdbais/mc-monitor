@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- I due passi, nell'ordine in cui si fanno. -->
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_connessione"
+            android:icon="@drawable/ic_compass_mc"
+            android:title="Collegamento al server Linux" />
+        <item
+            android:id="@+id/nav_installati"
+            android:icon="@drawable/ic_world"
+            android:title="Server installati" />
+    </group>
+
+    <!-- Il resto è per chi sa già cosa sta facendo: visibile, ma in disparte. -->
+    <item android:title="Altro">
+        <menu>
+            <item
+                android:id="@+id/nav_nuovo"
+                android:icon="@drawable/ic_plus"
+                android:title="Crea un nuovo server" />
+            <item
+                android:id="@+id/nav_profili"
+                android:icon="@drawable/ic_clock_mc"
+                android:title="Profili salvati" />
+            <item
+                android:id="@+id/nav_manuale"
+                android:icon="@drawable/ic_book"
+                android:title="Manuale d'uso" />
+            <item
+                android:id="@+id/nav_info"
+                android:icon="@drawable/ic_info"
+                android:title="Informazioni" />
+        </menu>
+    </item>
+</menu>

@@ -4,9 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Typeface
-import android.net.Uri
 import android.os.Bundle
-import android.text.util.Linkify
 import java.text.DateFormat
 import java.util.Date
 import android.widget.ScrollView
@@ -22,7 +20,6 @@ import com.bellizia.mcmonitor.data.PlayerTracker
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.ServerConfig
 import com.bellizia.mcmonitor.databinding.ActivityServersBinding
-import com.bellizia.mcmonitor.databinding.DialogAboutBinding
 import com.bellizia.mcmonitor.databinding.ItemServerBinding
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.ssh.SshManager
@@ -34,10 +31,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
  * Aprirne uno lo rende il server attivo per tutto il resto dell'app.
  */
 class ServersActivity : AppCompatActivity() {
-
-    private companion object {
-        const val MANUAL_URL = "https://github.com/bdbais/mc-monitor/blob/main/MANUALE.md"
-    }
 
     private lateinit var binding: ActivityServersBinding
     private var selectedId: String = ""
@@ -161,58 +154,9 @@ class ServersActivity : AppCompatActivity() {
 
     private fun showHelp(page: Help.Page) = HelpDialog.show(this, page)
 
-    /**
-     * Riconoscimenti: l'app sta in piedi sul lavoro di altri, e i collegamenti
-     * servono anche a chi volesse capire come funziona il proprio server.
-     */
-    private fun showAbout() {
-        val text = """
-            MC Monitor ${UpdateChecker.currentVersion(this)}
-            Licenza Apache 2.0
+    private fun showAbout() = About.show(this)
 
-            Codice sorgente, release e manuale
-            https://github.com/bdbais/mc-monitor
-
-            Costruita insieme a Claude di Anthropic
-            https://claude.com/claude-code
-
-            Minecraft è di Mojang Studios. Questa app non è affiliata né approvata da Mojang o Microsoft.
-            https://www.minecraft.net
-
-            LinuxGSM, il sistema che gestisce il server di gioco
-            https://linuxgsm.com
-
-            Modrinth, da cui arrivano mod e modpack
-            https://modrinth.com
-
-            FabricMC, il mod loader installabile dall'app
-            https://fabricmc.net
-
-            Elenco ufficiale delle versioni di Minecraft
-            https://piston-meta.mojang.com
-
-            Componenti di terze parti
-            mwiede/jsch (client SSH, BSD 3-Clause)
-            https://github.com/mwiede/jsch
-            AndroidX e Material Components (Apache 2.0)
-            Font Press Start 2P (SIL Open Font License 1.1)
-        """.trimIndent()
-
-        val about = DialogAboutBinding.inflate(layoutInflater)
-        about.credits.text = text
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Informazioni")
-            .setView(about.root)
-            .setPositiveButton("Chiudi", null)
-            .show()
-    }
-
-    /** Il manuale sta nel repository: si apre nel browser, sempre aggiornato. */
-    private fun openManual() {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(MANUAL_URL))
-        runCatching { startActivity(intent) }
-            .onFailure { toastShort("Nessuna app per aprire i collegamenti") }
-    }
+    private fun openManual() = About.manual(this)
 
     /**
      * Per creazione: dal più vecchio, cioè l'ordine in cui li hai fatti.

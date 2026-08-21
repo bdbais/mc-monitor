@@ -50,9 +50,37 @@ data class ServerConfig(
     val requirementsChecked: Boolean = false
 ) {
     val isComplete: Boolean
+        get() = hasCredentials && lgsmDir.isNotBlank() && script.isNotBlank()
+
+    /**
+     * Basta per entrare nel computer, non ancora per comandare un server:
+     * è il primo dei due passi che l'app chiede.
+     */
+    val hasCredentials: Boolean
         get() = host.isNotBlank() && user.isNotBlank() &&
-                (password.isNotBlank() || privateKey.isNotBlank()) &&
-                lgsmDir.isNotBlank() && script.isNotBlank()
+                (password.isNotBlank() || privateKey.isNotBlank())
+
+    /** Solo la parte di collegamento: vale per tutti i server di quel computer. */
+    fun credentials(): ServerConfig = ServerConfig(
+        host = host,
+        port = port,
+        user = user,
+        password = password,
+        privateKey = privateKey,
+        keyPassphrase = keyPassphrase,
+        hostKeyFingerprint = hostKeyFingerprint
+    )
+
+    /** Innesta le credenziali dell'utenza su un profilo, lasciando il resto com'è. */
+    fun withCredentials(account: ServerConfig): ServerConfig = copy(
+        host = account.host,
+        port = account.port,
+        user = account.user,
+        password = account.password,
+        privateKey = account.privateKey,
+        keyPassphrase = account.keyPassphrase,
+        hostKeyFingerprint = account.hostKeyFingerprint
+    )
 
     /** Cartella dei file di gioco, con default derivato dalla directory LinuxGSM. */
     val serverFiles: String
@@ -156,6 +184,7 @@ object Prefs {
     private const val FILE = "mcmonitor"
     private const val KEY_SERVERS = "servers"
     private const val KEY_ACTIVE = "activeServer"
+    private const val KEY_ACCOUNT = "sshAccount"
 
     private lateinit var sp: SharedPreferences
 
@@ -163,6 +192,7 @@ object Prefs {
         sp = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
         migrateSingleServer()
         migrateSendMode()
+        migrateAccount()
     }
 
     // ------------------------------------------------------------------ elenco
@@ -178,6 +208,42 @@ object Prefs {
     }
 
     fun activeId(): String = sp.getString(KEY_ACTIVE, "") ?: ""
+
+    // ------------------------------------------------------------- utenza Linux
+
+    /**
+     * L'utenza con cui si entra nel computer: è il primo passo, uguale per tutti
+     * i server che ci vivono dentro. Chi arriva da una versione precedente la
+     * ritrova già compilata, presa dal server che stava usando.
+     */
+    fun account(): ServerConfig {
+        val raw = sp.getString(KEY_ACCOUNT, null)
+        if (!raw.isNullOrBlank()) {
+            val saved = runCatching { ServerConfig.fromJson(JSONObject(raw)).credentials() }.getOrNull()
+            if (saved != null) return saved
+        }
+        val known = servers().firstOrNull { it.id == activeId() && it.hasCredentials }
+            ?: servers().firstOrNull { it.hasCredentials }
+        return known?.credentials() ?: ServerConfig()
+    }
+
+    /**
+     * Salvando l'utenza si aggiornano anche i server già configurati su quello
+     * stesso computer: cambiare qui la password e lasciarli indietro li
+     * escluderebbe tutti senza spiegazioni.
+     */
+    fun saveAccount(account: ServerConfig) {
+        val clean = account.credentials()
+        sp.edit().putString(KEY_ACCOUNT, clean.toJson().toString()).apply()
+        val updated = servers().map { server ->
+            if (server.host.equals(clean.host, ignoreCase = true) && server.user == clean.user) {
+                server.withCredentials(clean)
+            } else {
+                server
+            }
+        }
+        writeAll(updated)
+    }
 
     /**
      * Impostazione dell'app, non del singolo server: attiva per default, perché
@@ -281,9 +347,34 @@ object Prefs {
 
     // ------------------------------------------------- scorciatoie sul corrente
 
-    fun saveHostKey(fingerprint: String) = save(load().copy(hostKeyFingerprint = fingerprint))
+    /**
+     * Ricorda l'impronta di un computer sull'utenza e sui profili che stanno lì.
+     * L'host va passato: al primo collegamento un profilo può non esserci ancora,
+     * e scriverla su una configurazione vuota creerebbe un profilo fantasma.
+     */
+    fun saveHostKey(host: String, fingerprint: String) {
+        if (host.isBlank() || fingerprint.isBlank()) return
+        val account = account()
+        if (account.hasCredentials && account.host.equals(host, ignoreCase = true)) {
+            saveAccount(account.copy(hostKeyFingerprint = fingerprint))
+        }
+        val updated = servers().map { server ->
+            if (server.host.equals(host, ignoreCase = true) && server.hostKeyFingerprint.isBlank()) {
+                server.copy(hostKeyFingerprint = fingerprint)
+            } else {
+                server
+            }
+        }
+        writeAll(updated)
+    }
 
-    fun clearHostKey() = save(load().copy(hostKeyFingerprint = ""))
+    /** Dimentica l'impronta: la si riapprende al collegamento successivo. */
+    fun clearHostKey() {
+        val account = account()
+        if (account.hasCredentials) saveAccount(account.copy(hostKeyFingerprint = ""))
+        val active = servers().firstOrNull { it.id == activeId() } ?: return
+        save(active.copy(hostKeyFingerprint = ""))
+    }
 
     /** Usata quando l'app scopre da sola che "lgsm send" non esiste su questo server. */
     fun setUseLgsmSend(enabled: Boolean) = save(load().copy(useLgsmSend = enabled))
@@ -326,6 +417,20 @@ object Prefs {
         )
         writeAll(listOf(legacy))
         setActive(legacy.id)
+    }
+
+    /**
+     * Fino alla 1.16 le credenziali stavano dentro ogni profilo, senza un'utenza
+     * a sé. Chi aggiorna deve ritrovare il primo passo già compilato, non un
+     * modulo vuoto: si prende il server che stava usando e se ne salva la parte
+     * di collegamento. Una volta sola, e senza toccare i profili.
+     */
+    private fun migrateAccount() {
+        if (sp.contains(KEY_ACCOUNT)) return
+        val known = servers().firstOrNull { it.id == activeId() && it.hasCredentials }
+            ?: servers().firstOrNull { it.hasCredentials }
+            ?: return
+        sp.edit().putString(KEY_ACCOUNT, known.credentials().toJson().toString()).apply()
     }
 
     /**
