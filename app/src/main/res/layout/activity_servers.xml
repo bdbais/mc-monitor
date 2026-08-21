@@ -89,20 +89,12 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
+        android:gravity="end|center_vertical"
         android:orientation="horizontal"
         android:paddingStart="14dp"
         android:paddingTop="6dp"
         android:paddingEnd="6dp"
         android:paddingBottom="6dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="I tuoi server. Tocca per selezionare, poi Apri."
-            android:textColor="@color/text_dim"
-            android:textSize="13sp" />
 
         <ImageButton
             android:id="@+id/btnSortCreated"
@@ -139,6 +131,17 @@
             android:src="@drawable/ic_book"
             android:tooltipText="Manuale d'uso" />
     </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="8dp"
+        android:text="I tuoi server. Tocca per selezionare, poi Apri."
+        android:textAlignment="center"
+        android:textColor="@color/text_dim"
+        android:textSize="13sp" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
