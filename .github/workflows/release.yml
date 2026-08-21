@@ -47,8 +47,10 @@ jobs:
           fi
           echo "versione $dichiarata"
 
+      # Con i due flavor "testReleaseUnitTest" e ambiguo e "assembleRelease"
+      # produrrebbe anche la variante di prova: si nomina sempre "normale".
       - name: Test
-        run: ./gradlew testReleaseUnitTest --no-daemon
+        run: ./gradlew testNormaleReleaseUnitTest --no-daemon
 
       - name: Ricostruisci il keystore di firma
         if: env.HAS_KEYSTORE == 'true'
@@ -67,13 +69,13 @@ jobs:
           PROPS
 
       - name: Compila bundle e APK
-        run: ./gradlew bundleRelease assembleRelease --no-daemon
+        run: ./gradlew bundleNormaleRelease assembleNormaleRelease --no-daemon
 
       - name: Rinomina gli artefatti con la versione
         id: artefatti
         run: |
           versione=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          apk=$(ls app/build/outputs/apk/normale/release/*.apk | head -1)
           # Un APK non firmato si scarica benissimo e non si installa da nessuna
           # parte: il telefono dice solo "pacchetto non valido". Se il keystore
           # non c'è, il nome lo deve gridare invece di sembrare quello buono.
@@ -83,7 +85,7 @@ jobs:
             echo "::warning::Nessun keystore: l APK resta senza firma e non è installabile"
             cp "$apk" "MC-Monitor-$versione-NON-FIRMATO.apk"
           fi
-          cp app/build/outputs/bundle/release/app-release.aab "MC-Monitor-$versione.aab"
+          cp "$(ls app/build/outputs/bundle/normaleRelease/*.aab | head -1)" "MC-Monitor-$versione.aab"
           echo "versione=$versione" >> "$GITHUB_OUTPUT"
 
       - uses: actions/upload-artifact@v4
@@ -115,7 +117,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.bellizia.mcmonitor
-          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          releaseFiles: app/build/outputs/bundle/normaleRelease/*.aab
           track: ${{ env.TRACK }}
           status: completed
           releaseName: ${{ steps.artefatti.outputs.versione }}
