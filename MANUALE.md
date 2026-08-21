@@ -160,6 +160,18 @@ Trascina verso il basso per aggiornare.
 
 La coda di `logs/latest.log`, aggiornata ogni 6 secondi (l'interruttore in alto la ferma).
 
+Accanto all'interruttore due pulsanti:
+
+- **a capo automatico** — le righe lunghe continuano sotto invece di uscire a destra. Utile
+  per leggere, meno per confrontare le colonne del log: si accende e si spegne a piacere.
+- **tutto schermo** — restano solo le righe del log: spariscono barra del titolo, schede,
+  scorciatoie e campo dei comandi, e le righe vanno a capo da sole. Si esce con il pulsante
+  in alto a destra o con il tasto indietro, e tutto torna com'era.
+
+**In orizzontale** l'app si stringe da sola: la fila di scorciatoie diventa il pulsante
+**Comandi** accanto a Invia, l'interruttore perde l'etichetta e le righe vanno a capo. Con
+il telefono girato il log passa da due righe a sei, e a tutto schermo riempie lo schermo.
+
 Sotto, il campo per inviare comandi e una riga di scorciatoie: `list`, `say`, `tp`,
 `gamemode`, `time set day`, `weather clear`, `whitelist`, `kick`, `ban`, `save-all`…
 Toccarne una **compila il campo senza inviare**: quelle che finiscono con uno spazio

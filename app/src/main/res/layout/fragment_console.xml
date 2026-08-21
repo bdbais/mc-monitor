@@ -7,6 +7,7 @@
     android:padding="10dp">
 
     <LinearLayout
+        android:id="@+id/rigaControlli"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -19,36 +20,86 @@
             android:layout_weight="1"
             android:checked="true"
             android:text="Aggiornamento automatico" />
+
+        <ImageButton
+            android:id="@+id/btnWrap"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Manda a capo le righe lunghe"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_wrap"
+            android:tooltipText="A capo automatico" />
+
+        <ImageButton
+            android:id="@+id/btnFullscreen"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Mostra solo il log, a tutto schermo"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_fullscreen"
+            android:tooltipText="Tutto schermo" />
     </LinearLayout>
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipe"
+    <!-- Il log e il pulsante per uscire dal tutto schermo, sovrapposto in alto a
+         destra: in quella modalita' e' l'unico comando che resta a schermo. -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="6dp"
         android:layout_weight="1">
 
-        <androidx.core.widget.NestedScrollView
-            android:id="@+id/scroll"
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipe"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/surface"
-            android:padding="10dp">
+            android:layout_height="match_parent">
 
-            <HorizontalScrollView
+            <androidx.core.widget.NestedScrollView
+                android:id="@+id/scroll"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="match_parent"
+                android:background="@color/surface"
+                android:padding="10dp">
 
-                <TextView
-                    android:id="@+id/log"
-                    style="@style/Mono"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" />
-            </HorizontalScrollView>
-        </androidx.core.widget.NestedScrollView>
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                <HorizontalScrollView
+                    android:id="@+id/logScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fillViewport="true"
+                    android:scrollbars="none">
+
+                    <TextView
+                        android:id="@+id/log"
+                        style="@style/Mono"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textIsSelectable="true" />
+                </HorizontalScrollView>
+            </androidx.core.widget.NestedScrollView>
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <ImageButton
+            android:id="@+id/btnEsciSchermo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="8dp"
+            android:alpha="0.85"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Torna alla scheda"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_fullscreen_exit"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <HorizontalScrollView
+        android:id="@+id/rigaComandi"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
@@ -63,6 +114,7 @@
     </HorizontalScrollView>
 
     <LinearLayout
+        android:id="@+id/rigaInvio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
@@ -84,6 +136,18 @@
                 android:inputType="text"
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- In orizzontale la fila di scorciatoie sparisce per far posto al log:
+             i comandi restano raggiungibili da qui, in elenco. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnComandi"
+            style="@style/McButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:minWidth="0dp"
+            android:text="Comandi"
+            android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSend"

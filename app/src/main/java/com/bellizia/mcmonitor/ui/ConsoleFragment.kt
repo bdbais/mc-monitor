@@ -1,10 +1,13 @@
 package com.bellizia.mcmonitor.ui
 
+import android.content.res.Configuration
 import android.os.Bundle
+import android.view.ViewGroup.LayoutParams
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
 import com.bellizia.mcmonitor.R
 import com.google.android.material.chip.Chip
@@ -27,6 +30,15 @@ class ConsoleFragment : Fragment() {
     private val b get() = _b!!
     private var busy = false
 
+    /** Righe mandate a capo invece che scorrevoli in orizzontale. */
+    private var wrapLines = false
+
+    /** Solo log a schermo: spariscono controlli, scorciatoie, campo e barra delle schede. */
+    private var fullscreen = false
+
+    /** Come stavano le righe prima del tutto schermo, per rimetterle come erano. */
+    private var wrapPrimaDelloSchermo = false
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, s: Bundle?): View {
         _b = FragmentConsoleBinding.inflate(inflater, container, false)
         return b.root
@@ -48,6 +60,30 @@ class ConsoleFragment : Fragment() {
         b.input.setOnEditorActionListener { _, _, _ -> send(); true }
         buildQuickCommands()
 
+        b.btnWrap.setOnClickListener { setWrap(!wrapLines) }
+        b.btnFullscreen.setOnClickListener { setFullscreen(true) }
+        b.btnEsciSchermo.setOnClickListener { setFullscreen(false) }
+        b.btnComandi.setOnClickListener { showCommandList() }
+
+        /*
+         * In orizzontale lo spazio in altezza e' pochissimo: barra, schede,
+         * interruttore, scorciatoie e campo di testo lasciavano al log due righe.
+         * Qui la fila di scorciatoie diventa un pulsante, l'interruttore perde
+         * l'etichetta e le righe vanno a capo, che su uno schermo largo si legge
+         * meglio dello scorrimento laterale.
+         */
+        val orizzontale = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        b.rigaComandi.visible(!orizzontale)
+        b.btnComandi.visible(orizzontale)
+        if (orizzontale) b.autoRefresh.text = ""
+        setWrap(orizzontale)
+
+        // In tutto schermo il tasto indietro riporta alla scheda invece di uscire.
+        val indietro = requireActivity().onBackPressedDispatcher.addCallback(this, false) {
+            setFullscreen(false)
+        }
+        backCallback = indietro
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 while (isActive) {
@@ -61,6 +97,71 @@ class ConsoleFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         if (Prefs.load().isComplete && b.log.text.isNullOrBlank()) load()
+    }
+
+    private var backCallback: androidx.activity.OnBackPressedCallback? = null
+
+    /** Le stesse scorciatoie delle chip, in elenco: serve quando la fila non c'e'. */
+    private fun showCommandList() {
+        val voci = quickCommands.map { it.trim() }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Comandi rapidi")
+            .setItems(voci) { _, indice ->
+                val comando = quickCommands[indice]
+                b.input.setText(comando)
+                b.input.setSelection(comando.length)
+                b.input.requestFocus()
+                if (comando.endsWith(" ")) showKeyboard() else hideKeyboard()
+            }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    /**
+     * Righe a capo o scorrimento laterale. Con l'andare a capo si legge tutto
+     * senza trascinare, ma le colonne del log si perdono: per questo resta una
+     * scelta, non una regola.
+     */
+    private fun setWrap(wrap: Boolean) {
+        wrapLines = wrap
+        val bind = _b ?: return
+        bind.btnWrap.alpha = if (wrap) 1f else 0.45f
+        // Dentro uno scorrevole orizzontale la larghezza non basta a far andare a
+        // capo: il testo viene misurato senza limiti. Il limite va messo a mano,
+        // e la larghezza reale si conosce solo dopo il primo disegno.
+        bind.logScroll.post {
+            val b2 = _b ?: return@post
+            b2.log.maxWidth = if (wrap) b2.logScroll.width.coerceAtLeast(1) else Int.MAX_VALUE
+            b2.log.layoutParams = b2.log.layoutParams.apply {
+                width = if (wrap) LayoutParams.MATCH_PARENT else LayoutParams.WRAP_CONTENT
+            }
+            b2.log.requestLayout()
+            if (wrap) b2.logScroll.scrollTo(0, 0)
+        }
+    }
+
+    /** Tutto schermo: resta il log e basta, in verticale come in orizzontale. */
+    private fun setFullscreen(on: Boolean) {
+        fullscreen = on
+        val bind = _b ?: return
+        bind.rigaControlli.visible(!on)
+        bind.rigaComandi.visible(!on && resources.configuration.orientation != Configuration.ORIENTATION_LANDSCAPE)
+        bind.rigaInvio.visible(!on)
+        bind.btnEsciSchermo.visible(on)
+        backCallback?.isEnabled = on
+        // A tutto schermo si legge, non si confrontano colonne: le righe vanno a
+        // capo da sole, e uscendo tornano come le aveva lasciate chi legge.
+        if (on) {
+            wrapPrimaDelloSchermo = wrapLines
+            setWrap(true)
+        } else {
+            setWrap(wrapPrimaDelloSchermo)
+        }
+        (activity as? com.bellizia.mcmonitor.MainActivity)?.hideChrome(on)
+        if (on) hideKeyboard()
+        // Il salto in fondo va fatto quando il log ha gia' la nuova altezza,
+        // altrimenti si ferma dove finiva prima e sembra bloccato a meta'.
+        bind.scroll.postDelayed({ _b?.scroll?.fullScroll(View.FOCUS_DOWN) }, 150)
     }
 
     private fun buildQuickCommands() {
@@ -139,6 +240,10 @@ class ConsoleFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // Uscendo dalla scheda la barra dell'app deve tornare, altrimenti resta
+        // nascosta anche nelle altre schede.
+        if (fullscreen) (activity as? com.bellizia.mcmonitor.MainActivity)?.hideChrome(false)
+        backCallback = null
         _b = null
     }
 }

@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Quattro angoli che si allargano: il log a tutto schermo. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M2,2h5v2h-3v3h-2zM9,2h5v5h-2v-3h-3zM2,9h2v3h3v2h-5zM12,9h2v5h-5v-2h3z" />
+</vector>

@@ -40,6 +40,17 @@ class MainActivity : AppCompatActivity() {
         "Impostazioni" to { SettingsFragment() as Fragment }
     )
 
+    /**
+     * Nasconde barra del titolo e schede: la usa la Console quando mostra il log
+     * a tutto schermo, dove ogni riga di interfaccia e' una riga di log in meno.
+     * Anche lo scorrimento fra le schede si ferma, o si cambierebbe scheda
+     * trascinando il log.
+     */
+    fun hideChrome(hidden: Boolean) {
+        binding.appbar.visibility = if (hidden) android.view.View.GONE else android.view.View.VISIBLE
+        binding.pager.isUserInputEnabled = !hidden
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
