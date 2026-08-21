@@ -53,6 +53,25 @@ object UpdateChecker {
             .split('.', '-', '+')
             .mapNotNull { part -> part.takeWhile { it.isDigit() }.toIntOrNull() }
 
+    /**
+     * Quale APK proporre quando la release ne contiene piu di uno.
+     *
+     * Prima il file che porta esattamente il nome della versione; poi qualsiasi
+     * APK che non sia una variante di prova o una build senza firma. Prendere il
+     * primo della lista, come faceva la 1.16, poteva installare l app di
+     * diagnostica: ha un identificativo diverso e finiva accanto a quella vera
+     * invece di aggiornarla.
+     */
+    fun pickApk(assets: List<JSONObject>, version: String): JSONObject? {
+        val apk = assets.filter { it.optString("name").endsWith(".apk", ignoreCase = true) }
+        val atteso = "MC-Monitor-$version.apk"
+        return apk.firstOrNull { it.optString("name").equals(atteso, ignoreCase = true) }
+            ?: apk.firstOrNull { asset ->
+                val nome = asset.optString("name").lowercase()
+                listOf("prova", "diag", "non-firmato", "unsigned").none { nome.contains(it) }
+            }
+    }
+
     private fun fetchLatest(): Update? {
         val connection = (URL(LATEST).openConnection() as HttpURLConnection).apply {
             connectTimeout = 12_000
@@ -64,13 +83,14 @@ object UpdateChecker {
             if (connection.responseCode !in 200..299) return null
             val json = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
             val assets = json.optJSONArray("assets") ?: return null
-            val apk = (0 until assets.length())
-                .mapNotNull { assets.optJSONObject(it) }
-                .firstOrNull { it.optString("name").endsWith(".apk", ignoreCase = true) }
-                ?: return null
+            val versione = json.optString("tag_name").removePrefix("v")
+            val apk = pickApk(
+                (0 until assets.length()).mapNotNull { assets.optJSONObject(it) },
+                versione
+            ) ?: return null
 
             return Update(
-                version = json.optString("tag_name").removePrefix("v"),
+                version = versione,
                 notes = json.optString("body").take(1500),
                 apkUrl = apk.optString("browser_download_url"),
                 pageUrl = json.optString("html_url"),
