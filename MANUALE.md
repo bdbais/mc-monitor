@@ -215,14 +215,21 @@ Spigot dalla 1.13 in poi.
 
 <img src="store/screenshots/05-mod.png" width="320" alt="Scheda Mod">
 
-**Ambiente del server** — versione di Minecraft e mod loader, rilevati dai log e dai file
-presenti. I due campi restano modificabili: sono i filtri usati nella ricerca.
+**Ambiente del server** — versione di Minecraft e mod loader, che l'app ricava da sola: la
+versione dalla riga che il server scrive nel log all'avvio e, se il server non è mai
+partito, da `mcversion` nella configurazione di LinuxGSM; il loader dai file presenti.
+Accanto alla versione è scritto da dove viene, "in esecuzione" o "da configurazione".
 
-**Se il server è vanilla** compare **Installa Fabric sul server**: scarica il jar di avvio
-da meta.fabricmc.net (è il server a scaricarlo, con curl) e modifica `startparameters` di
-LinuxGSM per usarlo, tenendo una copia del file. Poi va riavviato.
+**Se il server è vanilla** compare **Installa Fabric per Minecraft &lt;versione&gt;**: la
+versione non viene chiesta, è quella del server. Il jar di avvio lo scarica il server da
+meta.fabricmc.net (con curl) e `startparameters` di LinuxGSM viene modificato per usarlo,
+tenendo una copia del file. Poi va riavviato. Solo se la versione è davvero indeterminabile
+— server mai avviato e `mcversion="latest"` — l'app la chiede una volta.
 
-**Cerca su Modrinth** — nessun account necessario: l'API pubblica non richiede login.
+**Cerca su Modrinth** — nessun account necessario: l'API pubblica non richiede login. Non
+c'è niente da impostare: i mod vengono cercati per la versione e il loader del server, e
+sotto il campo di ricerca è scritto quali sono. Se per quella combinazione non esce niente,
+un pulsante propone di **cercare senza filtri**.
 
 <img src="store/screenshots/05-mod-ricerca.png" width="320" alt="Ricerca su Modrinth">
 

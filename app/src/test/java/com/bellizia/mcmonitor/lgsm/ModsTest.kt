@@ -4,6 +4,7 @@ import com.bellizia.mcmonitor.data.ServerConfig
 import com.bellizia.mcmonitor.mods.Modrinth
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -54,6 +55,47 @@ class ModsTest {
         val env = Mods.parseEnvironment("version=1.21.10\nloader=vanilla\nmodsdir=no\n", cfg)
         assertTrue(env.isVanilla)
         assertFalse(env.hasModsDir)
+    }
+
+    @Test
+    fun `senza log prende la versione dalla configurazione`() {
+        val env = Mods.parseEnvironment("version=\ncfgversion=1.20.4\nloader=vanilla\nmodsdir=no\n", cfg)
+        assertEquals("1.20.4", env.minecraftVersion)
+        assertEquals("da configurazione", env.versionSource)
+    }
+
+    @Test
+    fun `il log vince sulla configurazione`() {
+        val env = Mods.parseEnvironment("version=1.21.1\ncfgversion=1.20.4\nloader=fabric\nmodsdir=yes\n", cfg)
+        assertEquals("1.21.1", env.minecraftVersion)
+        assertEquals("in esecuzione", env.versionSource)
+        assertEquals("1.20.4", env.configuredVersion)
+    }
+
+    @Test
+    fun `mcversion latest non e' una versione`() {
+        val env = Mods.parseEnvironment("version=\ncfgversion=latest\nloader=vanilla\nmodsdir=no\n", cfg)
+        // Va detto, non usato: a Fabric e a Modrinth "latest" non significa niente.
+        assertEquals("latest", env.configuredVersion)
+        assertNull(env.minecraftVersion)
+        assertNull(env.versionSource)
+    }
+
+    @Test
+    fun `senza nessuna fonte la versione resta sconosciuta`() {
+        val env = Mods.parseEnvironment("version=\ncfgversion=\nloader=vanilla\nmodsdir=no\n", cfg)
+        assertNull(env.minecraftVersion)
+        assertNull(env.configuredVersion)
+    }
+
+    @Test
+    fun `il rilevamento legge log archiviati e configurazione`() {
+        val comando = Mods.detectEnvironment(cfg)
+        assertTrue(comando.contains("logs/latest.log"))
+        assertTrue(comando.contains("zgrep"))
+        // Il percorso del file di configurazione e quello di LinuxGSM.
+        assertTrue(comando.contains("lgsm/config-lgsm/mcserver/mcserver.cfg"))
+        assertTrue(comando.contains("cfgversion="))
     }
 
     @Test

@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +39,9 @@ class ModsFragment : Fragment() {
     private val b get() = _b!!
 
     private var environment: ServerEnvironment? = null
+
+    /** Attivo solo dopo una ricerca a vuoto, per un secondo tentativo piu largo. */
+    private var senzaFiltri = false
     private val dayFormat = SimpleDateFormat("dd/MM/yyyy", Locale.ITALY)
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, s: Bundle?): View {
@@ -85,11 +89,22 @@ class ModsFragment : Fragment() {
             env.onSuccess { e ->
                 environment = e
                 bind.environment.text = buildString {
-                    append("Minecraft ${e.minecraftVersion ?: "versione ignota"}")
+                    val versione = e.minecraftVersion
+                    if (versione != null) {
+                        append("Minecraft $versione")
+                        e.versionSource?.let { append(" ($it)") }
+                    } else {
+                        // "latest" nella configurazione non e una versione: lo si dice com'e.
+                        append("Minecraft: versione ancora da determinare")
+                        e.configuredVersion?.let { append(" (configurato: $it)") }
+                    }
                     append(" · ${e.loaderLabel}")
                     append(if (e.hasModsDir) " · cartella mods presente" else " · nessuna cartella mods")
                 }
                 bind.btnInstallLoader.visible(e.isVanilla)
+                bind.btnInstallLoader.text = e.minecraftVersion
+                    ?.let { "Installa Fabric per Minecraft $it" }
+                    ?: "Installa Fabric sul server"
                 bind.warning.visible(e.isVanilla || !e.hasModsDir)
                 bind.warning.text = when {
                     e.isVanilla -> "Questo è un server vanilla: i mod non verranno caricati finché " +
@@ -98,9 +113,7 @@ class ModsFragment : Fragment() {
                     !e.hasModsDir -> "La cartella mods non esiste ancora: verrà creata alla prima installazione."
                     else -> ""
                 }
-                // I campi restano modificabili: il rilevamento è un punto di partenza.
-                if (bind.gameVersion.text.isNullOrBlank()) bind.gameVersion.setText(e.minecraftVersion.orEmpty())
-                if (bind.loader.text.isNullOrBlank() && !e.isVanilla) bind.loader.setText(e.loader, false)
+                showFilters()
             }.onFailure {
                 bind.environment.text = "Rilevamento fallito: ${it.userMessage()}"
             }
@@ -151,12 +164,36 @@ class ModsFragment : Fragment() {
 
     // ------------------------------------------------------------- ricerca
 
+    /** Dice con che cosa si sta cercando, senza chiederlo: e roba del server. */
+    private fun showFilters() {
+        val bind = _b ?: return
+        val versione = gameVersion()
+        val loader = loader()
+        bind.filtri.text = when {
+            senzaFiltri -> "Ricerca senza filtri: possono uscire mod per altre versioni."
+            versione == null && loader == null ->
+                "Ricerca senza filtri: del server non si sa ancora versione ne loader."
+            else -> buildString {
+                append("Cerco mod per ")
+                append(versione?.let { "Minecraft $it" } ?: "qualsiasi versione")
+                loader?.let { append(" · ${environment?.loaderLabel}") }
+            }
+        }
+    }
+
     private fun search() {
+        // Ogni ricerca nuova riparte dai filtri del server.
+        senzaFiltri = false
+        runSearch()
+    }
+
+    private fun runSearch() {
         val query = b.query.text?.toString()?.trim().orEmpty()
         if (query.isEmpty()) {
             toast("Scrivi il nome di un mod")
             return
         }
+        showFilters()
         b.searchProgress.visible(true)
         b.results.removeAllViews()
         viewLifecycleOwner.lifecycleScope.launch {
@@ -176,9 +213,16 @@ class ModsFragment : Fragment() {
         if (projects.isEmpty()) {
             val row = ItemModrinthBinding.inflate(layoutInflater, bind.results, false)
             row.title.text = "Nessun risultato"
-            row.meta.text = "Prova senza filtro di versione o loader"
             row.description.visible(false)
-            row.btnInstall.visible(false)
+            if (senzaFiltri) {
+                row.meta.text = "Nemmeno cercando senza filtri: prova con un altro nome."
+                row.btnInstall.visible(false)
+            } else {
+                row.meta.text = "Nessun mod per la versione del server. Si puo cercare piu largo."
+                row.btnInstall.text = "Cerca senza filtri"
+                row.btnInstall.visible(true)
+                row.btnInstall.setOnClickListener { searchWithoutFilters() }
+            }
             bind.results.addView(row.root)
             return
         }
@@ -193,6 +237,12 @@ class ModsFragment : Fragment() {
         }
     }
 
+    /** Secondo tentativo, piu largo: utile quando un mod non e ancora aggiornato. */
+    private fun searchWithoutFilters() {
+        senzaFiltri = true
+        runSearch()
+    }
+
     private fun chooseVersion(project: ModProject) {
         b.searchProgress.visible(true)
         viewLifecycleOwner.lifecycleScope.launch {
@@ -204,8 +254,20 @@ class ModsFragment : Fragment() {
             if (versions.isEmpty()) {
                 showText(
                     project.title,
-                    "Nessuna versione compatibile con Minecraft ${gameVersion() ?: "?"} " +
-                            "e loader ${loader() ?: "?"}.\n\nProva a cambiare i due campi in cima alla scheda."
+                    buildString {
+                        append("Questo mod non ha una versione per ")
+                        append(gameVersion()?.let { "Minecraft $it" } ?: "la versione del server")
+                        loader()?.let { append(" con ${environment?.loaderLabel}") }
+                        append(".\n\n")
+                        append(
+                            if (senzaFiltri) {
+                                "L'autore non l'ha ancora pubblicata per questa combinazione."
+                            } else {
+                                "Puoi riprovare con \"Cerca senza filtri\" e guardare le altre versioni, " +
+                                        "ma un mod di un'altra versione di solito fa crashare il server."
+                            }
+                        )
+                    }
                 )
                 return@launch
             }
@@ -263,15 +325,17 @@ class ModsFragment : Fragment() {
         }
     }
 
-    /** Su un server vanilla i mod non partono: qui si installa Fabric. */
+    /**
+     * Su un server vanilla i mod non partono: qui si installa Fabric.
+     *
+     * La versione non si chiede: e quella del server, letta dal log o da
+     * `mcversion`. Solo se non si riesce a saperla (server mai avviato e
+     * `mcversion="latest"`) si apre un campo, spiegando perche.
+     */
     private fun installLoader() {
-        val version = gameVersion() ?: environment?.minecraftVersion
+        val version = environment?.minecraftVersion
         if (version.isNullOrBlank()) {
-            showText(
-                "Versione sconosciuta",
-                "Scrivi la versione di Minecraft nel campo in cima alla scheda: serve per " +
-                        "scegliere il Fabric giusto."
-            )
+            askVersionThenInstall()
             return
         }
         MaterialAlertDialogBuilder(requireContext())
@@ -284,6 +348,34 @@ class ModsFragment : Fragment() {
             )
             .setNegativeButton("Annulla", null)
             .setPositiveButton("Installa") { _, _ -> runLoaderInstall(version) }
+            .show()
+    }
+
+    /**
+     * Caso limite: LinuxGSM ha `mcversion="latest"` e il server non e mai partito,
+     * quindi nessuno sa ancora quale versione sara. Meglio chiederla qui, una
+     * volta, che tenere un campo sempre in mezzo ai piedi.
+     */
+    private fun askVersionThenInstall() {
+        val campo = EditText(requireContext()).apply {
+            hint = "per esempio 1.21.1"
+            setSingleLine()
+            setText(environment?.configuredVersion?.takeIf { it.first().isDigit() }.orEmpty())
+            setPadding(48, 24, 48, 24)
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Per quale versione?")
+            .setMessage(
+                "Non riesco a sapere la versione da solo: il server non e mai stato avviato " +
+                        "e nella configurazione c'e \"${environment?.configuredVersion ?: "latest"}\". " +
+                        "Avvia il server una volta, oppure scrivi qui la versione."
+            )
+            .setView(campo)
+            .setNegativeButton("Annulla", null)
+            .setPositiveButton("Continua") { _, _ ->
+                val scritta = campo.text?.toString()?.trim().orEmpty()
+                if (scritta.isBlank()) toast("Serve la versione") else runLoaderInstall(scritta)
+            }
             .show()
     }
 
@@ -397,9 +489,17 @@ class ModsFragment : Fragment() {
 
     // -------------------------------------------------------------- utilita'
 
-    private fun gameVersion() = b.gameVersion.text?.toString()?.trim()?.takeIf { it.isNotBlank() }
+    /**
+     * Versione e loader per cui cercare i mod: li sa gia l app, letti dal server.
+     * Chiederli sarebbe far ripetere all utente qualcosa che e scritto nella
+     * configurazione. Restano nulli solo quando si e scelto di cercare senza
+     * filtri, dopo una ricerca che non ha trovato niente.
+     */
+    private fun gameVersion() =
+        if (senzaFiltri) null else environment?.minecraftVersion
 
-    private fun loader() = b.loader.text?.toString()?.trim()?.takeIf { it.isNotBlank() }
+    private fun loader() =
+        if (senzaFiltri) null else environment?.loader?.takeIf { it != "vanilla" }
 
     /** Esegue un'operazione sul server e poi ricarica lo stato della cartella mods. */
     private fun run(progress: String, block: suspend () -> String) {

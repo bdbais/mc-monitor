@@ -59,42 +59,6 @@
                         android:text="Installa Fabric sul server"
                         android:visibility="gone" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:layout_weight="1"
-                            android:hint="Versione Minecraft">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/gameVersion"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="text"
-                                android:maxLines="1" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:hint="Loader">
-
-                            <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                                android:id="@+id/loader"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                app:simpleItems="@array/mod_loaders" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -145,6 +109,14 @@
                             android:layout_marginStart="8dp"
                             android:text="Cerca" />
                     </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/filtri"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textColor="@color/text_dim"
+                        android:textSize="12sp" />
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/searchProgress"
