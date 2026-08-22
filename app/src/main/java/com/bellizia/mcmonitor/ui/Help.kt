@@ -81,6 +81,32 @@ object Help {
         """.trimIndent()
     )
 
+    val MACRO = Page(
+        "Le macro",
+        """
+        Una macro è una fila di comandi con un nome. Si tocca una volta e partono tutti, nell'ordine giusto.
+
+        Serve perché quasi niente di quello che fa un amministratore è un comando solo: mettere il server in manutenzione vuol dire avvisare, aspettare, avvisare ancora, salvare. A mano si sbaglia l'ordine o si salta un pezzo, e capita sempre quando si ha fretta.
+
+        Prima di partire ti mostra la lista esatta di cosa sta per succedere. Le macro che cambiano il mondo o disturbano chi sta giocando lo dicono nella conferma.
+
+        Scriverne una tua: "Scrivi una macro nuova", poi un comando per riga, senza la barra iniziale.
+
+        Due cose che nei comandi normali non esistono:
+        • <giocatore>, <x>, <messaggio> — un buco fra parentesi angolari diventa una domanda quando lanci la macro. Puoi chiamarli come vuoi
+        • !attendi 30 — non è un comando di Minecraft: è una pausa di 30 secondi. Serve per i conti alla rovescia
+
+        Le macro già pronte non si rovinano: se ne apri una e la cambi, quello che salvi diventa una macro tua e l'originale resta dov'è.
+
+        "Ferma la macro" interrompe subito, anche durante una pausa. I comandi già partiti sono già partiti: non tornano indietro.
+
+        Le macro stanno sul telefono, non sul server: sono un modo tuo di comandare, non una cosa del mondo di Minecraft. Se cambi telefono si riscrivono.
+
+        L'elenco dei comandi di Minecraft, se ne cerchi uno:
+        https://minecraft.wiki/w/Commands
+        """.trimIndent()
+    )
+
     val BLUEPRINT = Page(
         "Il progetto del server",
         """

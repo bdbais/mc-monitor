@@ -2,6 +2,7 @@ package com.bellizia.mcmonitor.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.ViewGroup.LayoutParams
@@ -73,6 +74,9 @@ class ConsoleFragment : Fragment() {
         buildQuickCommands()
 
         b.btnCerca.setOnClickListener { toggleFiltro() }
+        b.btnMacro.setOnClickListener {
+            startActivity(Intent(requireContext(), MacroActivity::class.java))
+        }
         b.filtro.doAfterTextChanged {
             filtro = it?.toString().orEmpty()
             renderLog()

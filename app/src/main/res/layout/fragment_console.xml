@@ -21,6 +21,20 @@
             android:checked="true"
             android:text="Aggiornamento automatico" />
 
+        <!-- Le file di comandi già pronte: qui, accanto alla console, che è dove
+             i comandi si scrivono uno per volta. -->
+        <ImageButton
+            android:id="@+id/btnMacro"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Macro: file di comandi già pronte"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_macro"
+            android:tooltipText="Macro" />
+
         <ImageButton
             android:id="@+id/btnCerca"
             android:layout_width="40dp"

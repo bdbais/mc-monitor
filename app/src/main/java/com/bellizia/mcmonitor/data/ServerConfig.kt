@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
+import com.bellizia.mcmonitor.lgsm.Macro
 import java.util.UUID
 
 /**
@@ -282,6 +283,38 @@ object Prefs {
         set(value) {
             sp.edit().putString("sortMode", value).apply()
         }
+
+    // ------------------------------------------------------------------ macro
+
+    /**
+     * Le macro scritte da chi usa l'app, in aggiunta a quelle gia' pronte.
+     * Stanno sul telefono e non sul server: sono un modo di comandare, non una
+     * cosa del mondo di Minecraft.
+     */
+    fun macros(): List<Macro> {
+        val raw = sp.getString("macros", null) ?: return emptyList()
+        return runCatching {
+            val array = JSONArray(raw)
+            (0 until array.length()).mapNotNull { i ->
+                array.optJSONObject(i)?.let { Macro.fromJson(it) }
+            }
+        }.getOrDefault(emptyList())
+    }
+
+    fun saveMacro(macro: Macro) {
+        val id = macro.id.ifBlank { "m-" + UUID.randomUUID().toString().take(8) }
+        val altre = macros().filterNot { it.id == id }
+        writeMacros(altre + macro.copy(id = id))
+    }
+
+    fun deleteMacro(id: String) {
+        writeMacros(macros().filterNot { it.id == id })
+    }
+
+    private fun writeMacros(list: List<Macro>) {
+        val array = JSONArray().also { a -> list.forEach { a.put(it.toJson()) } }
+        sp.edit().putString("macros", array.toString()).apply()
+    }
 
     /** Segna l apertura di un server: serve all ordinamento per ultimo utilizzo. */
     fun markUsed(id: String) {

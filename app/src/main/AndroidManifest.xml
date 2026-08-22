@@ -75,6 +75,14 @@
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- File di comandi da lanciare in un tocco. -->
+        <activity
+            android:name=".ui.MacroActivity"
+            android:exported="false"
+            android:label="Macro"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- La configurazione del server in un file, per clonarlo altrove. -->
         <activity
             android:name=".ui.BlueprintActivity"
