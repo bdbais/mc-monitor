@@ -129,7 +129,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Parametri del server" />
+                            android:text="Impostazioni del server" />
 
                         <!-- L'intera configurazione in un file, per rifare questo
                              server su un altro computer. -->
@@ -151,11 +151,11 @@
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:background="@drawable/bg_stone_button"
-                            android:contentDescription="Modifica i parametri del server"
+                            android:contentDescription="Impostazioni del server"
                             android:padding="8dp"
                             android:scaleType="fitCenter"
                             android:src="@drawable/ic_pencil"
-                            android:tooltipText="Modifica i parametri" />
+                            android:tooltipText="Impostazioni" />
                     </LinearLayout>
 
                     <LinearLayout

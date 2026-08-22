@@ -54,7 +54,9 @@ class StatusFragment : Fragment() {
         b.btnShareAddress.setOnClickListener { shareAddress() }
         b.btnChangeVersion.setOnClickListener { chooseVersion() }
         b.btnParams.setOnClickListener {
-            if (configured()) startActivity(Intent(requireContext(), ParamsActivity::class.java))
+            // La matita porta a quello che si cambia davvero. Alle impostazioni
+            // tecniche di LinuxGSM si arriva da lì, in fondo alla pagina.
+            if (configured()) startActivity(Intent(requireContext(), GameSettingsActivity::class.java))
         }
         b.btnProgetto.setOnClickListener {
             if (configured()) startActivity(Intent(requireContext(), BlueprintActivity::class.java))

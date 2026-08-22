@@ -59,25 +59,57 @@ object Help {
         """.trimIndent()
     )
 
-    val PARAMS = Page(
-        "I parametri del server",
+    val GAME_SETTINGS = Page(
+        "Le impostazioni del server",
         """
-        Questi sono gli interruttori di LinuxGSM: decidono quanta memoria dare al server, quale versione di Minecraft scaricare, su quale porta rispondere, quanti backup tenere.
+        Queste sono le impostazioni del gioco: difficoltà, messaggio di benvenuto, quanti giocatori entrano, quanto lontano si vede, chi può collegarsi.
 
-        Vivono in un file di testo sul computer (mcserver.cfg). Quello che vedi in cima è quello che è stato scritto lì; sotto, in "Da aggiungere", ci sono i parametri che LinuxGSM conosce ma che nel file non ci sono: finché mancano vale il valore di fabbrica.
+        Vivono in un file che si chiama server.properties, dentro la cartella del mondo. È un file diverso da quello di LinuxGSM, e ha una vita diversa: quello di LinuxGSM si tocca il primo giorno e poi resta fermo, questo si cambia ogni volta che cambia qualcosa fra chi gioca.
 
-        Tocca un parametro per cambiarlo. Ogni modifica tiene una copia del file con la data, quindi si può sempre tornare indietro collegandosi al computer.
+        Niente parte finché non premi Salva. Le modifiche si accumulano — la riga cambiata si segna con un puntino — e partono tutte insieme: una sola connessione, una sola copia di sicurezza del file. Prima di scrivere ti viene mostrato l'elenco esatto di cosa cambia, da cosa a cosa.
 
-        Le modifiche valgono dal prossimo avvio del server: dopo averle fatte compare il pulsante per riavviarlo.
+        Alcune valgono subito e altre dal prossimo avvio, ed è scritto sotto ognuna. Difficoltà e whitelist, per esempio, l'app le scrive nel file E le manda al server, così cambiano anche per chi sta giocando in quel momento. Se il server è spento la scrittura vale lo stesso, e te lo dice.
 
-        I due più usati:
-        • javaram — la memoria, per esempio 2G o 4G. Troppo poca fa scattare il server, troppa lo fa uccidere dal sistema
-        • mcversion — la versione di Minecraft. Cambiarla qui e poi lanciare un aggiornamento è quello che fa la scheda Stato
+        Le quattro che contano di più su un server piccolo:
+        • Difficoltà — in pacifica i mostri non compaiono proprio
+        • Solo chi è in whitelist — la vera difesa di un server aperto su internet
+        • Quanto lontano si vede — il primo numero da abbassare quando il server singhiozza
+        • Metti in pausa quando non c'è nessuno — smette di consumare quando il mondo è vuoto
 
-        Se un parametro non ti è chiaro, l'elenco completo con le spiegazioni ufficiali è qui:
-        https://docs.linuxgsm.com/configuration/game-server-config
-        e per le impostazioni di Minecraft vero e proprio (server.properties):
+        Di ogni file toccato resta una copia con la data nel nome.
+
+        Le voci che non ci sono qui — porte, indirizzi, messa a punto fine — restano nel file come sono: questa schermata non le tocca. Per la memoria, i backup e gli avvisi c'è "Impostazioni tecniche di LinuxGSM", in fondo alla pagina.
+
+        L'elenco completo con le spiegazioni ufficiali:
         https://minecraft.wiki/w/Server.properties
+        """.trimIndent()
+    )
+
+    val PARAMS = Page(
+        "Le impostazioni tecniche",
+        """
+        Questi sono gli interruttori di LinuxGSM, cioè del programma che accende e spegne il server: quanta memoria dare a Java, quale versione di Minecraft scaricare, quanti backup tenere, dove mandare gli avvisi.
+
+        Non è qui che si cambiano difficoltà, messaggio di benvenuto o whitelist: quelle stanno in "Impostazioni del server", che è la schermata da cui sei arrivato.
+
+        UNA COSA DA SAPERE SUBITO
+
+        LinuxGSM ha cinque file di configurazione in fila, e questa schermata ne legge uno solo: mcserver.cfg, quello delle tue modifiche. Su un server appena installato quel file è VUOTO, e va benissimo così: i valori veri (memoria 1024, quattro backup, log tenuti sette giorni) stanno nel file di fabbrica, che non si tocca perché LinuxGSM lo riscrive a ogni aggiornamento.
+
+        Quindi: se qui non vedi niente, non vuol dire che il server non abbia impostazioni. Vuol dire che stai usando quelle di fabbrica, e che qui si scrivono solo le differenze.
+
+        Sotto, in "Da aggiungere", ci sono i parametri che LinuxGSM conosce ma che nel tuo file non ci sono ancora.
+
+        QUANDO HANNO EFFETTO
+
+        Sotto ogni parametro c'è scritto. Quasi tutti — backup, log, avvisi — LinuxGSM li rilegge da solo e non serve riavviare niente. Solo la memoria e la riga di avvio chiedono un riavvio, e solo per quelli compare il pulsante. La versione di Minecraft non si applica con un riavvio ma con un aggiornamento, dalla scheda Stato.
+
+        Ogni modifica tiene una copia del file con la data, perché una riga sbagliata qui impedisce al server di partire. "Togli" non cancella la riga: la commenta, così LinuxGSM torna al valore di fabbrica e si può sempre rimetterla.
+
+        Un valore vuoto non è un valore di fabbrica: è una riga che il server esegue lo stesso. Per questo l'app non lo lascia salvare.
+
+        L'elenco completo con le spiegazioni ufficiali:
+        https://docs.linuxgsm.com/configuration/game-server-config
         """.trimIndent()
     )
 

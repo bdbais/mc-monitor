@@ -1,14 +1,15 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.22.
+Versione 1.23.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
 - [3. I due passi: il computer e i mondi](#3-i-due-passi-il-computer-e-i-mondi)
 - [4. Configurare un server](#4-configurare-un-server)
 - [5. Stato e controllo](#5-stato-e-controllo)
-- [6. I parametri del server](#6-i-parametri-del-server)
+- [6. Le impostazioni del server](#6-le-impostazioni-del-server)
+- [6bis. Le impostazioni tecniche di LinuxGSM](#6bis-le-impostazioni-tecniche-di-linuxgsm)
 - [7. Il progetto: rifare questo server altrove](#7-il-progetto-rifare-questo-server-altrove)
 - [8. Console](#8-console)
 - [9. Le macro](#9-le-macro)
@@ -218,35 +219,82 @@ L'indirizzo da dare a chi gioca ha sempre la porta scritta, anche quando è la 2
 default: senza, le app di messaggistica lo scambiano per l'indirizzo di un sito e lo
 trasformano in un link che non porta da nessuna parte.
 
-Sulla riga **Parametri del server** ci sono due pulsanti: la **cassa** apre il progetto
-(sezione 7), la **matita** apre tutti i parametri (sezione 6).
+Sulla riga **Impostazioni del server** ci sono due pulsanti: la **cassa** apre il progetto
+(sezione 7), la **matita** apre le impostazioni del gioco (sezione 6), da cui si arriva
+anche a quelle tecniche di LinuxGSM.
 
 Trascina verso il basso per aggiornare.
 
-## 6. I parametri del server
+## 6. Le impostazioni del server
 
 Il pulsante con la matita, nella scheda Stato.
 
-Il file `lgsm/config-lgsm/<script>/<script>.cfg` decide quanta memoria dare a Java, quale
-versione scaricare, su quale porta rispondere, quanti backup tenere. Prima l'app ne
-scriveva uno solo, `mcversion`, e per il resto bisognava collegarsi al computer a mano.
+Sono le impostazioni del **gioco**: difficoltà, messaggio di benvenuto, quanti giocatori
+entrano, quanto lontano si vede, chi può collegarsi. Vivono in
+`serverfiles/server.properties`, e fino alla 1.22 dall'app non si potevano toccare in
+nessun modo.
 
-In alto i parametri scritti nel file; sotto, in **Da aggiungere**, quelli che LinuxGSM
-conosce ma che nel file non ci sono — finché mancano vale il valore di fabbrica. Ognuno ha
-scritto accanto a cosa serve. In fondo si può aggiungere un parametro qualsiasi, anche non
-in elenco.
+Ogni voce ha il suo tipo, non è un campo di testo qualsiasi: la difficoltà è una scelta fra
+quattro parole, la distanza di visuale un numero fra 3 e 32, il resto sono interruttori. Il
+motivo è che il server **non protesta** per un valore sbagliato: scrivendo
+`difficulty=medio` non succede niente, il server usa il valore di fabbrica, e chi l'ha
+scritto resta convinto di aver cambiato qualcosa.
+
+**Niente parte finché non premi Salva.** Le modifiche si accumulano — la riga cambiata si
+segna con un puntino — e partono tutte insieme: una connessione, una copia di sicurezza del
+file, un messaggio. Prima di scrivere ti viene mostrato l'elenco esatto, da cosa a cosa.
+
+Difficoltà e whitelist l'app le scrive nel file **e** le manda al server, così cambiano
+anche per chi sta giocando in quel momento. Se il server è spento la scrittura vale lo
+stesso, e te lo dice invece di far credere che non sia successo niente.
+
+Le quattro che contano di più su un server piccolo:
+
+- **Difficoltà** — in pacifica i mostri non compaiono affatto
+- **Solo chi è in whitelist** — la vera difesa di un server aperto su internet
+- **Quanto lontano si vede** — il primo numero da abbassare quando il server singhiozza
+- **Metti in pausa quando non c'è nessuno** — smette di consumare quando il mondo è vuoto
+
+Le impostazioni delicate avvisano nella riga stessa: spegnendo il controllo degli account
+Minecraft, per esempio, chiunque può entrare con il nome di un altro.
+
+Dal 1.21.9 quattro impostazioni (fra cui il PVP) sono uscite da `server.properties` e sono
+diventate regole di gioco. L'app se ne accorge dalla versione del server e le manda per la
+strada giusta, invece di scrivere una riga che non farebbe niente.
+
+Le voci che qui non ci sono — porte, indirizzi, messa a punto fine — restano nel file come
+sono: questa schermata non le tocca, e lo dice.
+
+## 6bis. Le impostazioni tecniche di LinuxGSM
+
+In fondo alla schermata delle impostazioni.
+
+Sono gli interruttori del programma che accende e spegne il server: memoria per Java,
+versione da scaricare, quanti backup tenere, dove mandare gli avvisi. Vivono in
+`lgsm/config-lgsm/<script>/<script>.cfg`.
+
+**Se questa schermata è vuota è normale, e non vuol dire che il server non abbia
+impostazioni.** LinuxGSM ha cinque file di configurazione in fila e questo è quello delle
+tue modifiche: nasce vuoto. I valori veri — memoria 1024, quattro backup, log tenuti sette
+giorni — stanno nel file di fabbrica, che non si tocca perché LinuxGSM lo riscrive a ogni
+suo aggiornamento. Qui si scrivono soltanto le differenze.
+
+Sotto ogni parametro c'è scritto **quando avrà effetto**. Quasi tutti — backup, log,
+avvisi — LinuxGSM li rilegge da solo e non serve riavviare niente: il pulsante di riavvio
+compare solo per la memoria e la riga di avvio, che sono le due che finiscono nel comando
+con cui il server viene lanciato. La versione di Minecraft non si applica con un riavvio ma
+con un aggiornamento, dalla scheda Stato.
 
 **Togliere** un parametro non lo cancella: lo commenta. LinuxGSM torna al valore di
-fabbrica e la riga resta lì a ricordare cosa c'era.
+fabbrica e la riga resta lì a ricordare cosa c'era. Un valore **vuoto** invece non è un
+valore di fabbrica: è una riga che il server esegue lo stesso, e `javaram=""` diventa
+`java -XmxM -jar`, cioè un server che non parte più. Per questo l'app non lo lascia
+salvare.
 
 Prima di ogni modifica il file viene copiato con la data nel nome
-(`mcserver.cfg.mcmonitor.bak.20260822...`): una riga sbagliata qui impedisce al server di
-partire, e la copia si recupera collegandosi al computer.
+(`mcserver.cfg.mcmonitor.bak.20260823...`).
 
-Le modifiche valgono dal prossimo avvio: dopo la prima compare il pulsante per riavviare.
-
-I più usati: `javaram` (la memoria, per esempio `2G`), `mcversion` (la versione),
-`maxbackups`, `updateonstart`. L'elenco completo con le spiegazioni ufficiali è nella
+L'elenco completo con le spiegazioni ufficiali è nella
 [documentazione di LinuxGSM](https://docs.linuxgsm.com/configuration/game-server-config),
 richiamata anche dall'aiuto della pagina.
 

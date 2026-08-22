@@ -33,7 +33,9 @@ class ParamsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityParamsBinding
     private var params: List<ServerParam> = emptyList()
-    private var modificato = false
+
+    /** Le chiavi scritte in questa sessione: solo alcune chiedono un riavvio. */
+    private val toccati = mutableSetOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,31 +74,68 @@ class ParamsActivity : AppCompatActivity() {
 
     private fun render() {
         val attivi = params.filter { !it.commented }
+        val file = GameVersion.configPath(Prefs.load()).substringAfterLast('/')
         binding.intestazione.text = buildString {
-            append("${attivi.size} parametri attivi in ")
-            append(GameVersion.configPath(Prefs.load()).substringAfterLast('/'))
-            append(".\nOgni modifica tiene una copia del file, e vale al prossimo riavvio del server.")
+            if (attivi.isEmpty()) {
+                append("In $file non c'è scritto niente, ed è normale: è il file delle tue ")
+                append("modifiche, e nasce vuoto.\n\n")
+                append("Il server sta girando lo stesso, con i valori di fabbrica di LinuxGSM ")
+                append("(memoria 1024, quattro backup, log tenuti sette giorni). Quelli stanno ")
+                append("in un altro file, che non si tocca: qui si scrivono le differenze.")
+            } else {
+                append("$file, l'unico file che questa schermata legge e modifica: ")
+                append("${attivi.size} righe scritte.\n\n")
+                append("Quello che qui non compare non è spento: sta usando il valore di ")
+                append("fabbrica di LinuxGSM.")
+            }
+            append("\n\nOgni modifica tiene una copia datata del file.")
         }
 
         binding.elenco.removeAllViews()
         attivi.sortedBy { it.key }.forEach { param ->
-            binding.elenco.addView(riga(param.key, param.value, param.description, binding.elenco))
+            binding.elenco.addView(
+                riga(param.key, param.value, param.description, binding.elenco, nuovo = false)
+            )
         }
 
         binding.aggiungibili.removeAllViews()
-        ServerParams.addable(params).forEach { (chiave, spiegazione) ->
-            binding.aggiungibili.addView(riga(chiave, "", spiegazione, binding.aggiungibili))
+        ServerParams.addable(params).forEach { info ->
+            binding.aggiungibili.addView(
+                riga(info.key, "", info.what, binding.aggiungibili, nuovo = true)
+            )
         }
-        binding.btnRiavvia.visible(modificato)
+        // Il riavvio butta fuori i giocatori: si propone solo per le righe che
+        // finiscono davvero nella riga di lancio. Il resto LinuxGSM lo rilegge da sé.
+        binding.btnRiavvia.visible(ServerParams.needsRestart(toccati))
     }
 
-    private fun riga(chiave: String, valore: String, spiegazione: String, parent: LinearLayout): View {
+    /**
+     * Una riga dell'elenco.
+     *
+     * [nuovo] lo decide il chiamante, non il valore. Deducendolo dal valore vuoto,
+     * una riga presente nel file ma vuota — cioè proprio quella che impedisce al
+     * server di partire — si riapriva come "Aggiungi un parametro" e perdeva il
+     * pulsante "Togli": l'unica riga da cancellare era anche l'unica che l'app
+     * non lasciava più cancellare.
+     */
+    private fun riga(
+        chiave: String,
+        valore: String,
+        spiegazione: String,
+        parent: LinearLayout,
+        nuovo: Boolean
+    ): View {
         val item = ItemParamBinding.inflate(layoutInflater, parent, false)
         item.chiave.text = chiave
-        item.valore.text = if (valore.isBlank()) "(non impostato)" else valore
+        item.valore.text = when {
+            nuovo -> "valore di fabbrica"
+            valore.isBlank() -> "riga vuota: il server potrebbe non partire"
+            else -> valore
+        }
+        val effetto = ServerParams.effectLabel(chiave)
         item.spiegazione.visible(spiegazione.isNotBlank())
-        item.spiegazione.text = spiegazione
-        val apri = { editDialog(chiave, valore, nuovo = valore.isBlank()) }
+        item.spiegazione.text = if (effetto.isBlank()) spiegazione else "$spiegazione\n$effetto"
+        val apri = { editDialog(chiave, valore, nuovo) }
         item.card.setOnClickListener { apri() }
         item.btnModifica.setOnClickListener { apri() }
         return item.root
@@ -141,6 +180,10 @@ class ParamsActivity : AppCompatActivity() {
                 when {
                     !ServerParams.isValidKey(k) ->
                         toast("Nome non valido: solo lettere, numeri e trattino basso")
+                    v.isBlank() -> toast(
+                        "Un valore vuoto e' una riga che il server esegue lo stesso: " +
+                                "per tornare al valore di fabbrica usa Togli."
+                    )
                     else -> {
                         d.dismiss()
                         scrivi(k, v)
@@ -163,7 +206,7 @@ class ParamsActivity : AppCompatActivity() {
             binding.swipe.isRefreshing = false
             esito.fold(
                 onSuccess = {
-                    modificato = true
+                    toccati += chiave
                     toast("$chiave salvato")
                     load()
                 },
@@ -191,7 +234,7 @@ class ParamsActivity : AppCompatActivity() {
                     binding.swipe.isRefreshing = false
                     esito.fold(
                         onSuccess = {
-                            modificato = true
+                            toccati += chiave
                             toast("$chiave tolto")
                             load()
                         },
@@ -213,7 +256,7 @@ class ParamsActivity : AppCompatActivity() {
                     val esito = runCatching { McRepository.restart() }
                     binding.swipe.isRefreshing = false
                     showText("Riavvio", esito.getOrElse { it.userMessage() })
-                    modificato = false
+                    toccati.clear()
                     render()
                 }
             }

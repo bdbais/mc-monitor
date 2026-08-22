@@ -137,4 +137,94 @@ class PresenceTest {
         assertEquals("Vale", messaggi[1].name)
         assertEquals(1700000250L, messaggi[1].epochSeconds)
     }
+
+    @Test
+    fun `il proprio telefono di ieri sparisce dall'elenco`() {
+        // Reinstallando l'app l'identificativo cambia: sul server resta il segnale
+        // di prima, e ci si ritrova due volte in elenco.
+        val elenco = listOf(
+            Admin(id = "nuovo1", name = "Bais", secondsAgo = 5, doing = ""),
+            Admin(id = "vecchio1", name = "Bais", secondsAgo = 4000, doing = "")
+        )
+        val puliti = Presence.withoutOwnGhosts(elenco, "nuovo1", "Bais")
+        assertEquals(1, puliti.size)
+        assertEquals("nuovo1", puliti[0].id)
+    }
+
+    @Test
+    fun `un altro amministratore collegato non si tocca mai`() {
+        // Stesso nome, ma c'e' adesso: e' un'altra persona, e va vista.
+        val elenco = listOf(
+            Admin(id = "nuovo1", name = "Bais", secondsAgo = 5, doing = ""),
+            Admin(id = "altro1", name = "Bais", secondsAgo = 20, doing = "riavvio")
+        )
+        assertEquals(2, Presence.withoutOwnGhosts(elenco, "nuovo1", "Bais").size)
+    }
+
+    @Test
+    fun `chi e' uscito da poco resta in elenco`() {
+        // "Vale e' uscita dieci minuti fa" e' informazione utile: sparisce solo
+        // chi ha il tuo stesso nome.
+        val elenco = listOf(
+            Admin(id = "nuovo1", name = "Bais", secondsAgo = 5, doing = ""),
+            Admin(id = "vale1", name = "Vale", secondsAgo = 600, doing = "")
+        )
+        assertEquals(2, Presence.withoutOwnGhosts(elenco, "nuovo1", "Bais").size)
+    }
+
+    @Test
+    fun `i segnali vecchi di piu di un'ora vengono buttati`() {
+        val comando = Presence.list()
+        assertTrue(comando.contains("-mmin +60"))
+        assertTrue(comando.contains("-delete"))
+    }
+
+    @Test
+    fun `la riga scritta due volte si legge una volta sola`() {
+        // Il sintomo visto dall'utente: lo stesso messaggio due volte, con lo
+        // stesso orario. La riga era finita davvero due volte nel file, e questi
+        // file restano com'e' sono: il doppione va tolto in lettura.
+        val raw = """
+            ora=1700000300
+            {"id":"aaa111","nome":"Federico","ts":1700000100,"testo":"Ciao Vale","su":"","tutti":true}
+            {"id":"aaa111","nome":"Federico","ts":1700000100,"testo":"Ciao Vale","su":"","tutti":true}
+        """.trimIndent()
+        val messaggi = Presence.parseMessages(raw)
+        assertEquals(1, messaggi.size)
+        assertEquals("Ciao Vale", messaggi[0].text)
+    }
+
+    @Test
+    fun `due persone che dicono la stessa cosa restano due`() {
+        // Il filtro non deve mangiarsi i messaggi veri: stesso testo, stesso
+        // secondo, ma telefoni diversi.
+        val raw = """
+            ora=1700000300
+            {"id":"aaa111","nome":"Federico","ts":1700000100,"testo":"ok"}
+            {"id":"bbb222","nome":"Vale","ts":1700000100,"testo":"ok"}
+        """.trimIndent()
+        assertEquals(2, Presence.parseMessages(raw).size)
+    }
+
+    @Test
+    fun `la stessa persona puo ridirlo piu tardi`() {
+        val raw = """
+            ora=1700000300
+            {"id":"aaa111","nome":"Federico","ts":1700000100,"testo":"ci sei?"}
+            {"id":"aaa111","nome":"Federico","ts":1700000160,"testo":"ci sei?"}
+        """.trimIndent()
+        assertEquals(2, Presence.parseMessages(raw).size)
+    }
+
+    @Test
+    fun `una nota e un messaggio uguale non si mangiano`() {
+        // Stesso telefono, stesso secondo, stesso testo, ma uno e' una nota su un
+        // giocatore e l'altro no: sono due cose diverse.
+        val raw = """
+            ora=1700000300
+            {"id":"aaa111","nome":"Federico","ts":1700000100,"testo":"tornato","su":""}
+            {"id":"aaa111","nome":"Federico","ts":1700000100,"testo":"tornato","su":"Ciccio"}
+        """.trimIndent()
+        assertEquals(2, Presence.parseMessages(raw).size)
+    }
 }

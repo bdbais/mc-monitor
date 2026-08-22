@@ -98,16 +98,38 @@ object Presence {
         "rm -f $DIR/presence/${safeId(id)}.json 2>/dev/null; echo ok"
 
     /**
-     * Elenco dei segnali più l'ora del server. I file più vecchi di un giorno
-     * vengono buttati: sono telefoni che non torneranno.
+     * Elenco dei segnali più l'ora del server.
+     *
+     * I segnali vecchi di più di un'ora vengono buttati. La pagina si chiama "chi
+     * c'è adesso": sapere che qualcuno è uscito dieci minuti fa serve, sapere che
+     * un telefono si è fatto vivo l'ultima volta ieri no, e intanto quel nome
+     * resta lì a occupare l'elenco.
      */
     fun list(): String = """
         d=$DIR/presence
         mkdir -p "${'$'}d"
-        find "${'$'}d" -type f -name '*.json' -mtime +1 -delete 2>/dev/null
+        find "${'$'}d" -type f -name '*.json' -mmin +60 -delete 2>/dev/null
         echo "ora=${'$'}(date +%s)"
         for f in "${'$'}d"/*.json; do [ -f "${'$'}f" ] || continue; cat "${'$'}f"; done
     """.trimIndent()
+
+    /**
+     * Toglie i propri fantasmi dall'elenco.
+     *
+     * L'identificativo del telefono nasce a caso e non sopravvive a una
+     * reinstallazione: chi reinstalla l'app lascia sul server il segnale di
+     * prima, e si ritrova due volte in elenco — una come "tu", una come "non c'è
+     * più". È lo stesso nome, e non è collegato: è quasi certamente il proprio
+     * telefono di ieri.
+     *
+     * Chi è collegato adesso non si tocca mai, nemmeno se ha il tuo stesso nome:
+     * quello è un altro amministratore, e va visto.
+     */
+    fun withoutOwnGhosts(admins: List<Admin>, myId: String, myName: String): List<Admin> {
+        val mio = safeId(myId)
+        val nome = safeName(myName)
+        return admins.filter { it.active || it.id == mio || !it.name.equals(nome, ignoreCase = true) }
+    }
 
     fun parseAdmins(raw: String): List<Admin> {
         val text = Lgsm.clean(raw)
@@ -190,6 +212,10 @@ object Presence {
                     )
                 }.getOrNull()
             }
+            // Stesso telefono, stesso secondo, stesse parole: è una riga scritta
+            // due volte, non qualcuno che ha scritto due volte. Serve anche per i
+            // file in cui il doppione c'è già finito.
+            .distinctBy { listOf(it.id, it.epochSeconds, it.text, it.about) }
     }
 
     /**

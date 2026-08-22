@@ -60,6 +60,12 @@ object BlueprintRepository {
                     problemi += "$chiave: nome non ammesso, saltato"
                     return@forEach
                 }
+                if (valore.isBlank()) {
+                    // Scriverla vuota è peggio che non scriverla: LinuxGSM userebbe
+                    // una riga vuota al posto del suo valore di fabbrica.
+                    problemi += "$chiave: valore vuoto nel progetto, saltato"
+                    return@forEach
+                }
                 val r = SshManager.exec(c, ServerParams.set(c, chiave, valore), 30_000)
                 if (ServerParams.written(r.text)) {
                     scritti++

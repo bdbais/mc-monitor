@@ -67,11 +67,19 @@
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Le impostazioni del gioco: server.properties. -->
+        <activity
+            android:name=".ui.GameSettingsActivity"
+            android:exported="false"
+            android:label="Impostazioni del server"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Tutti i parametri di LinuxGSM, modificabili. -->
         <activity
             android:name=".ui.ParamsActivity"
             android:exported="false"
-            android:label="Parametri del server"
+            android:label="Impostazioni tecniche"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 

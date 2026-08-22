@@ -1,6 +1,7 @@
 package com.bellizia.mcmonitor.data
 
 import com.bellizia.mcmonitor.lgsm.ChatMessage
+import com.bellizia.mcmonitor.lgsm.GameSettings
 import com.bellizia.mcmonitor.lgsm.GameVersion
 import com.bellizia.mcmonitor.lgsm.JoinAttempt
 import com.bellizia.mcmonitor.lgsm.Lgsm
@@ -110,6 +111,53 @@ object McRepository {
         val testo = Lgsm.clean(r.text).trim()
         if (!ServerParams.written(testo)) throw SshException(testo.ifBlank { "Modifica non riuscita." })
         return testo
+    }
+
+    // ------------------------------------------ impostazioni del gioco
+
+    /** Le righe di server.properties, chiave per valore. */
+    suspend fun properties(): Map<String, String> {
+        val c = cfg()
+        val r = SshManager.exec(c, GameSettings.readAll(c), 30_000)
+        if (r.exitCode == GameSettings.EXIT_NO_PROPERTIES) {
+            throw SshException(
+                "server.properties non c'è ancora: Minecraft lo scrive al primo avvio. " +
+                        "Accendi il server una volta e torna qui."
+            )
+        }
+        return GameSettings.parse(r.text)
+    }
+
+    /**
+     * Scrive più impostazioni in una volta sola, e per quelle che hanno un comando
+     * lo manda anche alla console.
+     *
+     * Sempre il file e poi il comando, mai solo il comando: il comando cambia il
+     * mondo che sta girando adesso, il file decide come riparte. Se il server è
+     * spento o non risponde, la scrittura è comunque andata a buon fine e va detto,
+     * altrimenti sembra che non sia successo niente.
+     */
+    suspend fun setProperties(
+        values: Map<String, String>,
+        versione: String?
+    ): String {
+        val c = cfg()
+        val r = SshManager.exec(c, GameSettings.setProperties(c, values), 45_000)
+        val testo = Lgsm.clean(r.text).trim()
+        if (!GameSettings.written(testo)) throw SshException(testo.ifBlank { "Modifica non riuscita." })
+
+        val comandi = values.mapNotNull { (chiave, valore) ->
+            GameSettings.byKey(chiave)?.let { GameSettings.commandFor(it, valore, versione) }
+        }
+        if (comandi.isEmpty()) return "salvato"
+
+        val falliti = comandi.count { comando -> runCatching { send(comando) }.isFailure }
+        return when {
+            falliti == 0 -> "salvato, e già applicato"
+            falliti == comandi.size ->
+                "salvato nel file, ma il server non ha ricevuto i comandi: varrà dal prossimo avvio"
+            else -> "salvato; $falliti comandi su ${comandi.size} non sono arrivati al server"
+        }
     }
 
     /** Quando quel giocatore ha lasciato l'ultima traccia nel log. */

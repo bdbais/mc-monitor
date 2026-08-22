@@ -109,7 +109,7 @@ class ServerParamsTest {
             ServerParam("mcversion", "1.20.1", false),
             ServerParam("javaram", "2G", true)
         )
-        val proponibili = ServerParams.addable(presenti).map { it.first }
+        val proponibili = ServerParams.addable(presenti).map { it.key }
         assertFalse(proponibili.contains("mcversion"))
         // Commentato vuol dire spento: si può riaccendere.
         assertTrue(proponibili.contains("javaram"))
@@ -124,9 +124,82 @@ class ServerParamsTest {
 
     @Test
     fun `ogni parametro del catalogo e' spiegato`() {
-        ServerParams.catalogue.forEach { (chiave, testo) ->
-            assertTrue(chiave, ServerParams.isValidKey(chiave))
-            assertTrue(chiave, testo.length > 20)
+        ServerParams.catalogue.forEach { info ->
+            assertTrue(info.key, ServerParams.isValidKey(info.key))
+            assertTrue(info.key, info.what.length > 20)
         }
+    }
+
+    @Test
+    fun `il commento in coda non entra nel valore`() {
+        // LinuxGSM dice di copiare le righe dal suo _default.cfg, e quelle righe
+        // sono scritte cosi'. Prima il valore diventava tutta la riga, commento
+        // compreso, e bastava riaprirla e salvarla per rompere l'avvio.
+        val righe = ServerParams.parse("""
+            javaram="1024" # -Xmx${'$'}1024M
+            maxbackups="4"
+            logdays=7 # giorni
+            startparameters="-jar server.jar nogui"
+        """.trimIndent())
+        assertEquals("1024", righe.first { it.key == "javaram" }.value)
+        assertEquals("4", righe.first { it.key == "maxbackups" }.value)
+        assertEquals("7", righe.first { it.key == "logdays" }.value)
+        assertEquals("-jar server.jar nogui", righe.first { it.key == "startparameters" }.value)
+    }
+
+    @Test
+    fun `il cancelletto dentro il valore resta`() {
+        val righe = ServerParams.parse("""servername="Casa#1"""")
+        assertEquals("Casa#1", righe.first().value)
+    }
+
+    @Test
+    fun `se la chiave c'e' due volte comanda l'ultima`() {
+        // Il file viene eseguito dall'alto in basso: l'ultima assegnazione vince.
+        // Mostrando la prima si diceva un valore che il server non usa.
+        val righe = ServerParams.parse("""
+            javaram="1024"
+            maxbackups="4"
+            javaram="4096"
+        """.trimIndent())
+        assertEquals(1, righe.count { it.key == "javaram" })
+        assertEquals("4096", righe.first { it.key == "javaram" }.value)
+    }
+
+    @Test
+    fun `nel catalogo non ci sono piu' le chiavi che LinuxGSM non legge`() {
+        // Verificate sul _default.cfg di mcserver: non esistono. Porta, indirizzo
+        // e nome, per Minecraft, LinuxGSM li prende da server.properties.
+        val chiavi = ServerParams.catalogue.map { it.key }
+        listOf("port", "queryport", "ip", "servername", "javaparms", "mcbranch").forEach {
+            assertFalse(it, chiavi.contains(it))
+        }
+        assertEquals(16, chiavi.size)
+        assertEquals(chiavi.size, chiavi.distinct().size)
+    }
+
+    @Test
+    fun `il riavvio si propone solo a chi serve`() {
+        assertTrue(ServerParams.needsRestart(listOf("javaram")))
+        assertTrue(ServerParams.needsRestart(listOf("maxbackups", "startparameters")))
+        // Riavviare non cambia la versione: quella vuole un aggiornamento.
+        assertFalse(ServerParams.needsRestart(listOf("mcversion")))
+        // Questi LinuxGSM li rilegge da solo a ogni esecuzione.
+        assertFalse(ServerParams.needsRestart(listOf("maxbackups", "logdays", "discordalert")))
+        assertFalse(ServerParams.needsRestart(emptyList()))
+    }
+
+    @Test
+    fun `ogni voce dice quando avra' effetto`() {
+        ServerParams.catalogue.forEach { info ->
+            assertTrue(info.key, ServerParams.effectLabel(info.key).isNotBlank())
+        }
+        assertEquals("", ServerParams.effectLabel("inventato"))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `un valore vuoto viene rifiutato`() {
+        // `javaram=""` diventa `java -XmxM -jar`: il server non parte piu'.
+        ServerParams.set(cfg, "javaram", "   ")
     }
 }

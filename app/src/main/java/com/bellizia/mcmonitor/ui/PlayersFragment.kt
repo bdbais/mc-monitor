@@ -160,12 +160,41 @@ class PlayersFragment : Fragment() {
             .setNegativeButton("Annulla") { _, _ -> renderWhitelistSwitch(!attivare) }
             .setOnCancelListener { renderWhitelistSwitch(!attivare) }
             .setPositiveButton(if (attivare) "Chiudi" else "Apri") { _, _ ->
-                command(
-                    if (attivare) "whitelist on" else "whitelist off",
-                    if (attivare) "Server chiuso: solo la whitelist" else "Server aperto a tutti"
-                )
+                applicaWhitelist(attivare)
             }
             .show()
+    }
+
+    /**
+     * Accende o spegne la whitelist scrivendo anche il file.
+     *
+     * Il comando da console cambia il server che sta girando adesso, ma questo
+     * interruttore lo legge da `white-list` in server.properties, che è il file
+     * che decide come riparte. Mandando solo il comando, questa schermata e quella
+     * delle impostazioni finivano per dire due cose diverse a un tocco di
+     * distanza, e dopo un riavvio vinceva quella che nessuno aveva scelto.
+     */
+    private fun applicaWhitelist(attivare: Boolean) {
+        val valore = if (attivare) "true" else "false"
+        viewLifecycleOwner.lifecycleScope.launch {
+            val esito = runCatching {
+                McRepository.setProperties(mapOf("white-list" to valore), versione = null)
+            }
+            if (!isAdded) return@launch
+            esito.fold(
+                onSuccess = {
+                    toast(
+                        if (attivare) "Server chiuso: solo la whitelist"
+                        else "Server aperto a tutti"
+                    )
+                    refresh()
+                },
+                onFailure = {
+                    toast("Non riuscito: ${it.userMessage()}")
+                    renderWhitelistSwitch(!attivare)
+                }
+            )
+        }
     }
 
     private fun renderWaiting(waiting: List<JoinAttempt>) {

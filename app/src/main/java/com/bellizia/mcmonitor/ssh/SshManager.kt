@@ -56,9 +56,21 @@ object SshManager {
                     run(s, command, timeoutMs)
                 } catch (first: Exception) {
                     close()
-                    // Solo una sessione riciclata merita un secondo tentativo: se la
-                    // connessione era appena stata aperta, ritentare raddoppia l'attesa.
-                    if (!reused) throw SshException(friendly(first), first)
+                    // Si ritenta solo a due condizioni, e servono entrambe.
+                    //
+                    // La sessione dev'essere riciclata: se era appena stata aperta,
+                    // ritentare raddoppia soltanto l'attesa.
+                    //
+                    // E il comando non dev'essere mai partito. Questa è la
+                    // condizione che conta: una volta che il canale si è
+                    // agganciato, il comando sul server è in esecuzione, e se
+                    // quello che si rompe è la lettura della risposta ripeterlo
+                    // lo esegue una seconda volta. Su un comando che aggiunge una
+                    // riga in fondo a un file — un messaggio in chat, un oggetto
+                    // dato a un giocatore — vuol dire farlo due volte.
+                    if (!safeToRetry(reused, first)) {
+                        throw SshException(friendly(first), first)
+                    }
                     try {
                         run(obtain(cfg).first, command, timeoutMs)
                     } catch (e: Exception) {
@@ -372,8 +384,30 @@ object SshManager {
     private fun fingerprintOf(s: Session): String =
         runCatching { s.hostKey?.getFingerPrint(JSch()) ?: "" }.getOrDefault("")
 
+    /**
+     * Il comando non è mai arrivato al server: la sessione era morta, o il canale
+     * non si è agganciato. È l'unico caso in cui ripetere è sicuro.
+     */
+    internal class ChannelNotStarted(cause: Exception) : Exception(cause.message, cause)
+
+    /**
+     * Se ripetere il comando è sicuro.
+     *
+     * Servono due cose insieme: che la sessione fosse riciclata (una appena
+     * aperta che fallisce non guadagna niente a essere riprovata subito) e che il
+     * comando non sia mai partito. La seconda è quella che conta: dopo che il
+     * canale si è agganciato il comando è in esecuzione sul server, e ripeterlo
+     * perché si è persa la risposta lo esegue due volte.
+     */
+    internal fun safeToRetry(reused: Boolean, error: Throwable): Boolean =
+        reused && error is ChannelNotStarted
+
     private fun run(s: Session, command: String, timeoutMs: Long): ExecResult {
-        val channel = s.openChannel("exec") as ChannelExec
+        val channel = try {
+            s.openChannel("exec") as ChannelExec
+        } catch (e: Exception) {
+            throw ChannelNotStarted(e)
+        }
         val out = ByteArrayOutputStream()
         val err = ByteArrayOutputStream()
         try {
@@ -381,7 +415,13 @@ object SshManager {
             channel.setOutputStream(out)
             channel.setErrStream(err)
             channel.setPty(false)
-            channel.connect(15_000)
+            try {
+                channel.connect(15_000)
+            } catch (e: Exception) {
+                // Da qui in poi il comando è partito: quello che va storto dopo
+                // non autorizza più a ripeterlo.
+                throw ChannelNotStarted(e)
+            }
 
             val deadline = System.currentTimeMillis() + timeoutMs
             while (!channel.isClosed) {
@@ -408,7 +448,13 @@ object SshManager {
 
     private fun ms(from: Long) = "${System.currentTimeMillis() - from} ms"
 
-    private fun friendly(e: Exception): String = when {
+    private fun friendly(wrapped: Exception): String = friendlyOf(unwrap(wrapped))
+
+    /** L'involucro serve a decidere se ritentare, non a essere letto da qualcuno. */
+    private fun unwrap(e: Exception): Exception =
+        if (e is ChannelNotStarted) (e.cause as? Exception ?: e) else e
+
+    private fun friendlyOf(e: Exception): String = when {
         e is SshException -> e.message ?: "Errore SSH"
         e is UnknownHostException -> "Host non trovato: controlla indirizzo e DNS."
         e is ConnectException -> "Connessione rifiutata: server spento o porta SSH errata."

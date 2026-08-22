@@ -40,6 +40,9 @@ class AdminActivity : AppCompatActivity() {
     private val orario = SimpleDateFormat("d MMM HH:mm", Locale.ITALY)
     private var ultimoMessaggio = 0L
 
+    /** Un invio alla volta: al campo di testo si arriva da due tasti diversi. */
+    private var inviando = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAdminBinding.inflate(layoutInflater)
@@ -76,8 +79,9 @@ class AdminActivity : AppCompatActivity() {
         Notifications.clearAdminMessages(this)
     }
 
-    private fun renderAdmins(admins: List<Admin>) {
+    private fun renderAdmins(tutti: List<Admin>) {
         val mio = Presence.safeId(Prefs.deviceId)
+        val admins = Presence.withoutOwnGhosts(tutti, Prefs.deviceId, Prefs.adminName)
         val attivi = admins.filter { it.active }
         binding.statoPresenza.text = when {
             attivi.isEmpty() -> "Nessuno, nemmeno tu: il computer non ha ancora ricevuto segnali."
@@ -132,18 +136,36 @@ class AdminActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Manda il messaggio, una volta sola.
+     *
+     * Ci arrivano due strade — il pulsante e il tasto della tastiera — e il
+     * pulsante disabilitato non chiudeva la seconda. Con l'invio che passa da SSH
+     * e ci mette qualche secondo, il testo restava nel campo, sembrava non essere
+     * partito, e si premeva di nuovo: in chat comparivano due volte le stesse
+     * parole. Per questo il campo si svuota subito, e ci torna solo se l'invio
+     * fallisce davvero.
+     */
     private fun invia() {
+        if (inviando) return
         val testo = binding.messaggio.text?.toString()?.trim().orEmpty()
         if (testo.isBlank()) return
         val aTutti = binding.aTutti.isChecked
+
+        inviando = true
         binding.btnInvia.isEnabled = false
+        binding.messaggio.setText("")
+
         lifecycleScope.launch {
             val esito = runCatching { PresenceRepository.send(testo, broadcast = aTutti) }
+            inviando = false
             binding.btnInvia.isEnabled = true
             esito.onSuccess {
-                binding.messaggio.setText("")
                 aggiorna()
             }.onFailure {
+                // Non è partito: il testo torna dov'era, così non si riscrive.
+                binding.messaggio.setText(testo)
+                binding.messaggio.setSelection(testo.length)
                 android.widget.Toast.makeText(
                     this@AdminActivity,
                     "Messaggio non inviato: ${it.userMessage()}",
