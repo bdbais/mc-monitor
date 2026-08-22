@@ -2,7 +2,7 @@
 
 App Android per gestire un server Minecraft installato con **LinuxGSM**, via **SSH**.
 
-APK pronto all'uso: **`MC-Monitor-1.18.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
+APK pronto all'uso: **`MC-Monitor-1.19.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
 
 **[Manuale d'uso completo](MANUALE.md)** · [Release e APK](https://github.com/bdbais/mc-monitor/releases)
 
@@ -18,6 +18,19 @@ APK pronto all'uso: **`MC-Monitor-1.18.apk`** (firmato, `minSdk 26` / Android 8+
 1. Copia l'APK sul telefono.
 2. Abilita "Installa app sconosciute" per il gestore file / browser che usi.
 3. Apri l'APK e installa.
+
+## Nome e password
+
+Al primo avvio l'app chiede il nome dell'amministratore e una password per aprirsi: da qui
+si spegne un server, si bannano giocatori e si cancella un mondo, quindi il telefono
+lasciato sul tavolo non deve bastare. Dove c'è impronta o volto, quelli fanno da
+scorciatoia e la password resta la via di riserva.
+
+Della password si conserva solo l'impronta PBKDF2-HMAC-SHA256 (210 000 iterazioni, sale
+casuale per installazione): non esiste recupero, e l'app lo dice prima di accettarla. Si
+può rimandare — "Per ora senza password" — e accenderla dopo dal menu, voce **Blocco e
+amministratore**, dove si sceglie anche dopo quanto tempo in secondo piano richiudere:
+subito, due minuti, un quarto d'ora o mai.
 
 ## I due passi
 
@@ -91,7 +104,7 @@ lo riazzera dopo una reinstallazione legittima del server.
 - **Stato** — `lgsm details`: stato STARTED/STOPPED, IP, porte, versione, uptime, output completo. Pulsanti **Avvia / Ferma / Riavvia** (`lgsm start|stop|restart`), con conferma sulle azioni distruttive.
 - **Console** — coda di `logs/latest.log` (fallback sul console log di LinuxGSM), aggiornamento automatico ogni 6 s, e invio comandi alla console del server. La riga di scorciatoie sopra il campo di testo compila il comando al posto tuo: quelle che finiscono con uno spazio (`tp `, `kick `…) aspettano l'argomento e aprono la tastiera, le altre sono complete e basta premere **Invia**.
 - **Giocatori** — chi è online con coordinate X/Y/Z e dimensione; whitelist e lista ban lette da `whitelist.json` e `banned-players.json`, con aggiunta/rimozione. Toccando un nome (online, in whitelist o bannato) si apre il pannello con tutte le operazioni — vedi sotto.
-- **Mod** — cosa è installato sul server, ricerca su Modrinth con installazione lato server e verifica sha1, importazione di modpack `.mrpack`, installazione di Fabric su un server vanilla. Vedi [Mod e modpack](MANUALE.md#8-mod-e-modpack).
+- **Mod** — cosa è installato sul server, ricerca su Modrinth con installazione lato server e verifica sha1, importazione di modpack `.mrpack`, installazione di Fabric su un server vanilla. Vedi [Mod e modpack](MANUALE.md#9-mod-e-modpack).
 - **Versione** — cambio della versione di Minecraft dall'elenco ufficiale Mojang, scrivendo `mcversion` nella configurazione LinuxGSM e lanciando `update`, con backup opzionale del mondo.
 - **Mappa** — piano X/Z navigabile (trascina, pizzica, doppio tap) con griglia dei chunk, spawn, giocatori e **scia degli spostamenti** aggiornata in tempo reale; filtro Overworld / Nether / End. Il pulsante **Mappa web** apre Dynmap/BlueMap a tutto schermo, se configurata.
 

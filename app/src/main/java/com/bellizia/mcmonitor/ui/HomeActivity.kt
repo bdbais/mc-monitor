@@ -89,6 +89,7 @@ class HomeActivity : AppCompatActivity() {
             R.id.nav_connessione, R.id.nav_installati -> show(item.itemId)
             R.id.nav_nuovo -> createServer()
             R.id.nav_profili -> startActivity(Intent(this, ServersActivity::class.java))
+            R.id.nav_blocco -> LockSettings.show(this)
             R.id.nav_manuale -> About.manual(this)
             R.id.nav_info -> About.show(this)
         }
@@ -147,10 +148,13 @@ class HomeActivity : AppCompatActivity() {
     private fun refreshHeader() {
         val account = Prefs.account()
         val subtitle = binding.nav.getHeaderView(0)?.findViewById<TextView>(R.id.navSubtitle)
-        subtitle?.text = if (account.hasCredentials) {
-            Privacy.account(account.user, "${account.host}:${account.port}")
-        } else {
-            "nessun computer collegato"
+        subtitle?.text = buildString {
+            val admin = Prefs.adminName
+            if (admin.isNotBlank()) append(admin).append(" · ")
+            append(
+                if (account.hasCredentials) Privacy.account(account.user, "${account.host}:${account.port}")
+                else "nessun computer collegato"
+            )
         }
     }
 

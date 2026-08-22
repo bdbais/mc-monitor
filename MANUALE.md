@@ -1,20 +1,21 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.18.
+Versione 1.19.
 
 - [1. Installazione](#1-installazione)
-- [2. I due passi: il computer e i mondi](#2-i-due-passi-il-computer-e-i-mondi)
-- [3. Configurare un server](#3-configurare-un-server)
-- [4. Stato e controllo](#4-stato-e-controllo)
-- [5. Console](#5-console)
-- [6. Giocatori](#6-giocatori)
-- [7. Mappa](#7-mappa)
-- [8. Mod e modpack](#8-mod-e-modpack)
-- [9. Cambiare versione di Minecraft](#9-cambiare-versione-di-minecraft)
-- [10. RCON](#10-rcon)
-- [11. Aggiornamenti dell'app](#11-aggiornamenti-dellapp)
-- [12. Se qualcosa non funziona](#12-se-qualcosa-non-funziona)
+- [2. Il nome e la password](#2-il-nome-e-la-password)
+- [3. I due passi: il computer e i mondi](#3-i-due-passi-il-computer-e-i-mondi)
+- [4. Configurare un server](#4-configurare-un-server)
+- [5. Stato e controllo](#5-stato-e-controllo)
+- [6. Console](#6-console)
+- [7. Giocatori](#7-giocatori)
+- [8. Mappa](#8-mappa)
+- [9. Mod e modpack](#9-mod-e-modpack)
+- [10. Cambiare versione di Minecraft](#10-cambiare-versione-di-minecraft)
+- [11. RCON](#11-rcon)
+- [12. Aggiornamenti dell'app](#12-aggiornamenti-dellapp)
+- [13. Se qualcosa non funziona](#13-se-qualcosa-non-funziona)
 
 ---
 
@@ -25,7 +26,32 @@ gestore file che usi e apri il file. Serve Android 8 o successivo.
 
 L'app non richiede account, non usa servizi intermedi e parla solo con il tuo server.
 
-## 2. I due passi: il computer e i mondi
+## 2. Il nome e la password
+
+Al primo avvio l'app chiede due cose e poi non le chiede più.
+
+**Come ti chiami** — il nome dell'amministratore. Compare nel menu accanto al computer
+collegato, e servirà a firmare i messaggi quando ci sarà la chat fra amministratori.
+
+**Una password per aprire l'app** — perché da qui si spegne il server, si decide chi può
+entrare e si può cancellare un mondo intero: un telefono lasciato sul tavolo non deve
+avere tutto questo a portata di dito.
+
+Se il telefono ha impronta o riconoscimento del volto, l'app propone di usarli: aprendo
+compare il lettore, e la password resta come alternativa quando l'impronta non va.
+
+Si può anche scegliere **"Per ora senza password"**: l'app lo chiede una volta sola e poi
+si apre liberamente. La protezione si accende quando si vuole dal menu, voce **Blocco e
+amministratore**, dove si cambia anche il nome, si toglie la password (serve conoscerla) e
+si decide dopo quanto tempo richiuderla: subito, due minuti, un quarto d'ora, oppure mai
+finché l'app resta aperta.
+
+> **La password non si recupera.** L'app non la conserva: ne tiene solo un'impronta, che
+> non si può riportare indietro. Se la dimentichi l'unica strada è cancellare i dati
+> dell'app da Android e ricominciare — e allora conviene aver esportato la configurazione
+> o aver acceso il backup automatico, così i server si ritrovano tutti reimportando il file.
+
+## 3. I due passi: il computer e i mondi
 
 L'app si apre con un menu a sinistra (l'icona con le tre righe, in alto) diviso nei due
 passi che servono davvero, nell'ordine in cui si fanno.
@@ -107,7 +133,7 @@ come `update` o `details` iniziano a fallire con errori che non dicono qual è l
 Cambiare server chiude sessione SSH, RCON e azzera le scie sulla mappa: i dati di un
 server non possono mescolarsi con quelli di un altro.
 
-## 3. Configurare un server
+## 4. Configurare un server
 
 <img src="store/screenshots/02-impostazioni.png" width="320" alt="Impostazioni">
 
@@ -142,7 +168,7 @@ a un utente preciso, e i comandi alla console funzionano solo collegandosi con q
 Al primo collegamento l'app memorizza l'impronta della chiave host e la verifica ogni
 volta: se cambia, blocca la connessione e lo segnala.
 
-## 4. Stato e controllo
+## 5. Stato e controllo
 
 <img src="store/screenshots/07-stato.png" width="320" alt="Stato del server">
 
@@ -154,7 +180,7 @@ Più in basso: la versione di Minecraft configurata e l'elenco dei mod installat
 
 Trascina verso il basso per aggiornare.
 
-## 5. Console
+## 6. Console
 
 <img src="store/screenshots/06-console.png" width="320" alt="Console">
 
@@ -180,7 +206,7 @@ un `ban` partito per sbaglio.
 
 I comandi viaggiano su `tmux send-keys`, oppure via RCON se l'hai attivato.
 
-## 6. Giocatori
+## 7. Giocatori
 
 <img src="store/screenshots/03-giocatori.png" width="320" alt="Giocatori">
 
@@ -205,7 +231,7 @@ comunque agli altri di entrare.
 
 Le voci che richiedono il giocatore in gioco sono disattivate quando è offline.
 
-## 7. Mappa
+## 8. Mappa
 
 <img src="store/screenshots/04-mappa.png" width="320" alt="Mappa">
 
@@ -223,7 +249,7 @@ adegua da solo. **Mappa web** apre Dynmap/BlueMap a tutto schermo, se configurat
 Le posizioni arrivano da `data get entity <nome> Pos`: serve un server vanilla, Paper o
 Spigot dalla 1.13 in poi.
 
-## 8. Mod e modpack
+## 9. Mod e modpack
 
 <img src="store/screenshots/05-mod.png" width="320" alt="Scheda Mod">
 
@@ -260,7 +286,7 @@ recupera in un tocco) o **rimuovere**.
 
 Dopo ogni modifica compare il pulsante per riavviare il server.
 
-## 9. Cambiare versione di Minecraft
+## 10. Cambiare versione di Minecraft
 
 Nella scheda Stato, **Cambia versione** mostra l'elenco ufficiale delle release preso dal
 manifesto di Mojang. Scegliendone una, l'app scrive `mcversion` nella configurazione
@@ -271,7 +297,7 @@ Prima di procedere ti viene proposto **Backup e cambio**: usalo. Un mondo salvat
 versione recente spesso non si riapre con una precedente, e l'app te lo segnala quando
 stai tornando indietro.
 
-## 10. RCON
+## 11. RCON
 
 Senza RCON l'app scrive nella console tmux e rilegge il log: ogni aggiornamento lascia
 righe di servizio in `latest.log`. Con RCON le risposte arrivano subito e il log resta
@@ -285,7 +311,7 @@ Il **tunnel SSH** è attivo di default: la porta RCON viaggia dentro la connessi
 quindi non devi aprire porte sul firewall e la password — che il protocollo trasmette in
 chiaro — non esce dal tunnel.
 
-## 11. Aggiornamenti dell'app
+## 12. Aggiornamenti dell'app
 
 All'avvio l'app controlla se sul repository c'è una release più recente. In tal caso
 compare un banner con versione, dimensione e le note: **Aggiorna** scarica l'APK e apre
@@ -294,7 +320,7 @@ l'installer di sistema, **Più tardi** lo nasconde fino al prossimo avvio.
 La prima volta Android chiede di autorizzare MC Monitor a installare app: è una conferma
 di sistema, l'app non installa nulla da sola.
 
-## 12. Se qualcosa non funziona
+## 13. Se qualcosa non funziona
 
 **Diagnostica connessione** (in Impostazioni) prova gli stadi separatamente — DNS, porta
 TCP, handshake SSH, autenticazione — e poi verifica sul server tmux, le sessioni attive,

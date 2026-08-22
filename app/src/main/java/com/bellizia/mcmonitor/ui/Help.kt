@@ -49,7 +49,7 @@ object Help {
 
         Tocca "Apri" su quello che ti interessa: da lì in poi puoi accenderlo, spegnerlo, vedere chi sta giocando, la mappa, le mod.
 
-        Il cestino a destra cancella quel server dal computer per sempre: il mondo, le costruzioni, le mod, tutto. Ti chiede due volte se sei sicura e la seconda volta devi riscrivere il nome. Se il mondo ti interessa, prima fatti fare una copia.
+        Il cestino a destra cancella quel server dal computer per sempre: il mondo, le costruzioni, le mod, tutto. Te lo chiede due volte, e la seconda volta devi riscrivere il nome. Se il mondo ti interessa, prima fatti fare una copia.
 
         Se compare un riquadro giallo "Manutenzione del computer", vuol dire che il programma che fa funzionare i server (si chiama LinuxGSM) è vecchio. Il pulsante lo aggiorna: non tocca il mondo né le mod, e serve perché con quello vecchio ogni tanto le cose smettono di funzionare senza dire perché.
 

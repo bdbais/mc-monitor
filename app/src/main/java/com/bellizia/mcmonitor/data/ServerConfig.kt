@@ -289,6 +289,54 @@ object Prefs {
         save(server.copy(lastUsedAt = System.currentTimeMillis()))
     }
 
+    // ------------------------------------------------- amministratore e blocco
+
+    /**
+     * Come ti chiami quando comandi il server: comparira' accanto alle azioni e,
+     * quando ci sara', nella chat fra amministratori.
+     */
+    var adminName: String
+        get() = sp.getString("adminName", "") ?: ""
+        set(value) {
+            sp.edit().putString("adminName", value.trim()).apply()
+        }
+
+    /** Impronta della password che sblocca l'app, con il suo sale. Mai la password. */
+    var lockHash: String
+        get() = sp.getString("lockHash", "") ?: ""
+        set(value) {
+            sp.edit().putString("lockHash", value).apply()
+        }
+
+    var lockSalt: String
+        get() = sp.getString("lockSalt", "") ?: ""
+        set(value) {
+            sp.edit().putString("lockSalt", value).apply()
+        }
+
+    var lockBiometric: Boolean
+        get() = sp.getBoolean("lockBiometric", false)
+        set(value) {
+            sp.edit().putBoolean("lockBiometric", value).apply()
+        }
+
+    /** Minuti in secondo piano prima di richiedere la password. -1 = mai. */
+    var lockTimeoutMinutes: Int
+        get() = sp.getInt("lockTimeoutMinutes", 2)
+        set(value) {
+            sp.edit().putInt("lockTimeoutMinutes", value).apply()
+        }
+
+    val lockConfigured: Boolean
+        get() = lockHash.isNotBlank() && lockSalt.isNotBlank()
+
+    /** La presentazione del primo avvio si fa una volta sola, anche se si salta. */
+    var welcomeDone: Boolean
+        get() = sp.getBoolean("welcomeDone", false)
+        set(value) {
+            sp.edit().putBoolean("welcomeDone", value).apply()
+        }
+
     var privacyMode: Boolean
         get() = sp.getBoolean("privacyMode", true)
         set(value) {
