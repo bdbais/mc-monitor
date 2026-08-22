@@ -194,7 +194,7 @@ class PlayerActions(
             this.hint = hint
             inputType = InputType.TYPE_CLASS_TEXT
             setSingleLine()
-        }
+        }.dialogoVisibile()
         val container = FrameLayout(context).apply {
             setPadding(60, 20, 60, 0)
             addView(input)

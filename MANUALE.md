@@ -1,21 +1,24 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.20.
+Versione 1.21.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
 - [3. I due passi: il computer e i mondi](#3-i-due-passi-il-computer-e-i-mondi)
 - [4. Configurare un server](#4-configurare-un-server)
 - [5. Stato e controllo](#5-stato-e-controllo)
-- [6. Console](#6-console)
-- [7. Giocatori](#7-giocatori)
-- [8. Mappa](#8-mappa)
-- [9. Mod e modpack](#9-mod-e-modpack)
-- [10. Cambiare versione di Minecraft](#10-cambiare-versione-di-minecraft)
-- [11. RCON](#11-rcon)
-- [12. Aggiornamenti dell'app](#12-aggiornamenti-dellapp)
-- [13. Se qualcosa non funziona](#13-se-qualcosa-non-funziona)
+- [6. I parametri del server](#6-i-parametri-del-server)
+- [7. Il progetto: rifare questo server altrove](#7-il-progetto-rifare-questo-server-altrove)
+- [8. Console](#8-console)
+- [9. Le macro](#9-le-macro)
+- [10. Giocatori](#10-giocatori)
+- [11. Mappa](#11-mappa)
+- [12. Mod e modpack](#12-mod-e-modpack)
+- [13. Cambiare versione di Minecraft](#13-cambiare-versione-di-minecraft)
+- [14. RCON](#14-rcon)
+- [15. Aggiornamenti dell'app](#15-aggiornamenti-dellapp)
+- [16. Se qualcosa non funziona](#16-se-qualcosa-non-funziona)
 
 ---
 
@@ -148,6 +151,14 @@ Nella stessa pagina c'è la chat. I messaggi restano sul computer del server, in
 amministratori, che è esattamente il punto. Non ci sono account: accanto a ogni messaggio
 c'è il nome che ognuno si è dato al primo avvio.
 
+L'interruttore **avvisa tutti** sotto la chat serve per i messaggi che devono trovare gli
+altri anche quando non stanno guardando: sul telefono di chi non l'ha ancora letto compare
+un **numero rosso sull'icona dell'app**, che sparisce appena apre la chat. Senza, il
+messaggio resta lì ad aspettare che qualcuno passi di là.
+
+Anche le note lasciate bannando o ammettendo un giocatore finiscono qui, segnate con il
+nome di quel giocatore.
+
 **Il semaforo.** Prima di avviare, fermare o riavviare il server, se c'è qualcun altro
 collegato l'app lo dice e chiede conferma, con un pulsante per scrivergli invece di
 procedere. Non blocca niente — decidi tu — ma toglie il caso peggiore: due persone che si
@@ -200,18 +211,92 @@ completo di `lgsm details`. I pulsanti **Avvia**, **Ferma** e **Riavvia** chiedo
 conferma quando l'azione disconnette i giocatori, e avvisano se in quel momento c'è un
 altro amministratore collegato.
 
-Più in basso: la versione di Minecraft configurata e l'elenco dei mod installati.
+Più in basso: la versione di Minecraft configurata e l'elenco dei mod installati, che
+porta alla scheda Mod.
+
+L'indirizzo da dare a chi gioca ha sempre la porta scritta, anche quando è la 25565 di
+default: senza, le app di messaggistica lo scambiano per l'indirizzo di un sito e lo
+trasformano in un link che non porta da nessuna parte.
+
+Sulla riga **Parametri del server** ci sono due pulsanti: la **cassa** apre il progetto
+(sezione 7), la **matita** apre tutti i parametri (sezione 6).
 
 Trascina verso il basso per aggiornare.
 
-## 6. Console
+## 6. I parametri del server
+
+Il pulsante con la matita, nella scheda Stato.
+
+Il file `lgsm/config-lgsm/<script>/<script>.cfg` decide quanta memoria dare a Java, quale
+versione scaricare, su quale porta rispondere, quanti backup tenere. Prima l'app ne
+scriveva uno solo, `mcversion`, e per il resto bisognava collegarsi al computer a mano.
+
+In alto i parametri scritti nel file; sotto, in **Da aggiungere**, quelli che LinuxGSM
+conosce ma che nel file non ci sono — finché mancano vale il valore di fabbrica. Ognuno ha
+scritto accanto a cosa serve. In fondo si può aggiungere un parametro qualsiasi, anche non
+in elenco.
+
+**Togliere** un parametro non lo cancella: lo commenta. LinuxGSM torna al valore di
+fabbrica e la riga resta lì a ricordare cosa c'era.
+
+Prima di ogni modifica il file viene copiato con la data nel nome
+(`mcserver.cfg.mcmonitor.bak.20260822...`): una riga sbagliata qui impedisce al server di
+partire, e la copia si recupera collegandosi al computer.
+
+Le modifiche valgono dal prossimo avvio: dopo la prima compare il pulsante per riavviare.
+
+I più usati: `javaram` (la memoria, per esempio `2G`), `mcversion` (la versione),
+`maxbackups`, `updateonstart`. L'elenco completo con le spiegazioni ufficiali è nella
+[documentazione di LinuxGSM](https://docs.linuxgsm.com/configuration/game-server-config),
+richiamata anche dall'aiuto della pagina.
+
+## 7. Il progetto: rifare questo server altrove
+
+Il pulsante con la cassa, nella scheda Stato.
+
+Il progetto è la ricetta di questo server in un file solo: le impostazioni di LinuxGSM,
+quelle di Minecraft (`server.properties`), l'elenco dei mod e, se lo chiedi, chi è in
+whitelist e chi è operatore. Serve a chi vuole rifare il tuo stesso server sul proprio
+computer senza copiare niente a mano.
+
+**Cosa non c'è dentro:**
+
+- il mondo — sono gigabyte, si copia con un backup
+- i file dei mod — c'è la loro impronta sha1, che su Modrinth ritrova il file esatto:
+  stessa versione, stesso pacchetto, non uno che si chiama allo stesso modo
+- le password — né quella SSH, né quella di RCON, né i token di Telegram o il webhook di
+  Discord. Sarebbero utilissimi al clone, e sarebbero anche il modo di regalare a un altro
+  la chiave del proprio server senza accorgersene
+
+Il file è compresso e cifrato con AES-GCM e una password che scegli tu (PBKDF2, 210.000
+iterazioni). Mandala per un'altra via rispetto al file: se viaggiano insieme, non serve a
+niente.
+
+**In importazione** scegli cosa applicare, riquadro per riquadro, e vedi quanti valori
+sono. Porte, indirizzi e nome del server non vengono toccati: sul tuo computer sono
+diversi, e sovrascriverli spegnerebbe il server o lo farebbe accavallare a un altro.
+I mod che su Modrinth non ci sono vengono elencati per nome, da copiare a mano.
+
+Whitelist e operatori passano dalla console, quindi in quel momento il server deve essere
+acceso: gli UUID dei giocatori li cerca lui.
+
+Di ogni file toccato resta una copia con la data. Le impostazioni valgono dal riavvio.
+
+> Il file dei **collegamenti** — host, utente, password SSH — è un'altra cosa, e si esporta
+> dalle Impostazioni. Se sbagli file, l'app te lo dice invece di aprirlo vuoto.
+
+## 8. Console
 
 <img src="store/screenshots/06-console.png" width="320" alt="Console">
 
 La coda di `logs/latest.log`, aggiornata ogni 6 secondi (l'interruttore in alto la ferma).
 
-Accanto all'interruttore due pulsanti:
+Accanto all'interruttore quattro pulsanti:
 
+- **macro** — le file di comandi già pronte (sezione 9).
+- **cerca** — apre una riga di ricerca che filtra le righe già scaricate, senza chiedere
+  niente al server: scrivi `ERROR`, o il nome di un giocatore, e restano solo quelle. Di
+  fianco è scritto quante righe sono rimaste. Si chiude con lo stesso pulsante.
 - **a capo automatico** — le righe lunghe continuano sotto invece di uscire a destra. Utile
   per leggere, meno per confrontare le colonne del log: si accende e si spegne a piacere.
 - **tutto schermo** — restano solo le righe del log: spariscono barra del titolo, schede,
@@ -228,9 +313,51 @@ Toccarne una **compila il campo senza inviare**: quelle che finiscono con uno sp
 aspettano l'argomento, le altre sono complete e basta premere Invia. È voluto: evita
 un `ban` partito per sbaglio.
 
+**Due tocchi su una riga** del log la selezionano e la copiano intera, anche la parte
+che esce dallo schermo: serve per incollare un errore in una ricerca o in un messaggio.
+
 I comandi viaggiano su `tmux send-keys`, oppure via RCON se l'hai attivato.
 
-## 7. Giocatori
+## 9. Le macro
+
+Il pulsante con il fulmine, nella Console.
+
+Una macro è una fila di comandi con un nome: si tocca una volta e partono tutti,
+nell'ordine giusto. Serve perché quasi niente di quello che fa un amministratore è un
+comando solo — mettere il server in manutenzione vuol dire avvisare, aspettare, avvisare
+ancora, salvare — e a mano si sbaglia l'ordine o si salta un pezzo proprio quando si ha
+fretta.
+
+Prima di partire l'app mostra la lista esatta di cosa sta per succedere. Le macro che
+cambiano il mondo o disturbano chi gioca lo dicono nella conferma.
+
+**Già pronte**, una ventina, fra cui:
+
+- **Manutenzione fra 5 minuti** — avvisa, conta alla rovescia, salva
+- **Backup a caldo: prima / dopo** — `save-off` e `save-all flush`, poi `save-on`
+- **Pulisci gli oggetti a terra** — la prima cosa da provare quando il server arranca
+- **Chiudi il server ai nuovi** — whitelist accesa e avviso in chat
+- **Kit di sopravvivenza**, **Rimetti in piedi qualcuno**, **Dai il benvenuto**
+- e qualcuna per far divertire: fuochi d'artificio, pioggia di polli, invisibilità,
+  super salto, notte di caccia
+
+**Scriverne una tua**: "Scrivi una macro nuova", poi un comando per riga, senza la barra
+iniziale. Due cose che nei comandi normali non esistono:
+
+- `<giocatore>`, `<x>`, `<messaggio>` — un buco fra parentesi angolari diventa una domanda
+  quando lanci la macro. Puoi chiamarli come vuoi
+- `!attendi 30` — non è un comando di Minecraft: è una pausa di 30 secondi, per i conti
+  alla rovescia
+
+Le macro già pronte non si rovinano: se ne apri una e la cambi, quello che salvi diventa
+una macro tua e l'originale resta dov'è.
+
+**Ferma la macro** interrompe subito, anche durante una pausa. I comandi già partiti sono
+già partiti: non tornano indietro. Se un comando fallisce la macro si ferma lì.
+
+Le macro stanno sul telefono, non sul server.
+
+## 10. Giocatori
 
 <img src="store/screenshots/03-giocatori.png" width="320" alt="Giocatori">
 
@@ -244,6 +371,17 @@ comunque agli altri di entrare.
 
 **Online** — nome, coordinate X/Y/Z e dimensione di ciascun giocatore.
 
+**Whitelist e ban** — accanto al titolo della whitelist c'è l'interruttore che la accende
+e la spegne (`whitelist on|off`): spegnendola l'app chiede conferma, perché da quel momento
+entra chiunque conosca l'indirizzo.
+
+Quando **banni o ammetti** qualcuno puoi lasciare una nota. La ritrovano gli altri
+amministratori aprendo quel giocatore, insieme al nome di chi l'ha scritta: prima ogni
+volta si ricominciava da capo a chiedersi perché quel nome fosse in quella lista.
+
+Accanto al nome di chi non è collegato compare **l'ultima volta che si è visto**, presa da
+`latest.log` e dagli archivi compressi dei giorni scorsi.
+
 **Toccando un nome** si apre il pannello completo:
 
 - **Mostra sulla mappa e segui**
@@ -255,7 +393,7 @@ comunque agli altri di entrare.
 
 Le voci che richiedono il giocatore in gioco sono disattivate quando è offline.
 
-## 8. Mappa
+## 11. Mappa
 
 <img src="store/screenshots/04-mappa.png" width="320" alt="Mappa">
 
@@ -273,7 +411,12 @@ adegua da solo. **Mappa web** apre Dynmap/BlueMap a tutto schermo, se configurat
 Le posizioni arrivano da `data get entity <nome> Pos`: serve un server vanilla, Paper o
 Spigot dalla 1.13 in poi.
 
-## 9. Mod e modpack
+Quando la mappa è vuota dice **perché** lo è: nessuno collegato, nessuna posizione ricevuta
+(succede sui server che non rispondono a quel comando, per esempio con certi mod), oppure
+tutti in un'altra dimensione rispetto al filtro scelto. Erano tre casi diversi che
+sembravano lo stesso guasto.
+
+## 12. Mod e modpack
 
 <img src="store/screenshots/05-mod.png" width="320" alt="Scheda Mod">
 
@@ -293,6 +436,11 @@ c'è niente da impostare: i mod vengono cercati per la versione e il loader del 
 sotto il campo di ricerca è scritto quali sono. Se per quella combinazione non esce niente,
 un pulsante propone di **cercare senza filtri**.
 
+Il pulsante con la **stella** apre l'elenco dei **mod consigliati**: quelli che su un
+server piccolo risolvono i problemi che si presentano per primi — il server che arranca, i
+mostri che cancellano le costruzioni, i backup dimenticati — con scritto in una riga a cosa
+serve ognuno. Toccandone uno parte la ricerca già compilata.
+
 <img src="store/screenshots/05-mod-ricerca.png" width="320" alt="Ricerca su Modrinth">
 
 Toccando un risultato scegli la versione; l'app mostra le dipendenze obbligatorie e può
@@ -310,7 +458,7 @@ recupera in un tocco) o **rimuovere**.
 
 Dopo ogni modifica compare il pulsante per riavviare il server.
 
-## 10. Cambiare versione di Minecraft
+## 13. Cambiare versione di Minecraft
 
 Nella scheda Stato, **Cambia versione** mostra l'elenco ufficiale delle release preso dal
 manifesto di Mojang. Scegliendone una, l'app scrive `mcversion` nella configurazione
@@ -321,7 +469,7 @@ Prima di procedere ti viene proposto **Backup e cambio**: usalo. Un mondo salvat
 versione recente spesso non si riapre con una precedente, e l'app te lo segnala quando
 stai tornando indietro.
 
-## 11. RCON
+## 14. RCON
 
 Senza RCON l'app scrive nella console tmux e rilegge il log: ogni aggiornamento lascia
 righe di servizio in `latest.log`. Con RCON le risposte arrivano subito e il log resta
@@ -335,7 +483,7 @@ Il **tunnel SSH** è attivo di default: la porta RCON viaggia dentro la connessi
 quindi non devi aprire porte sul firewall e la password — che il protocollo trasmette in
 chiaro — non esce dal tunnel.
 
-## 12. Aggiornamenti dell'app
+## 15. Aggiornamenti dell'app
 
 All'avvio l'app controlla se sul repository c'è una release più recente. In tal caso
 compare un banner con versione, dimensione e le note: **Aggiorna** scarica l'APK e apre
@@ -344,7 +492,7 @@ l'installer di sistema, **Più tardi** lo nasconde fino al prossimo avvio.
 La prima volta Android chiede di autorizzare MC Monitor a installare app: è una conferma
 di sistema, l'app non installa nulla da sola.
 
-## 13. Se qualcosa non funziona
+## 16. Se qualcosa non funziona
 
 **Diagnostica connessione** (in Impostazioni) prova gli stadi separatamente — DNS, porta
 TCP, handshake SSH, autenticazione — e poi verifica sul server tmux, le sessioni attive,

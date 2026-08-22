@@ -112,12 +112,12 @@ class ParamsActivity : AppCompatActivity() {
             setText(chiave)
             isEnabled = chiave.isBlank()
             setSingleLine()
-        }
+        }.dialogoVisibile()
         val campoValore = EditText(this).apply {
             hint = "valore"
             setText(valore)
             setSingleLine()
-        }
+        }.dialogoVisibile()
         val nota = TextView(this).apply {
             text = ServerParams.describe(chiave)
             textSize = 12f

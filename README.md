@@ -2,7 +2,7 @@
 
 App Android per gestire un server Minecraft installato con **LinuxGSM**, via **SSH**.
 
-APK pronto all'uso: **`MC-Monitor-1.20.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
+APK pronto all'uso: **`MC-Monitor-1.21.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
 
 **[Manuale d'uso completo](MANUALE.md)** · [Release e APK](https://github.com/bdbais/mc-monitor/releases)
 
@@ -117,9 +117,12 @@ lo riazzera dopo una reinstallazione legittima del server.
 ## Cosa fa
 
 - **Stato** — `lgsm details`: stato STARTED/STOPPED, IP, porte, versione, uptime, output completo. Pulsanti **Avvia / Ferma / Riavvia** (`lgsm start|stop|restart`), con conferma sulle azioni distruttive.
-- **Console** — coda di `logs/latest.log` (fallback sul console log di LinuxGSM), aggiornamento automatico ogni 6 s, e invio comandi alla console del server. La riga di scorciatoie sopra il campo di testo compila il comando al posto tuo: quelle che finiscono con uno spazio (`tp `, `kick `…) aspettano l'argomento e aprono la tastiera, le altre sono complete e basta premere **Invia**.
-- **Giocatori** — chi è online con coordinate X/Y/Z e dimensione; whitelist e lista ban lette da `whitelist.json` e `banned-players.json`, con aggiunta/rimozione. Toccando un nome (online, in whitelist o bannato) si apre il pannello con tutte le operazioni — vedi sotto.
-- **Mod** — cosa è installato sul server, ricerca su Modrinth con installazione lato server e verifica sha1, importazione di modpack `.mrpack`, installazione di Fabric su un server vanilla. Vedi [Mod e modpack](MANUALE.md#9-mod-e-modpack).
+- **Console** — coda di `logs/latest.log` (fallback sul console log di LinuxGSM), aggiornamento automatico ogni 6 s, e invio comandi alla console del server. La riga di scorciatoie sopra il campo di testo compila il comando al posto tuo: quelle che finiscono con uno spazio (`tp `, `kick `…) aspettano l'argomento e aprono la tastiera, le altre sono complete e basta premere **Invia**. Ricerca che filtra le righe già scaricate senza interrogare il server, e due tocchi su una riga la copiano intera.
+- **Macro** — file di comandi da lanciare in un tocco, con una ventina già pronte (manutenzione con conto alla rovescia, backup a caldo, pulizia degli oggetti a terra) e la possibilità di scriverne altre. `<giocatore>` diventa una domanda, `!attendi 30` è una pausa. Vedi [Le macro](MANUALE.md#9-le-macro).
+- **Parametri** — tutto il file di configurazione di LinuxGSM modificabile dall'app, con la spiegazione di ogni chiave, l'aggiunta di quelle mancanti e una copia datata del file a ogni scrittura. Vedi [I parametri del server](MANUALE.md#6-i-parametri-del-server).
+- **Progetto** — l'intera configurazione del server (LinuxGSM, `server.properties`, elenco dei mod con impronta sha1, whitelist e operatori se richiesti) in un file compresso e cifrato con AES-GCM, da passare a chi vuole rifare lo stesso server altrove. Password, token e webhook restano fuori. In importazione i mod vengono ripresi da Modrinth per impronta, quindi identici. Vedi [Il progetto](MANUALE.md#7-il-progetto-rifare-questo-server-altrove).
+- **Giocatori** — chi è online con coordinate X/Y/Z e dimensione; whitelist e lista ban lette da `whitelist.json` e `banned-players.json`, con aggiunta/rimozione e l'interruttore che accende e spegne la whitelist. Bannando o ammettendo si può lasciare una **nota che vedono gli altri amministratori**. Accanto a chi non è collegato compare l'ultima volta che si è visto. Toccando un nome si apre il pannello con tutte le operazioni — vedi sotto.
+- **Mod** — cosa è installato sul server, ricerca su Modrinth con installazione lato server e verifica sha1, elenco dei mod più usati con il perché di ognuno, importazione di modpack `.mrpack`, installazione di Fabric su un server vanilla. Vedi [Mod e modpack](MANUALE.md#12-mod-e-modpack).
 - **Versione** — cambio della versione di Minecraft dall'elenco ufficiale Mojang, scrivendo `mcversion` nella configurazione LinuxGSM e lanciando `update`, con backup opzionale del mondo.
 - **Mappa** — piano X/Z navigabile (trascina, pizzica, doppio tap) con griglia dei chunk, spawn, giocatori e **scia degli spostamenti** aggiornata in tempo reale; filtro Overworld / Nether / End. Il pulsante **Mappa web** apre Dynmap/BlueMap a tutto schermo, se configurata.
 
@@ -299,3 +302,15 @@ libero dallo stesso spirito. Questo progetto non è affiliato con Mojang o Micro
 Le credenziali SSH stanno in `SharedPreferences` privata dell'app (accessibile solo
 all'app su un dispositivo non rootato, non cifrata da password). Consigliato: utente SSH
 dedicato, autenticazione a chiave, permessi limitati alla sola directory LinuxGSM.
+
+I due file esportabili sono cifrati con AES-GCM e una chiave derivata dalla password con
+PBKDF2-HMAC-SHA256 a 210.000 iterazioni; il tag GCM fa fallire l'apertura se il file è
+stato alterato, invece di restituire dati inventati. Il **progetto** del server esclude per
+costruzione qualsiasi chiave il cui nome contenga `password`, `token`, `secret`, `webhook`,
+`key`, `email`: non è una lista di comodo, è quello che impedisce di regalare la password
+di RCON o il webhook di Discord insieme alla configurazione.
+
+I valori scritti nei file del server (`<script>.cfg`, `server.properties`) passano da awk
+con la riga presa dall'ambiente e non da `awk -v`, che interpreterebbe a sua volta le
+sequenze di escape: virgolette e apici inversi arrivano protetti e non possono chiudere
+l'assegnazione e trasformare il resto del valore in un comando.

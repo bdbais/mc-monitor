@@ -248,12 +248,12 @@ class BlueprintActivity : AppCompatActivity() {
         val prima = EditText(this).apply {
             hint = "password (almeno ${SealedBox.MIN_PASSWORD} caratteri)"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-        }
+        }.dialogoVisibile()
         val seconda = EditText(this).apply {
             hint = "ripetila"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             visible(conferma)
-        }
+        }.dialogoVisibile()
         contenitore.addView(prima)
         contenitore.addView(seconda)
 

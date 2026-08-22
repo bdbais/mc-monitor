@@ -104,7 +104,7 @@ class MacroActivity : AppCompatActivity() {
                 hint = nome
                 setSingleLine()
                 inputType = InputType.TYPE_CLASS_TEXT
-            }.also { contenitore.addView(it) }
+            }.dialogoVisibile().also { contenitore.addView(it) }
         }
 
         MaterialAlertDialogBuilder(this)
@@ -210,18 +210,18 @@ class MacroActivity : AppCompatActivity() {
             hint = "nome della macro"
             setText(if (macro?.builtin == true) "${macro.name} (mia)" else macro?.name.orEmpty())
             setSingleLine()
-        }
+        }.dialogoVisibile()
         val spiegazione = EditText(this).apply {
             hint = "a cosa serve"
             setText(macro?.description.orEmpty())
             setSingleLine()
-        }
+        }.dialogoVisibile()
         val comandi = EditText(this).apply {
             hint = "un comando per riga"
             setText(macro?.commands?.joinToString("\n").orEmpty())
             minLines = 4
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
-        }
+        }.dialogoVisibile()
         val nota = TextView(this).apply {
             text = "Un comando per riga, senza la barra iniziale. " +
                     "<giocatore> o <x> diventano domande. " +
