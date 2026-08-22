@@ -59,6 +59,28 @@ object Help {
         """.trimIndent()
     )
 
+    val PARAMS = Page(
+        "I parametri del server",
+        """
+        Questi sono gli interruttori di LinuxGSM: decidono quanta memoria dare al server, quale versione di Minecraft scaricare, su quale porta rispondere, quanti backup tenere.
+
+        Vivono in un file di testo sul computer (mcserver.cfg). Quello che vedi in cima è quello che è stato scritto lì; sotto, in "Da aggiungere", ci sono i parametri che LinuxGSM conosce ma che nel file non ci sono: finché mancano vale il valore di fabbrica.
+
+        Tocca un parametro per cambiarlo. Ogni modifica tiene una copia del file con la data, quindi si può sempre tornare indietro collegandosi al computer.
+
+        Le modifiche valgono dal prossimo avvio del server: dopo averle fatte compare il pulsante per riavviarlo.
+
+        I due più usati:
+        • javaram — la memoria, per esempio 2G o 4G. Troppo poca fa scattare il server, troppa lo fa uccidere dal sistema
+        • mcversion — la versione di Minecraft. Cambiarla qui e poi lanciare un aggiornamento è quello che fa la scheda Stato
+
+        Se un parametro non ti è chiaro, l'elenco completo con le spiegazioni ufficiali è qui:
+        https://docs.linuxgsm.com/configuration/game-server-config
+        e per le impostazioni di Minecraft vero e proprio (server.properties):
+        https://minecraft.wiki/w/Server.properties
+        """.trimIndent()
+    )
+
     val SERVERS = Page(
         "Profili salvati",
         """

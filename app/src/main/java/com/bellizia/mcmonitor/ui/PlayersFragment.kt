@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.MainActivity
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.data.PresenceRepository
 import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.databinding.FragmentPlayersBinding
 import com.bellizia.mcmonitor.databinding.ItemPlayerBinding
@@ -108,6 +109,7 @@ class PlayersFragment : Fragment() {
             val attempts = runCatching { McRepository.joinAttempts() }.getOrNull()
             val enforced = runCatching { McRepository.whitelistEnforced() }.getOrNull()
             val bind = _b ?: return@launch
+            renderWhitelistSwitch(enforced)
             val waiting = attempts?.filter { it.name.lowercase() !in known }.orEmpty()
 
             bind.waitingCard.visible(waiting.isNotEmpty())
@@ -119,6 +121,51 @@ class PlayersFragment : Fragment() {
             }
             renderWaiting(waiting)
         }
+    }
+
+    /**
+     * Server chiuso o aperto. L'elenco della whitelist da solo non decide niente:
+     * se sul server white-list e' false, entra chiunque anche senza esserci
+     * dentro, e questo interruttore e' l'unico posto dove si vede e si cambia.
+     */
+    private fun renderWhitelistSwitch(enforced: Boolean?) {
+        val bind = _b ?: return
+        val attiva = enforced == true
+        bind.whitelistEnforced.setOnCheckedChangeListener(null)
+        bind.whitelistEnforced.isChecked = attiva
+        bind.whitelistEnforced.isEnabled = enforced != null
+        bind.whitelistStato.text = when (enforced) {
+            true -> "Server chiuso: entrano solo i nomi in elenco."
+            false -> "Server aperto: entra chiunque conosca l'indirizzo, l'elenco non viene guardato."
+            else -> "Non riesco a leggere white-list da server.properties."
+        }
+        bind.whitelistEnforced.setOnCheckedChangeListener { _, checked ->
+            if (checked == attiva) return@setOnCheckedChangeListener
+            confermaWhitelist(checked)
+        }
+    }
+
+    private fun confermaWhitelist(attivare: Boolean) {
+        val titolo = if (attivare) "Chiudere il server?" else "Aprire il server a tutti?"
+        val messaggio = if (attivare) {
+            "Da adesso entrano solo i giocatori in whitelist. Chi sta giocando e non c'e' " +
+                    "dentro viene disconnesso dal server."
+        } else {
+            "Da adesso entra chiunque conosca l'indirizzo, anche chi non e' in elenco. " +
+                    "La whitelist resta salvata e si puo' riattivare quando vuoi."
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(titolo)
+            .setMessage(messaggio)
+            .setNegativeButton("Annulla") { _, _ -> renderWhitelistSwitch(!attivare) }
+            .setOnCancelListener { renderWhitelistSwitch(!attivare) }
+            .setPositiveButton(if (attivare) "Chiudi" else "Apri") { _, _ ->
+                command(
+                    if (attivare) "whitelist on" else "whitelist off",
+                    if (attivare) "Server chiuso: solo la whitelist" else "Server aperto a tutti"
+                )
+            }
+            .show()
     }
 
     private fun renderWaiting(waiting: List<JoinAttempt>) {
@@ -135,10 +182,15 @@ class PlayersFragment : Fragment() {
                 if (attempt.uuid.isNotBlank()) append(" · ${attempt.uuid.take(8)}")
             }
             row.btnWhitelist.setOnClickListener {
-                command("whitelist add ${attempt.name}", "${attempt.name} ammesso")
+                commandWithNote(
+                    "whitelist add ${attempt.name}",
+                    "${attempt.name} ammesso",
+                    attempt.name,
+                    "ammesso"
+                )
             }
             row.btnBan.setOnClickListener {
-                command("ban ${attempt.name}", "${attempt.name} bannato")
+                commandWithNote("ban ${attempt.name}", "${attempt.name} bannato", attempt.name, "bannato")
             }
             row.root.setOnClickListener { playerActions(attempt.name) }
             list.addView(row.root)
@@ -214,7 +266,15 @@ class PlayersFragment : Fragment() {
             pos = lastPositions.firstOrNull { it.name.equals(name, ignoreCase = true) },
             online = lastNames.any { it.equals(name, ignoreCase = true) },
             onlineNames = lastNames,
-            run = { cmd, feedback -> command(cmd, feedback) },
+            run = { cmd, feedback ->
+                // Solo i due gesti che gli altri amministratori devono capire.
+                val nome = cmd.substringAfterLast(' ')
+                when {
+                    cmd.startsWith("ban ") -> commandWithNote(cmd, feedback, nome, "bannato")
+                    cmd.startsWith("whitelist add ") -> commandWithNote(cmd, feedback, nome, "ammesso")
+                    else -> command(cmd, feedback)
+                }
+            },
             showOnMap = { player -> (requireActivity() as MainActivity).showPlayerOnMap(player) },
             showChat = { player -> showChat(player) }
         ).show()
@@ -278,6 +338,36 @@ class PlayersFragment : Fragment() {
         }
         if (!configured()) return
         block(name)
+    }
+
+    /**
+     * Ban e whitelist non sono gesti neutri: chi arriva dopo si chiede perche'.
+     * Dopo il comando si puo' lasciare due righe agli altri amministratori, che
+     * restano legate al giocatore e compaiono nel suo pannello.
+     */
+    private fun commandWithNote(command: String, success: String, player: String, azione: String) {
+        command(command, success)
+        if (!isAdded) return
+        val campo = android.widget.EditText(requireContext()).apply {
+            hint = "perche' (facoltativo)"
+            setSingleLine()
+            setPadding(48, 24, 48, 24)
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Nota su $player")
+            .setMessage("Gli altri amministratori la vedranno nei messaggi e aprendo $player.")
+            .setView(campo)
+            .setNegativeButton("Senza nota", null)
+            .setPositiveButton("Salva") { _, _ ->
+                val nota = campo.text?.toString()?.trim().orEmpty()
+                if (nota.isBlank()) return@setPositiveButton
+                viewLifecycleOwner.lifecycleScope.launch {
+                    runCatching {
+                        PresenceRepository.send("$azione $player: $nota", about = player)
+                    }.onFailure { toast("Nota non salvata: ${it.userMessage()}") }
+                }
+            }
+            .show()
     }
 
     private fun command(command: String, success: String) {

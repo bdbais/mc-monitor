@@ -13,6 +13,7 @@ import com.bellizia.mcmonitor.data.PlayerTracker
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.PresenceRepository
 import com.bellizia.mcmonitor.lgsm.Presence
+import com.bellizia.mcmonitor.notify.Notifications
 import com.bellizia.mcmonitor.ui.visible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -127,8 +128,23 @@ class MainActivity : AppCompatActivity() {
                     if (Prefs.load().isComplete) {
                         PresenceRepository.heartbeat()
                         val altri = PresenceRepository.others()
-                        binding.adminBadge.visible(altri.isNotEmpty())
-                        binding.adminBadge.text = altri.size.toString()
+                        val nuovi = PresenceRepository.unread()
+                        // Sul pulsante conta chi c'e' adesso; i messaggi non letti
+                        // vanno sul pallino dell'icona, che si vede anche da fuori.
+                        binding.adminBadge.visible(altri.isNotEmpty() || nuovi.isNotEmpty())
+                        binding.adminBadge.text =
+                            if (nuovi.isNotEmpty()) nuovi.size.toString() else altri.size.toString()
+                        binding.adminBadge.setBackgroundColor(
+                            androidx.core.content.ContextCompat.getColor(
+                                this@MainActivity,
+                                if (nuovi.isNotEmpty()) R.color.danger else R.color.grass
+                            )
+                        )
+                        Notifications.adminMessages(
+                            this@MainActivity,
+                            nuovi.size,
+                            nuovi.lastOrNull()?.let { "${it.name}: ${it.text}" }.orEmpty()
+                        )
                     }
                     delay(Presence.HEARTBEAT_SECONDS * 1000)
                 }

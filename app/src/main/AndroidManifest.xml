@@ -67,6 +67,14 @@
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Tutti i parametri di LinuxGSM, modificabili. -->
+        <activity
+            android:name=".ui.ParamsActivity"
+            android:exported="false"
+            android:label="Parametri del server"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".ui.WebMapActivity"
             android:exported="false"

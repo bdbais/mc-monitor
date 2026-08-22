@@ -30,8 +30,14 @@ data class AdminMessage(
     val id: String,
     val name: String,
     val text: String,
-    val epochSeconds: Long
-)
+    val epochSeconds: Long,
+    /** Nome del giocatore a cui il messaggio si riferisce, se e' una nota. */
+    val about: String = "",
+    /** Segnato "a tutti": chi lo riceve viene avvisato, non lo legge per caso. */
+    val broadcast: Boolean = false
+) {
+    val isNote: Boolean get() = about.isNotBlank()
+}
 
 /**
  * Chi altro sta amministrando questo server, e la chat per mettersi d'accordo.
@@ -135,18 +141,26 @@ object Presence {
      * Un messaggio per riga, aggiunto in fondo. L'append di una riga corta è
      * atomico abbastanza da reggere due telefoni che scrivono insieme.
      */
-    fun send(id: String, name: String, text: String): String {
+    fun send(
+        id: String,
+        name: String,
+        text: String,
+        about: String = "",
+        broadcast: Boolean = false
+    ): String {
         val i = safeId(id)
         val n = safeName(name)
+        val a = about.filter { it.isLetterOrDigit() || it == '_' }.take(16)
         // Il testo entra in un JSON scritto da printf: virgolette e barre
         // rovescerebbero la riga, e a capo la spezzerebbero in due messaggi.
         val pulito = text.trim().take(500)
-            .replace(Regex("[\r\n\t]"), " ")
+            .replace(Regex("""[\r\n\t]"""), " ")
             .replace("\\", "/")
             .replace("\"", "'")
         return "d=$DIR; mkdir -p \"\$d\" && " +
-                "printf '{\"id\":\"%s\",\"nome\":\"%s\",\"ts\":%s,\"testo\":\"%s\"}\\n' " +
-                "'$i' '$n' \"\$(date +%s)\" ${Lgsm.sq(pulito)} >> \"\$d/chat.log\" && echo ok"
+                "printf '{\"id\":\"%s\",\"nome\":\"%s\",\"ts\":%s,\"testo\":\"%s\",\"su\":\"%s\",\"tutti\":%s}\\n' " +
+                "'$i' '$n' \"\$(date +%s)\" ${Lgsm.sq(pulito)} '$a' '${if (broadcast) "true" else "false"}' " +
+                ">> \"\$d/chat.log\" && echo ok"
     }
 
     fun read(): String = """
@@ -170,11 +184,20 @@ object Presence {
                         id = o.optString("id"),
                         name = o.optString("nome").ifBlank { "admin" },
                         text = testo,
-                        epochSeconds = o.optLong("ts")
+                        epochSeconds = o.optLong("ts"),
+                        about = o.optString("su"),
+                        broadcast = o.optString("tutti") == "true" || o.optBoolean("tutti")
                     )
                 }.getOrNull()
             }
     }
+
+    /**
+     * I messaggi non ancora letti da questo telefono: i propri non contano, e
+     * nemmeno quelli piu' vecchi dell'ultima volta che la chat e' stata aperta.
+     */
+    fun unread(messages: List<AdminMessage>, myId: String, lastRead: Long): List<AdminMessage> =
+        messages.filter { it.id != safeId(myId) && it.epochSeconds > lastRead }
 
     /**
      * Riassunto per la barra: quanti altri ci sono e se qualcuno sta facendo

@@ -315,6 +315,17 @@ object Prefs {
             return nuovo
         }
 
+    /**
+     * Fin dove la chat degli amministratori e' stata letta, server per server:
+     * serve a contare i messaggi nuovi senza rileggerli tutti come nuovi ogni
+     * volta che si apre l'app.
+     */
+    fun chatLastRead(serverId: String): Long = sp.getLong("chatLastRead_$serverId", 0L)
+
+    fun setChatLastRead(serverId: String, epochSeconds: Long) {
+        sp.edit().putLong("chatLastRead_$serverId", epochSeconds).apply()
+    }
+
     /** Impronta della password che sblocca l'app, con il suo sale. Mai la password. */
     var lockHash: String
         get() = sp.getString("lockHash", "") ?: ""

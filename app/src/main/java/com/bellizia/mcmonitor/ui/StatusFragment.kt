@@ -53,6 +53,9 @@ class StatusFragment : Fragment() {
         b.btnCopyAddress.setOnClickListener { copyAddress() }
         b.btnShareAddress.setOnClickListener { shareAddress() }
         b.btnChangeVersion.setOnClickListener { chooseVersion() }
+        b.btnParams.setOnClickListener {
+            if (configured()) startActivity(Intent(requireContext(), ParamsActivity::class.java))
+        }
         b.btnGoMods.setOnClickListener {
             (activity as? com.bellizia.mcmonitor.MainActivity)?.openTab("Mod")
         }

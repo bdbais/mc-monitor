@@ -20,8 +20,12 @@ object Notifications {
     const val CHANNEL_SERVICE = "monitoraggio"
     const val CHANNEL_STATUS = "stato-server"
     const val CHANNEL_PLAYERS = "giocatori"
+    const val CHANNEL_CHAT = "messaggi-admin"
 
     const val ID_SERVICE = 1
+
+    /** Sempre la stessa: i messaggi non letti sono un avviso solo, che si aggiorna. */
+    const val ID_CHAT = 2
 
     private var nextId = 100
 
@@ -48,6 +52,46 @@ object Notifications {
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply { description = "Entrate e uscite dei giocatori" }
         )
+        manager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_CHAT,
+                "Messaggi fra amministratori",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply { description = "Messaggi lasciati dagli altri amministratori del server" }
+        )
+    }
+
+    /**
+     * Messaggi non letti degli altri amministratori.
+     *
+     * Il numero passato con setNumber e' quello che i lanciatori mostrano sul
+     * pallino accanto all'icona: Android non ha un modo diretto per scriverci
+     * sopra, il conteggio arriva sempre da una notifica.
+     */
+    fun adminMessages(context: Context, count: Int, preview: String) {
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return
+        if (count <= 0) {
+            manager.cancel(ID_CHAT)
+            return
+        }
+        val titolo = if (count == 1) "Un messaggio dagli admin" else "$count messaggi dagli admin"
+        manager.notify(
+            ID_CHAT,
+            NotificationCompat.Builder(context, CHANNEL_CHAT)
+                .setContentTitle(titolo)
+                .setContentText(preview)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(preview))
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentIntent(openApp(context))
+                .setNumber(count)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .build()
+        )
+    }
+
+    fun clearAdminMessages(context: Context) {
+        context.getSystemService(NotificationManager::class.java)?.cancel(ID_CHAT)
     }
 
     /** Notifica permanente del servizio: dice cosa sta facendo e su quanti server. */

@@ -48,6 +48,69 @@ class ModrinthException(message: String, cause: Throwable? = null) : Exception(m
  * Client dell'API pubblica di Modrinth (v2). Nessuna chiave necessaria: serve
  * però uno User-Agent che identifichi l'applicazione, come chiede la loro documentazione.
  */
+/**
+ * I mod che quasi tutti mettono, con il perche' in una riga.
+ *
+ * Non e' una classifica: sono quelli che su un server piccolo risolvono i
+ * problemi che si presentano per primi — il server che arranca, i mostri che
+ * cancellano le costruzioni, i backup dimenticati.
+ */
+object RecommendedMods {
+
+    data class Suggestion(val name: String, val slug: String, val why: String, val loader: String)
+
+    val list = listOf(
+        Suggestion(
+            "Fabric API",
+            "fabric-api",
+            "Non fa niente da solo, ma quasi tutti gli altri mod lo pretendono: si installa per primo.",
+            "fabric"
+        ),
+        Suggestion(
+            "Lithium",
+            "lithium",
+            "Rende il server piu' veloce senza cambiare niente nel gioco. Il primo da mettere se scatta.",
+            "fabric"
+        ),
+        Suggestion(
+            "FerriteCore",
+            "ferrite-core",
+            "Riduce la memoria usata: utile sui computer piccoli e sui server con molti chunk.",
+            "fabric"
+        ),
+        Suggestion(
+            "Spark",
+            "spark",
+            "Dice cosa sta rallentando il server, con un rapporto da leggere invece di tirare a indovinare.",
+            "fabric"
+        ),
+        Suggestion(
+            "Chunky",
+            "chunky",
+            "Genera la mappa in anticipo: i giocatori non aspettano il mondo mentre esplorano.",
+            "fabric"
+        ),
+        Suggestion(
+            "Simple Voice Chat",
+            "simple-voice-chat",
+            "Chat vocale di prossimita': si sentono solo quelli vicini. Serve anche ai giocatori.",
+            "fabric"
+        ),
+        Suggestion(
+            "Dynmap",
+            "dynmap",
+            "La mappa del mondo in una pagina web, aggiornata mentre si gioca.",
+            "fabric"
+        ),
+        Suggestion(
+            "Vanilla Tweaks / Anti Xray",
+            "anti-xray",
+            "Nasconde i minerali a chi bara con le texture trasparenti.",
+            "fabric"
+        )
+    )
+}
+
 object Modrinth {
 
     private const val BASE = "https://api.modrinth.com/v2"

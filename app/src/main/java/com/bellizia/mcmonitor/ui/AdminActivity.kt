@@ -19,6 +19,7 @@ import com.bellizia.mcmonitor.databinding.ItemChatBinding
 import com.bellizia.mcmonitor.lgsm.Admin
 import com.bellizia.mcmonitor.lgsm.AdminMessage
 import com.bellizia.mcmonitor.lgsm.Presence
+import com.bellizia.mcmonitor.notify.Notifications
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -70,6 +71,9 @@ class AdminActivity : AppCompatActivity() {
         val messaggi = runCatching { PresenceRepository.messages() }.getOrDefault(emptyList())
         renderAdmins(admins)
         renderMessaggi(messaggi)
+        // Aperta la chat, i messaggi sono letti: via il pallino dall'icona.
+        PresenceRepository.markRead(messaggi)
+        Notifications.clearAdminMessages(this)
     }
 
     private fun renderAdmins(admins: List<Admin>) {
@@ -114,6 +118,8 @@ class AdminActivity : AppCompatActivity() {
                 append(if (mio) "tu" else messaggio.name)
                 append(" · ")
                 append(orario.format(Date(messaggio.epochSeconds * 1000)))
+                if (messaggio.broadcast) append(" · a tutti")
+                if (messaggio.isNote) append(" · su ${messaggio.about}")
             }
             riga.testo.text = messaggio.text
             binding.elencoMessaggi.addView(riga.root)
@@ -129,9 +135,10 @@ class AdminActivity : AppCompatActivity() {
     private fun invia() {
         val testo = binding.messaggio.text?.toString()?.trim().orEmpty()
         if (testo.isBlank()) return
+        val aTutti = binding.aTutti.isChecked
         binding.btnInvia.isEnabled = false
         lifecycleScope.launch {
-            val esito = runCatching { PresenceRepository.send(testo) }
+            val esito = runCatching { PresenceRepository.send(testo, broadcast = aTutti) }
             binding.btnInvia.isEnabled = true
             esito.onSuccess {
                 binding.messaggio.setText("")

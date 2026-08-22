@@ -52,9 +52,38 @@ object PresenceRepository {
         return Presence.parseMessages(r.text)
     }
 
-    suspend fun send(text: String) {
+    /**
+     * [about] lega il messaggio a un giocatore (le note su ban e whitelist),
+     * [broadcast] lo segna come "a tutti": gli altri vengono avvisati invece di
+     * trovarlo per caso.
+     */
+    suspend fun send(text: String, about: String = "", broadcast: Boolean = false) {
         val c = cfg()
         if (!c.isComplete || text.isBlank()) return
-        SshManager.exec(c, Presence.send(Prefs.deviceId, Prefs.adminName, text), 20_000)
+        SshManager.exec(
+            c,
+            Presence.send(Prefs.deviceId, Prefs.adminName, text, about, broadcast),
+            20_000
+        )
+    }
+
+    /** Le note lasciate dagli amministratori su un giocatore, dalla piu' recente. */
+    suspend fun notesAbout(player: String): List<AdminMessage> =
+        runCatching { messages() }.getOrDefault(emptyList())
+            .filter { it.about.equals(player, ignoreCase = true) }
+            .sortedByDescending { it.epochSeconds }
+
+    /** Quanti messaggi non ha ancora visto questo telefono. */
+    suspend fun unread(): List<AdminMessage> {
+        val c = cfg()
+        if (!c.isComplete) return emptyList()
+        val tutti = runCatching { messages() }.getOrDefault(emptyList())
+        return Presence.unread(tutti, Prefs.deviceId, Prefs.chatLastRead(c.id))
+    }
+
+    /** Segna letto fino all'ultimo messaggio ricevuto. */
+    fun markRead(messages: List<AdminMessage>) {
+        val ultimo = messages.maxOfOrNull { it.epochSeconds } ?: return
+        Prefs.setChatLastRead(Prefs.load().id, ultimo)
     }
 }

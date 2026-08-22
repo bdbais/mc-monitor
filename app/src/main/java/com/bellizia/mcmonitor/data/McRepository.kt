@@ -4,6 +4,8 @@ import com.bellizia.mcmonitor.lgsm.ChatMessage
 import com.bellizia.mcmonitor.lgsm.GameVersion
 import com.bellizia.mcmonitor.lgsm.JoinAttempt
 import com.bellizia.mcmonitor.lgsm.Lgsm
+import com.bellizia.mcmonitor.lgsm.ServerParam
+import com.bellizia.mcmonitor.lgsm.ServerParams
 import com.bellizia.mcmonitor.lgsm.VersionConfig
 import com.bellizia.mcmonitor.lgsm.PlayerEntry
 import com.bellizia.mcmonitor.lgsm.PlayerPos
@@ -78,6 +80,36 @@ object McRepository {
         val lower = output.lowercase()
         return lower.contains("unknown command") || lower.contains("usage:") ||
                 lower.contains("commands") || lower.contains("not a valid")
+    }
+
+    // ------------------------------------------- parametri di LinuxGSM
+
+    /** Tutte le righe del file di configurazione, commentate comprese. */
+    suspend fun params(): List<ServerParam> {
+        val c = cfg()
+        val r = SshManager.exec(c, ServerParams.readAll(c), 30_000)
+        if (r.exitCode == ServerParams.EXIT_NO_CONFIG) {
+            throw SshException("File di configurazione non trovato: ${GameVersion.configPath(c)}")
+        }
+        return ServerParams.parse(r.text)
+    }
+
+    /** Scrive un parametro, tenendo una copia datata del file. */
+    suspend fun setParam(key: String, value: String): String {
+        val c = cfg()
+        val r = SshManager.exec(c, ServerParams.set(c, key, value), 30_000)
+        val testo = Lgsm.clean(r.text).trim()
+        if (!ServerParams.written(testo)) throw SshException(testo.ifBlank { "Modifica non riuscita." })
+        return testo
+    }
+
+    /** Commenta un parametro: LinuxGSM torna al valore di fabbrica. */
+    suspend fun disableParam(key: String): String {
+        val c = cfg()
+        val r = SshManager.exec(c, ServerParams.disable(c, key), 30_000)
+        val testo = Lgsm.clean(r.text).trim()
+        if (!ServerParams.written(testo)) throw SshException(testo.ifBlank { "Modifica non riuscita." })
+        return testo
     }
 
     /** Quando quel giocatore ha lasciato l'ultima traccia nel log. */

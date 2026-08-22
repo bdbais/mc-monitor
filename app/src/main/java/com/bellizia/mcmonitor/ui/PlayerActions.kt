@@ -7,6 +7,7 @@ import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.data.McRepository
+import com.bellizia.mcmonitor.data.PresenceRepository
 import kotlinx.coroutines.launch
 import com.bellizia.mcmonitor.databinding.DialogCoordsBinding
 import com.bellizia.mcmonitor.databinding.DialogPlayerBinding
@@ -47,6 +48,22 @@ class PlayerActions(
                 val visto = runCatching { McRepository.lastSeen(name) }.getOrNull()
                 if (visto != null && fragment.isAdded) {
                     b.name.text = "$name  ·  visto $visto"
+                }
+            }
+        }
+
+        // Le note lasciate dagli altri amministratori quando lo hanno bannato o
+        // ammesso: senza, ogni volta si ricomincia da capo a chiedersi perche'.
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
+            val note = runCatching { PresenceRepository.notesAbout(name) }.getOrDefault(emptyList())
+            if (note.isEmpty() || !fragment.isAdded) return@launch
+            b.subtitle.text = buildString {
+                append(b.subtitle.text)
+                note.take(3).forEach { nota ->
+                    append("\n· ")
+                    append(nota.name)
+                    append(": ")
+                    append(nota.text)
                 }
             }
         }

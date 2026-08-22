@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Stella a pixel: i consigli, non una valutazione. -->
+    <path
+        android:fillColor="#C8A32E"
+        android:pathData="M7,2h2v3h-2zM4,5h8v2h-8zM5,7h6v2h-6zM4,9h2v2h-2zM10,9h2v2h-2zM3,11h2v2h-2zM11,11h2v2h-2z" />
+</vector>

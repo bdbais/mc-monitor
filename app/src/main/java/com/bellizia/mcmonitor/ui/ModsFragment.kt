@@ -23,6 +23,7 @@ import com.bellizia.mcmonitor.lgsm.ServerEnvironment
 import com.bellizia.mcmonitor.mods.ModFile
 import com.bellizia.mcmonitor.mods.ModProject
 import com.bellizia.mcmonitor.mods.Modrinth
+import com.bellizia.mcmonitor.mods.RecommendedMods
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -57,6 +58,7 @@ class ModsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.swipe.setOnRefreshListener { refresh() }
         b.btnSearch.setOnClickListener { search() }
+        b.btnConsigliati.setOnClickListener { showConsigliati() }
         b.btnPack.setOnClickListener {
             if (configured()) pickPack.launch(arrayOf("*/*"))
         }
@@ -160,6 +162,23 @@ class ModsFragment : Fragment() {
             }
             bind.installedList.addView(row.root)
         }
+    }
+
+    /**
+     * Da dove si comincia quando non si sa cosa cercare: pochi mod, con scritto
+     * a cosa servono. Toccandone uno parte la ricerca gia' scritta.
+     */
+    private fun showConsigliati() {
+        val voci = RecommendedMods.list.map { "${it.name}\n${it.why}" }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Mod consigliati")
+            .setItems(voci) { _, indice ->
+                val scelto = RecommendedMods.list[indice]
+                b.query.setText(scelto.name.substringBefore(" /"))
+                search()
+            }
+            .setNegativeButton("Chiudi", null)
+            .show()
     }
 
     // ------------------------------------------------------------- ricerca
