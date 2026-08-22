@@ -56,6 +56,9 @@ class StatusFragment : Fragment() {
         b.btnParams.setOnClickListener {
             if (configured()) startActivity(Intent(requireContext(), ParamsActivity::class.java))
         }
+        b.btnProgetto.setOnClickListener {
+            if (configured()) startActivity(Intent(requireContext(), BlueprintActivity::class.java))
+        }
         b.btnGoMods.setOnClickListener {
             (activity as? com.bellizia.mcmonitor.MainActivity)?.openTab("Mod")
         }

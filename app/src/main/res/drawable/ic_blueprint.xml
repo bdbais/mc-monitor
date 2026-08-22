@@ -1,0 +1,23 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Una cassa da spedire: il progetto del server che parte per un altro computer. -->
+    <path
+        android:fillColor="#8A5A2B"
+        android:pathData="M2,5h12v9h-12z" />
+    <path
+        android:fillColor="#A9703A"
+        android:pathData="M2,3h12v2h-12z" />
+    <path
+        android:fillColor="#6B4420"
+        android:pathData="M2,9h12v1h-12z" />
+    <path
+        android:fillColor="#C8A32E"
+        android:pathData="M7,3h2v11h-2z" />
+    <path
+        android:fillColor="#3E2A14"
+        android:pathData="M2,3h1v11h-1zM13,3h1v11h-1zM2,13h12v1h-12z" />
+</vector>

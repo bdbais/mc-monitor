@@ -81,6 +81,30 @@ object Help {
         """.trimIndent()
     )
 
+    val BLUEPRINT = Page(
+        "Il progetto del server",
+        """
+        Il progetto è la ricetta di questo server, in un file solo: le impostazioni di LinuxGSM, quelle di Minecraft (server.properties), l'elenco dei mod e, se lo chiedi, chi è in whitelist e chi è operatore.
+
+        Serve quando qualcuno vuole rifare il tuo stesso server sul proprio computer: gli mandi il file, lui lo importa e si ritrova tutto configurato come da te, senza copiare niente a mano.
+
+        Cosa NON c'è dentro:
+        • il mondo — sono gigabyte, si copia con un backup
+        • i file dei mod — c'è la loro impronta, che su Modrinth ritrova il file esatto: stessa versione, stesso pacchetto
+        • le password — né quella SSH, né quella di RCON, né i token di Discord o Telegram. Restano qui
+
+        Il file è cifrato con una password che scegli tu e compresso. Mandala per un'altra via rispetto al file: se viaggiano insieme, la password non serve a niente.
+
+        In importazione scegli cosa applicare, riquadro per riquadro. Porte, indirizzi e nome del server non vengono toccati: sul tuo computer sono diversi, e sovrascriverli spegnerebbe il server o lo farebbe accavallare a un altro.
+
+        Whitelist e operatori si scrivono passando dalla console, quindi in quel momento il server deve essere acceso: gli UUID dei giocatori li cerca lui.
+
+        Le impostazioni valgono dal riavvio successivo. Di ogni file toccato resta una copia con la data nel nome.
+
+        Il file dei collegamenti — quello con host, utente e password — è un'altra cosa, e si esporta dalle Impostazioni.
+        """.trimIndent()
+    )
+
     val SERVERS = Page(
         "Profili salvati",
         """

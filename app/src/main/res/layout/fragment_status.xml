@@ -131,6 +131,20 @@
                             android:layout_weight="1"
                             android:text="Parametri del server" />
 
+                        <!-- L'intera configurazione in un file, per rifare questo
+                             server su un altro computer. -->
+                        <ImageButton
+                            android:id="@+id/btnProgetto"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="6dp"
+                            android:background="@drawable/bg_stone_button"
+                            android:contentDescription="Esporta o importa il progetto del server"
+                            android:padding="8dp"
+                            android:scaleType="fitCenter"
+                            android:src="@drawable/ic_blueprint"
+                            android:tooltipText="Progetto del server" />
+
                         <!-- Tutti i parametri di LinuxGSM, non solo quelli mostrati qui. -->
                         <ImageButton
                             android:id="@+id/btnParams"

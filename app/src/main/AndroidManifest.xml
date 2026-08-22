@@ -75,6 +75,14 @@
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- La configurazione del server in un file, per clonarlo altrove. -->
+        <activity
+            android:name=".ui.BlueprintActivity"
+            android:exported="false"
+            android:label="Progetto del server"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".ui.WebMapActivity"
             android:exported="false"

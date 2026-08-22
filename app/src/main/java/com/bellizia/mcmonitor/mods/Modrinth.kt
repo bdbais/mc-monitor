@@ -201,6 +201,33 @@ object Modrinth {
         }
     }
 
+    /**
+     * Ritrova i mod partendo dall'impronta dei file, non dal nome.
+     *
+     * È così che si rimette in piedi il progetto di un altro server: l'impronta
+     * sha1 identifica quel file preciso, quindi quello che arriva è la stessa
+     * versione dello stesso mod, non "qualcosa che si chiama uguale". I file che
+     * su Modrinth non ci sono semplicemente non tornano indietro.
+     */
+    suspend fun byHashes(sha1: List<String>): Map<String, ModFile> = withContext(Dispatchers.IO) {
+        if (sha1.isEmpty()) return@withContext emptyMap()
+        val corpo = JSONObject()
+            .put("hashes", JSONArray(sha1.map { it.lowercase() }.distinct()))
+            .put("algorithm", "sha1")
+            .toString()
+
+        val risposta = runCatching { JSONObject(post("$BASE/version_files", corpo)) }
+            .getOrElse { throw ModrinthException("Risposta di Modrinth non leggibile.") }
+
+        risposta.keys().asSequence().mapNotNull { hash ->
+            val versione = risposta.optJSONObject(hash) ?: return@mapNotNull null
+            // parseVersions lavora su un elenco: qui l'elenco è di uno.
+            val file = parseVersions(JSONArray().put(versione).toString()).firstOrNull()
+                ?: return@mapNotNull null
+            hash.lowercase() to file
+        }.toMap()
+    }
+
     // ---------------------------------------------------------------- interno
 
     private fun facetsJson(facets: List<List<String>>): String =
@@ -219,6 +246,33 @@ object Modrinth {
             setRequestProperty("Accept", "application/json")
         }
         try {
+            val code = connection.responseCode
+            if (code == 429) throw ModrinthException("Troppe richieste a Modrinth: riprova fra un minuto.")
+            if (code !in 200..299) {
+                throw ModrinthException("Modrinth ha risposto $code ${connection.responseMessage ?: ""}".trim())
+            }
+            return connection.inputStream.bufferedReader().use { it.readText() }
+        } catch (e: ModrinthException) {
+            throw e
+        } catch (e: Exception) {
+            throw ModrinthException("Modrinth non raggiungibile: ${e.message}", e)
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun post(url: String, body: String): String {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 15_000
+            readTimeout = 20_000
+            setRequestProperty("User-Agent", USER_AGENT)
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Content-Type", "application/json")
+        }
+        try {
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
             val code = connection.responseCode
             if (code == 429) throw ModrinthException("Troppe richieste a Modrinth: riprova fra un minuto.")
             if (code !in 200..299) {
