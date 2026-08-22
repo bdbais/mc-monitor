@@ -50,6 +50,12 @@ class MainActivity : AppCompatActivity() {
         "Impostazioni" to { SettingsFragment() as Fragment }
     )
 
+    /** Porta su una scheda per nome: serve ai collegamenti fra una scheda e l'altra. */
+    fun openTab(title: String) {
+        val index = tabs.indexOfFirst { it.first.equals(title, ignoreCase = true) }
+        if (index >= 0) binding.pager.setCurrentItem(index, true)
+    }
+
     /**
      * Nasconde barra del titolo e schede: la usa la Console quando mostra il log
      * a tutto schermo, dove ogni riga di interfaccia e' una riga di log in meno.

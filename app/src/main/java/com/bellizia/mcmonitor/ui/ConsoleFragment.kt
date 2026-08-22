@@ -1,13 +1,19 @@
 package com.bellizia.mcmonitor.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.view.ViewGroup.LayoutParams
+import android.view.GestureDetector
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import android.widget.TextView
 import androidx.activity.addCallback
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import com.bellizia.mcmonitor.R
 import com.google.android.material.chip.Chip
@@ -29,6 +35,12 @@ class ConsoleFragment : Fragment() {
     private var _b: FragmentConsoleBinding? = null
     private val b get() = _b!!
     private var busy = false
+
+    /** Ultimo log ricevuto per intero: il filtro lavora su questo, non sul server. */
+    private var logCompleto = ""
+
+    /** Testo cercato: vuoto quando la ricerca e' spenta. */
+    private var filtro = ""
 
     /** Righe mandate a capo invece che scorrevoli in orizzontale. */
     private var wrapLines = false
@@ -60,6 +72,13 @@ class ConsoleFragment : Fragment() {
         b.input.setOnEditorActionListener { _, _, _ -> send(); true }
         buildQuickCommands()
 
+        b.btnCerca.setOnClickListener { toggleFiltro() }
+        b.filtro.doAfterTextChanged {
+            filtro = it?.toString().orEmpty()
+            renderLog()
+        }
+        b.log.setOnClickListener(null)
+        b.log.setOnTouchListener(doppioTapPerCopiare())
         b.btnWrap.setOnClickListener { setWrap(!wrapLines) }
         b.btnFullscreen.setOnClickListener { setFullscreen(true) }
         b.btnEsciSchermo.setOnClickListener { setFullscreen(false) }
@@ -164,6 +183,80 @@ class ConsoleFragment : Fragment() {
         bind.scroll.postDelayed({ _b?.scroll?.fullScroll(View.FOCUS_DOWN) }, 150)
     }
 
+    /**
+     * La ricerca filtra quello che e' gia' arrivato, non chiede altro al server:
+     * il log e' gia' in mano, e cosi' funziona anche mentre la rete fa i capricci.
+     */
+    private fun toggleFiltro() {
+        val bind = _b ?: return
+        val acceso = bind.rigaFiltro.visibility != View.VISIBLE
+        bind.rigaFiltro.visible(acceso)
+        bind.btnCerca.alpha = if (acceso) 1f else 0.45f
+        if (acceso) {
+            bind.filtro.requestFocus()
+            showKeyboardFor(bind.filtro)
+        } else {
+            bind.filtro.setText("")
+            filtro = ""
+            hideKeyboard()
+            renderLog()
+        }
+    }
+
+    private fun renderLog() {
+        val bind = _b ?: return
+        if (filtro.isBlank()) {
+            bind.log.text = logCompleto
+            bind.esitoFiltro.text = ""
+            return
+        }
+        val righe = logCompleto.lines().filter { it.contains(filtro, ignoreCase = true) }
+        bind.log.text = if (righe.isEmpty()) "(nessuna riga con \"$filtro\")" else righe.joinToString("\n")
+        bind.esitoFiltro.text = "${righe.size} righe"
+    }
+
+    /**
+     * Due tocchi su una riga la selezionano tutta e la copiano: nel log serve
+     * spesso prendere una riga intera per incollarla altrove, e trascinare le
+     * maniglie della selezione su testo monospazio e' un supplizio.
+     */
+    private fun doppioTapPerCopiare(): View.OnTouchListener {
+        val rilevatore = GestureDetector(
+            requireContext(),
+            object : GestureDetector.SimpleOnGestureListener() {
+                override fun onDown(e: MotionEvent) = true
+
+                override fun onDoubleTap(e: MotionEvent): Boolean {
+                    val bind = _b ?: return false
+                    val riga = rigaAlPunto(bind.log, e.x, e.y) ?: return false
+                    requireContext().getSystemService(ClipboardManager::class.java)
+                        ?.setPrimaryClip(ClipData.newPlainText("riga di log", riga))
+                    toast("Riga copiata")
+                    return true
+                }
+            }
+        )
+        return View.OnTouchListener { view, event ->
+            val gestito = rilevatore.onTouchEvent(event)
+            if (!gestito) view.performClick()
+            gestito
+        }
+    }
+
+    /** Quale riga del TextView sta sotto il dito. */
+    private fun rigaAlPunto(view: TextView, x: Float, y: Float): String? {
+        val layout = view.layout ?: return null
+        val riga = layout.getLineForVertical((y - view.totalPaddingTop).toInt().coerceAtLeast(0))
+        val inizio = layout.getLineStart(riga)
+        val fine = layout.getLineEnd(riga)
+        return view.text?.substring(inizio, fine)?.trim()?.takeIf { it.isNotBlank() }
+    }
+
+    private fun showKeyboardFor(target: View) {
+        requireContext().getSystemService(InputMethodManager::class.java)
+            ?.showSoftInput(target, InputMethodManager.SHOW_IMPLICIT)
+    }
+
     private fun buildQuickCommands() {
         quickCommands.forEach { command ->
             val chip = layoutInflater.inflate(R.layout.item_command_chip, b.quickCommands, false) as Chip
@@ -201,10 +294,11 @@ class ConsoleFragment : Fragment() {
             val result = runCatching { McRepository.log(400) }
             busy = false
             val bind = _b ?: return@launch
-            bind.log.text = Privacy.text(
+            logCompleto = Privacy.text(
                 result.getOrElse { "Errore lettura log:\n${it.userMessage()}" }.trim().ifBlank { "(log vuoto)" },
                 Prefs.load()
             )
+            renderLog()
             bind.swipe.isRefreshing = false
             bind.scroll.post { bind.scroll.fullScroll(View.FOCUS_DOWN) }
         }

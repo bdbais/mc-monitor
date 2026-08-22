@@ -22,6 +22,18 @@
             android:text="Aggiornamento automatico" />
 
         <ImageButton
+            android:id="@+id/btnCerca"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Cerca nel log"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_search"
+            android:tooltipText="Cerca" />
+
+        <ImageButton
             android:id="@+id/btnWrap"
             android:layout_width="40dp"
             android:layout_height="40dp"
@@ -44,6 +56,41 @@
             android:scaleType="fitCenter"
             android:src="@drawable/ic_fullscreen"
             android:tooltipText="Tutto schermo" />
+    </LinearLayout>
+
+    <!-- Compare solo con la ricerca accesa: il log resta il protagonista. -->
+    <LinearLayout
+        android:id="@+id/rigaFiltro"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="cerca nel log (es. un nome)"
+            app:boxBackgroundColor="@color/surface">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/filtro"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/esitoFiltro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/text_dim"
+            android:textSize="12sp" />
     </LinearLayout>
 
     <!-- Il log e il pulsante per uscire dal tutto schermo, sovrapposto in alto a

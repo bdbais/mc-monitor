@@ -37,6 +37,10 @@ class MapFragment : Fragment() {
 
     private val clock = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
+    /** Ultimo conteggio ricevuto: serve a spiegare una mappa vuota. */
+    private var onlineCount = 0
+    private var positionCount = 0
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, s: Bundle?): View {
         _b = FragmentMapBinding.inflate(inflater, container, false)
         return b.root
@@ -103,6 +107,8 @@ class MapFragment : Fragment() {
             val bind = _b ?: return@launch
             bind.progress.visible(false)
             result.onSuccess { snap ->
+                onlineCount = snap.names.size
+                positionCount = snap.positions.size
                 render(snap.positions)
                 val missing = snap.names.size - snap.positions.size
                 bind.info.text = buildString {
@@ -134,6 +140,16 @@ class MapFragment : Fragment() {
         val trails = visible.associate { it.name to PlayerTracker.trail(it.name) }
         bind.map.setData(visible, trails)
         bind.empty.visible(visible.isEmpty())
+        // Una mappa vuota ha tre cause diverse, e dirle evita di dare la colpa
+        // all'app: nessuno collegato, nessuna posizione, o tutti altrove.
+        bind.empty.text = when {
+            onlineCount == 0 ->
+                "Nessuno sta giocando adesso.\nLa mappa mostra i giocatori: senza di loro resta vuota."
+            positionCount == 0 ->
+                "Ci sono $onlineCount giocatori, ma il server non ha dato le posizioni.\n" +
+                        "Succede quando qualcuno è appena entrato o sta ancora caricando: riprova fra qualche secondo."
+            else -> "Nessun giocatore in questa dimensione: prova gli altri filtri qui sopra."
+        }
 
         bind.btnUnfollow.visible(PlayerTracker.focus != null)
         if (followed != null) {

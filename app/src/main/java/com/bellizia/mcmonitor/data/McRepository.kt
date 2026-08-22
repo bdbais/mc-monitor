@@ -80,6 +80,15 @@ object McRepository {
                 lower.contains("commands") || lower.contains("not a valid")
     }
 
+    /** Quando quel giocatore ha lasciato l'ultima traccia nel log. */
+    suspend fun lastSeen(player: String): String? {
+        val c = cfg()
+        val raw = runCatching { SshManager.exec(c, Lgsm.lastSeen(c, player), 45_000).text }.getOrNull()
+            ?: return null
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.ITALY).format(Date())
+        return Lgsm.parseLastSeen(raw, today)
+    }
+
     /** Cronologia di chat e comandi di un giocatore, ordinata nel tempo. */
     suspend fun chat(player: String): List<ChatMessage> {
         val c = cfg()

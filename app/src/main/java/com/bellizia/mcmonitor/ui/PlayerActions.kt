@@ -5,6 +5,9 @@ import android.text.InputType
 import android.widget.EditText
 import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.bellizia.mcmonitor.data.McRepository
+import kotlinx.coroutines.launch
 import com.bellizia.mcmonitor.databinding.DialogCoordsBinding
 import com.bellizia.mcmonitor.databinding.DialogPlayerBinding
 import com.bellizia.mcmonitor.lgsm.PlayerPos
@@ -36,6 +39,17 @@ class PlayerActions(
         sheet.setContentView(b.root)
 
         b.name.text = name
+        // "Quando c'era?" e' la prima domanda davanti a un nome sconosciuto: la
+        // risposta arriva dai log e si aggiunge appena pronta, senza far
+        // aspettare il resto del pannello.
+        if (!online) {
+            fragment.viewLifecycleOwner.lifecycleScope.launch {
+                val visto = runCatching { McRepository.lastSeen(name) }.getOrNull()
+                if (visto != null && fragment.isAdded) {
+                    b.name.text = "$name  ·  visto $visto"
+                }
+            }
+        }
         b.subtitle.text = when {
             pos != null -> "X ${pos.x.roundToInt()}  Y ${pos.y.roundToInt()}  Z ${pos.z.roundToInt()} · ${pos.shortDimension}"
             online -> "online, posizione non disponibile"

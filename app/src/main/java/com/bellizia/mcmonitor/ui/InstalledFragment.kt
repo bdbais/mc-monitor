@@ -149,7 +149,7 @@ class InstalledFragment : Fragment() {
 
         // Senza collegamento cercare non ha senso: il pulsante riporta al passo 1
         // invece di lasciare davanti a un tasto che non fa niente.
-        bind.btnRicerca.text = if (connesso) "Cerca di nuovo" else "Vai al collegamento"
+        bind.btnRicerca.text = if (connesso) "Trova servers Minecraft" else "Vai al collegamento"
         bind.btnRicerca.setOnClickListener {
             if (connesso) search() else (activity as? HomeActivity)?.show(R.id.nav_connessione)
         }

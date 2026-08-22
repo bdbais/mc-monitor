@@ -53,6 +53,9 @@ class StatusFragment : Fragment() {
         b.btnCopyAddress.setOnClickListener { copyAddress() }
         b.btnShareAddress.setOnClickListener { shareAddress() }
         b.btnChangeVersion.setOnClickListener { chooseVersion() }
+        b.btnGoMods.setOnClickListener {
+            (activity as? com.bellizia.mcmonitor.MainActivity)?.openTab("Mod")
+        }
         b.btnStart.setOnClickListener {
             withOtherAdmins("avviare il server") {
                 control("Avvio del server…", "avvio") { McRepository.start() }
@@ -138,9 +141,10 @@ class StatusFragment : Fragment() {
             ?: details["Server IP"]?.substringAfter(':', "")?.takeIf { it.isNotBlank() }
             ?: "25565"
 
-        // L'indirizzo vero resta in memoria per copia e condivisione; a schermo,
-        // in modalità privacy, se ne vede solo l'inizio.
-        gameAddress = if (port == "25565") host else "$host:$port"
+        // La porta si scrive sempre, anche la 25565: senza, il testo condiviso
+        // sembra l'indirizzo di un sito e le app di messaggistica lo trasformano
+        // in un link http che non porta da nessuna parte.
+        gameAddress = if (host.isBlank()) "" else "$host:$port"
         val bind = _b ?: return
         bind.addressBox.visible(host.isNotBlank())
         bind.address.text = Privacy.host(gameAddress)
@@ -156,10 +160,14 @@ class StatusFragment : Fragment() {
     private fun shareAddress() {
         val address = gameAddress.ifBlank { return }
         val name = Prefs.load().displayName
+        // Il testo dice cosa farne: chi lo riceve spesso non ha mai aggiunto un
+        // server a mano, e un indirizzo secco sembra un collegamento da toccare.
+        val testo = "Server Minecraft \"$name\"\n\nIndirizzo: $address\n\n" +
+                "In Minecraft: Gioca · Server · Aggiungi server, e incolla l'indirizzo."
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, "Server Minecraft $name")
-            putExtra(Intent.EXTRA_TEXT, "Server Minecraft \"$name\": $address")
+            putExtra(Intent.EXTRA_TEXT, testo)
         }
         startActivity(Intent.createChooser(intent, "Condividi l'indirizzo"))
     }

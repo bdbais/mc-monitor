@@ -1,5 +1,6 @@
 package com.bellizia.mcmonitor.lgsm
 
+import com.bellizia.mcmonitor.data.ServerConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -135,5 +136,37 @@ class LgsmParsingTest {
         assertEquals(1, messages.size)
         assertEquals("test", messages[0].text)
         assertEquals("21:04:11", messages[0].time)
+    }
+
+    @Test
+    fun `ultima traccia di un giocatore, con la data giusta`() {
+        // Da latest.log la data e' oggi: dentro il file c'e' solo l'orario.
+        val oggi = Lgsm.parseLastSeen(
+            "latest.log:[21:14:07] [Server thread/INFO]: Vale left the game",
+            "2026-08-22"
+        )
+        assertEquals("2026-08-22 21:14:07", oggi)
+
+        // Dai log archiviati la data viene dal nome del file.
+        val vecchia = Lgsm.parseLastSeen(
+            "2026-08-19-3.log.gz:[07:02:11] [Server thread/INFO]: <Vale> ciao",
+            "2026-08-22"
+        )
+        assertEquals("2026-08-19 07:02:11", vecchia)
+
+        // Nessuna traccia, o cartella dei log assente: non si inventa niente.
+        assertNull(Lgsm.parseLastSeen("", "2026-08-22"))
+        assertNull(Lgsm.parseLastSeen("CARTELLA LOG NON TROVATA", "2026-08-22"))
+    }
+
+    @Test
+    fun `il comando cerca prima nel log di oggi`() {
+        val cfg = ServerConfig(lgsmDir = "/home/mcserver", script = "mcserver")
+        val comando = Lgsm.lastSeen(cfg, "Vale")
+        assertTrue(comando.contains("latest.log"))
+        assertTrue(comando.contains("zgrep"))
+        assertTrue(comando.contains("'Vale'"))
+        // Prima il log di oggi, e solo se non c'e' niente si scava negli archivi.
+        assertTrue(comando.indexOf("latest.log") < comando.indexOf("*.log.gz"))
     }
 }

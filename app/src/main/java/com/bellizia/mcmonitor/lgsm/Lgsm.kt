@@ -376,6 +376,42 @@ object Lgsm {
      * Ricostruisce data e ora di ogni riga: l'ora sta nella riga di log, la data nel
      * nome del file (`2026-08-01-1.log.gz`), mentre `latest.log` è la giornata odierna.
      */
+    /**
+     * L'ultima riga di log che nomina un giocatore: entrata, uscita, chat o
+     * comando. Serve a rispondere alla domanda che si fa sempre guardando un
+     * nome — "ma quando c'era?" — senza aprire tutta la cronologia.
+     */
+    fun lastSeen(cfg: ServerConfig, player: String): String {
+        val name = player.filter { it.isLetterOrDigit() || it == '_' }
+        val logs = "${cfg.serverFiles.trimEnd('/')}/logs"
+        val cerca = sq(name)
+        return "cd ${path(logs)} 2>/dev/null || { echo 'CARTELLA LOG NON TROVATA'; exit 0; }; " +
+                "ultima=\$(grep -aF $cerca latest.log 2>/dev/null | tail -1); " +
+                "if [ -n \"\$ultima\" ]; then printf 'latest.log:%s\n' \"\$ultima\"; " +
+                "elif command -v zgrep >/dev/null 2>&1; then " +
+                "zgrep -aHF $cerca *.log.gz 2>/dev/null | tail -1; fi"
+    }
+
+    /**
+     * Data e ora dell'ultima traccia, con la data presa dal nome del file
+     * compresso: dentro il log c'e' solo l'orario.
+     */
+    fun parseLastSeen(raw: String, today: String): String? {
+        val text = clean(raw).trim()
+        if (text.isBlank() || text.contains("CARTELLA LOG NON TROVATA")) return null
+        val riga = text.lines().lastOrNull { it.isNotBlank() } ?: return null
+        val fileRe = Regex("""^([A-Za-z0-9._-]+\.log(?:\.gz)?):(.*)${'$'}""")
+        val m = fileRe.find(riga)
+        val file = m?.groupValues?.get(1)
+        val corpo = m?.groupValues?.get(2) ?: riga
+        val data = when {
+            file == null || file == "latest.log" -> today
+            else -> Regex("""^(\d{4}-\d{2}-\d{2})""").find(file)?.groupValues?.get(1) ?: today
+        }
+        val ora = Regex("""^\[(\d{2}:\d{2}:\d{2})""").find(corpo.trim())?.groupValues?.get(1)
+        return if (ora == null) data else "$data $ora"
+    }
+
     fun parseChat(raw: String, today: String): List<ChatMessage> {
         val fileRe = Regex("^([A-Za-z0-9._-]+\\.log(?:\\.gz)?):(.*)$")
         val timeRe = Regex("^\\[(\\d{2}:\\d{2}:\\d{2})")

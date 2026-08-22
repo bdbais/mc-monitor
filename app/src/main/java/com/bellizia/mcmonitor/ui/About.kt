@@ -44,6 +44,18 @@ object About {
             Minecraft è di Mojang Studios. Questa app non è affiliata né approvata da Mojang o Microsoft.
             https://www.minecraft.net
 
+            Dove cercare quando qualcosa non torna
+            Wiki di Minecraft (comandi, oggetti, meccaniche)
+            https://minecraft.wiki
+            Elenco dei comandi della console
+            https://minecraft.wiki/w/Commands
+            server.properties, riga per riga
+            https://minecraft.wiki/w/Server.properties
+            Documentazione di LinuxGSM per il server Minecraft
+            https://docs.linuxgsm.com/game-servers/minecraft
+            Configurazione di LinuxGSM (mcserver.cfg)
+            https://docs.linuxgsm.com/configuration/game-server-config
+
             LinuxGSM, il sistema che gestisce il server di gioco
             https://linuxgsm.com
 

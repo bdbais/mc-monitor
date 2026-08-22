@@ -126,7 +126,9 @@ class PlayersFragment : Fragment() {
         list.removeAllViews()
         waiting.forEach { attempt ->
             val row = ItemWaitingBinding.inflate(layoutInflater, list, false)
-            row.name.text = Privacy.name(attempt.name)
+            // Qui l'amministratore deve decidere se ammettere o bannare: un nome
+            // mascherato non si riconosce, e la scelta si fa proprio sul nome.
+            row.name.text = attempt.name
             row.subtitle.text = buildString {
                 append(attempt.description)
                 if (attempt.stamp.isNotBlank()) append(" · ultimo tentativo ${attempt.stamp}")
