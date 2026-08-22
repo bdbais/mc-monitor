@@ -301,6 +301,20 @@ object Prefs {
             sp.edit().putString("adminName", value.trim()).apply()
         }
 
+    /**
+     * Identificativo di questa installazione: distingue i telefoni fra loro nella
+     * presenza e nella chat, senza dire niente su chi li usa. Nasce a caso al
+     * primo bisogno e resta finché l'app resta installata.
+     */
+    val deviceId: String
+        get() {
+            val salvato = sp.getString("deviceId", "") ?: ""
+            if (salvato.isNotBlank()) return salvato
+            val nuovo = UUID.randomUUID().toString().replace("-", "").take(12)
+            sp.edit().putString("deviceId", nuovo).apply()
+            return nuovo
+        }
+
     /** Impronta della password che sblocca l'app, con il suo sale. Mai la password. */
     var lockHash: String
         get() = sp.getString("lockHash", "") ?: ""

@@ -2,7 +2,7 @@
 
 App Android per gestire un server Minecraft installato con **LinuxGSM**, via **SSH**.
 
-APK pronto all'uso: **`MC-Monitor-1.19.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
+APK pronto all'uso: **`MC-Monitor-1.20.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
 
 **[Manuale d'uso completo](MANUALE.md)** · [Release e APK](https://github.com/bdbais/mc-monitor/releases)
 
@@ -69,6 +69,21 @@ Duplica, Rimuovi), **Manuale d'uso** e **Informazioni**.
 
 Cambiare server chiude sessione SSH, connessione RCON e azzera le scie in memoria: nessun
 dato di un server può finire mescolato con quelli di un altro.
+
+## Più amministratori sullo stesso server
+
+Ogni telefono lascia un segnale in `~/.mcmonitor/presence` una volta al minuto e li rilegge
+tutti: la pagina **Amministratori e messaggi** mostra chi c'è adesso, e il pulsante nella
+barra porta un numero quando ci sono altri. Chi sta avviando, fermando o riavviando lo
+dichiara nel proprio segnale, così gli altri lo vedono scritto accanto al nome.
+
+Prima di avviare, fermare o riavviare, se c'è qualcun altro collegato l'app lo dice e
+propone di scrivergli invece di procedere: è il caso in cui due amministratori si spengono
+il server a vicenda senza saperlo.
+
+La chat è un file di righe in `~/.mcmonitor/chat.log` sullo stesso computer — niente
+account, niente servizi in mezzo, e l'orologio dei messaggi è quello del server. Chi ha
+accesso a quell'utenza SSH legge i messaggi: sono gli amministratori, che è il punto.
 
 ## Configurare un server
 

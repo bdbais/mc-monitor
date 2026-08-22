@@ -1,5 +1,6 @@
 package com.bellizia.mcmonitor
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -10,6 +11,15 @@ import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.bellizia.mcmonitor.data.PlayerTracker
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.data.PresenceRepository
+import com.bellizia.mcmonitor.lgsm.Presence
+import com.bellizia.mcmonitor.ui.visible
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import com.bellizia.mcmonitor.databinding.ActivityMainBinding
 import com.bellizia.mcmonitor.ui.ConsoleFragment
 import com.bellizia.mcmonitor.ui.Help
@@ -79,6 +89,11 @@ class MainActivity : AppCompatActivity() {
             HelpDialog.show(this, Help.forTab(binding.pager.currentItem))
         }
 
+        binding.btnAdmin.setOnClickListener {
+            startActivity(Intent(this, com.bellizia.mcmonitor.ui.AdminActivity::class.java))
+        }
+        watchOtherAdmins()
+
         // Si parte dalle Impostazioni quando si arriva da "Modifica" o quando la
         // configurazione è incompleta; altrimenti direttamente dallo stato del server.
         val openSettings = intent.getBooleanExtra(EXTRA_OPEN_SETTINGS, false)
@@ -91,6 +106,28 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Il nome può cambiare dalle Impostazioni mentre l'activity è aperta.
         binding.serverName.text = Prefs.load().displayName
+    }
+
+    /**
+     * Presenza: ogni minuto si lascia un segnale sul computer e si guarda chi
+     * altro c'è. Il numero sul pulsante conta solo gli altri — sapere di essere
+     * da soli non serve a nessuno, sapere che c'è qualcun altro sì, perché da qui
+     * si spegne un server.
+     */
+    private fun watchOtherAdmins() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (isActive) {
+                    if (Prefs.load().isComplete) {
+                        PresenceRepository.heartbeat()
+                        val altri = PresenceRepository.others()
+                        binding.adminBadge.visible(altri.isNotEmpty())
+                        binding.adminBadge.text = altri.size.toString()
+                    }
+                    delay(Presence.HEARTBEAT_SECONDS * 1000)
+                }
+            }
+        }
     }
 
     /** Porta la mappa in primo piano centrata su un giocatore, e la tiene agganciata. */

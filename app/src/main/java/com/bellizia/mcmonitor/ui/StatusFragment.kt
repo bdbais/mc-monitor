@@ -17,6 +17,7 @@ import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.ModRepository
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.Privacy
+import com.bellizia.mcmonitor.data.PresenceRepository
 import com.bellizia.mcmonitor.databinding.FragmentStatusBinding
 import com.bellizia.mcmonitor.databinding.ItemKeyValueBinding
 import com.bellizia.mcmonitor.lgsm.Lgsm
@@ -52,15 +53,23 @@ class StatusFragment : Fragment() {
         b.btnCopyAddress.setOnClickListener { copyAddress() }
         b.btnShareAddress.setOnClickListener { shareAddress() }
         b.btnChangeVersion.setOnClickListener { chooseVersion() }
-        b.btnStart.setOnClickListener { control("Avvio del server…") { McRepository.start() } }
+        b.btnStart.setOnClickListener {
+            withOtherAdmins("avviare il server") {
+                control("Avvio del server…", "avvio") { McRepository.start() }
+            }
+        }
         b.btnStop.setOnClickListener {
-            confirm("Fermare il server?", "I giocatori online verranno disconnessi.") {
-                control("Arresto del server…") { McRepository.stop() }
+            withOtherAdmins("fermare il server") {
+                confirm("Fermare il server?", "I giocatori online verranno disconnessi.") {
+                    control("Arresto del server…", "arresto") { McRepository.stop() }
+                }
             }
         }
         b.btnRestart.setOnClickListener {
-            confirm("Riavviare il server?", "I giocatori online verranno disconnessi.") {
-                control("Riavvio del server…") { McRepository.restart() }
+            withOtherAdmins("riavviare il server") {
+                confirm("Riavviare il server?", "I giocatori online verranno disconnessi.") {
+                    control("Riavvio del server…", "riavvio") { McRepository.restart() }
+                }
             }
         }
     }
@@ -368,13 +377,54 @@ class StatusFragment : Fragment() {
         else -> Color.parseColor("#FFB300")
     }
 
-    private fun control(progress: String, block: suspend () -> String) {
+    /**
+     * Semaforo fra amministratori: prima di toccare il server si guarda se c'e'
+     * qualcun altro dentro in questo momento. Non blocca niente — decide chi sta
+     * davanti allo schermo — ma toglie il caso peggiore, cioe' due persone che
+     * spengono e riavviano a vicenda senza sapere l'una dell'altra.
+     */
+    private fun withOtherAdmins(azione: String, block: () -> Unit) {
+        if (!configured()) return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val altri = PresenceRepository.others()
+            if (!isAdded) return@launch
+            if (altri.isEmpty()) {
+                block()
+                return@launch
+            }
+            val chi = altri.joinToString(", ") { admin ->
+                buildString {
+                    append(admin.name)
+                    append(" (")
+                    append(if (admin.busy) admin.doing else admin.whenLabel)
+                    append(")")
+                }
+            }
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("C'è qualcun altro collegato")
+                .setMessage(
+                    "In questo momento c'è anche: $chi.\n\nStai per $azione. " +
+                            "Se non ve lo siete detti, meglio scrivergli prima."
+                )
+                .setNeutralButton("Scrivigli") { _, _ ->
+                    startActivity(Intent(requireContext(), AdminActivity::class.java))
+                }
+                .setNegativeButton("Aspetto", null)
+                .setPositiveButton("Vai avanti") { _, _ -> block() }
+                .show()
+        }
+    }
+
+    private fun control(progress: String, azione: String, block: suspend () -> String) {
         if (!configured()) return
         b.swipe.isRefreshing = true
         b.output.text = progress
         setButtons(false)
         viewLifecycleOwner.lifecycleScope.launch {
+            // Finché dura, gli altri lo vedono scritto accanto al nome.
+            PresenceRepository.heartbeat(azione)
             val result = runCatching { block() }
+            PresenceRepository.heartbeat()
             _b ?: return@launch
             b.output.text = result.getOrElse { it.userMessage() }.ifBlank { "Comando eseguito." }
             setButtons(true)

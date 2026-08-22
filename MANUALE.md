@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.19.
+Versione 1.20.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -31,7 +31,7 @@ L'app non richiede account, non usa servizi intermedi e parla solo con il tuo se
 Al primo avvio l'app chiede due cose e poi non le chiede più.
 
 **Come ti chiami** — il nome dell'amministratore. Compare nel menu accanto al computer
-collegato, e servirà a firmare i messaggi quando ci sarà la chat fra amministratori.
+collegato, e firma i messaggi nella chat fra amministratori.
 
 **Una password per aprire l'app** — perché da qui si spegne il server, si decide chi può
 entrare e si può cancellare un mondo intero: un telefono lasciato sul tavolo non deve
@@ -127,8 +127,31 @@ come `update` o `details` iniziano a fallire con errori che non dicono qual è l
 |---|---|
 | **Crea un nuovo server** | installa una nuova istanza LinuxGSM, staccata dai due passi |
 | **Profili salvati** | l'elenco classico dei profili, con Aggiungi, Modifica, Duplica, Rimuovi; utile se gestisci più computer |
+| **Amministratori e messaggi** | chi altro sta comandando questo server e la chat fra voi |
+| **Blocco e amministratore** | il tuo nome, la password dell'app e dopo quanto richiuderla |
 | **Manuale d'uso** | apre questa pagina |
 | **Informazioni** | versione, licenza e i progetti su cui l'app si appoggia |
+
+### Amministratori e messaggi
+
+Se il server lo gestite in più persone, ognuno con la sua copia dell'app, questa pagina
+dice **chi c'è adesso** e permette di **scrivervi**.
+
+Ogni telefono lascia un segnale sul computer una volta al minuto; l'app li rilegge e mostra
+chi si è fatto vivo di recente, con un pallino verde. Se qualcuno sta facendo qualcosa di
+delicato — avvio, arresto, riavvio — accanto al nome compare cosa, con il pallino giallo.
+Sul pulsante degli amministratori, nella barra in alto dentro un server, compare un numero:
+quanti **altri** ci sono in questo momento.
+
+Nella stessa pagina c'è la chat. I messaggi restano sul computer del server, in
+`~/.mcmonitor/chat.log`, e li legge chiunque abbia accesso a quell'utenza — cioè gli
+amministratori, che è esattamente il punto. Non ci sono account: accanto a ogni messaggio
+c'è il nome che ognuno si è dato al primo avvio.
+
+**Il semaforo.** Prima di avviare, fermare o riavviare il server, se c'è qualcun altro
+collegato l'app lo dice e chiede conferma, con un pulsante per scrivergli invece di
+procedere. Non blocca niente — decidi tu — ma toglie il caso peggiore: due persone che si
+spengono il server a vicenda senza sapere l'una dell'altra.
 
 Cambiare server chiude sessione SSH, RCON e azzera le scie sulla mappa: i dati di un
 server non possono mescolarsi con quelli di un altro.
@@ -174,7 +197,8 @@ volta: se cambia, blocca la connessione e lo segnala.
 
 Stato STARTED/STOPPED con pallino colorato, IP, porte, versione, uptime e l'output
 completo di `lgsm details`. I pulsanti **Avvia**, **Ferma** e **Riavvia** chiedono
-conferma quando l'azione disconnette i giocatori.
+conferma quando l'azione disconnette i giocatori, e avvisano se in quel momento c'è un
+altro amministratore collegato.
 
 Più in basso: la versione di Minecraft configurata e l'elenco dei mod installati.
 

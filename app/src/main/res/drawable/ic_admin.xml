@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Due teste a pixel, una davanti all'altra: gli altri amministratori. -->
+    <path
+        android:fillColor="#5E6266"
+        android:pathData="M9,2h4v4h-4zM10,6h3v4h-3z" />
+    <path
+        android:fillColor="#C8CDD2"
+        android:pathData="M3,4h5v5h-5zM2,9h7v5h-7z" />
+    <path
+        android:fillColor="#22262A"
+        android:pathData="M4,6h1v1h-1zM6,6h1v1h-1z" />
+</vector>

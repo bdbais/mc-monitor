@@ -25,6 +25,10 @@
                 android:icon="@drawable/ic_clock_mc"
                 android:title="Profili salvati" />
             <item
+                android:id="@+id/nav_admin"
+                android:icon="@drawable/ic_admin"
+                android:title="Amministratori e messaggi" />
+            <item
                 android:id="@+id/nav_blocco"
                 android:icon="@drawable/ic_lock"
                 android:title="Blocco e amministratore" />

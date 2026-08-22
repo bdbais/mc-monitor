@@ -90,6 +90,7 @@ class HomeActivity : AppCompatActivity() {
             R.id.nav_nuovo -> createServer()
             R.id.nav_profili -> startActivity(Intent(this, ServersActivity::class.java))
             R.id.nav_blocco -> LockSettings.show(this)
+            R.id.nav_admin -> openAdmins()
             R.id.nav_manuale -> About.manual(this)
             R.id.nav_info -> About.show(this)
         }
@@ -143,6 +144,18 @@ class HomeActivity : AppCompatActivity() {
             Intent(this, MainActivity::class.java)
                 .putExtra(MainActivity.EXTRA_OPEN_SETTINGS, settings || !server.isComplete)
         )
+    }
+
+    /**
+     * La chat fra amministratori vive nella home dell'utente SSH: senza un server
+     * scelto non si sa nemmeno dove guardare.
+     */
+    private fun openAdmins() {
+        if (!Prefs.load().isComplete) {
+            toast("Apri prima un server")
+            return
+        }
+        startActivity(Intent(this, AdminActivity::class.java))
     }
 
     private fun refreshHeader() {

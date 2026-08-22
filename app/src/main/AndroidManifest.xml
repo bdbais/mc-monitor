@@ -59,6 +59,14 @@
             android:parentActivityName=".ui.HomeActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Chi altro sta amministrando questo server, e i messaggi fra loro. -->
+        <activity
+            android:name=".ui.AdminActivity"
+            android:exported="false"
+            android:label="Amministratori"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
         <activity
             android:name=".ui.WebMapActivity"
             android:exported="false"
