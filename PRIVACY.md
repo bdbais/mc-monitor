@@ -1,6 +1,6 @@
 # Informativa sulla privacy — MC Monitor
 
-Ultimo aggiornamento: 5 agosto 2026
+Ultimo aggiornamento: 22 agosto 2026
 
 MC Monitor è un'app di amministrazione che si collega, tramite SSH e RCON, a un server
 Minecraft **scelto e posseduto dall'utente**.
@@ -21,6 +21,7 @@ inserisce:
 - password SSH, chiave privata SSH ed eventuale passphrase;
 - password RCON;
 - percorsi di LinuxGSM e URL della mappa web;
+- le macro scritte dall'utente e, se configurata, la chiave del servizio che le genera;
 - impronta digitale (fingerprint) della chiave host del server, per rilevarne il cambiamento;
 - posizioni dei giocatori lette durante la sessione, tenute solo in memoria e perse alla chiusura.
 
@@ -29,14 +30,34 @@ configurato, e per il solo scopo di autenticarsi ed eseguire i comandi richiesti
 
 ## Connessioni di rete
 
-L'app si collega esclusivamente a:
+Il server dell'utente:
 
-1. l'indirizzo del server indicato dall'utente, sulla porta SSH indicata;
+1. l'indirizzo indicato dall'utente, sulla porta SSH indicata;
 2. la porta RCON di quel server, se l'utente attiva RCON (di norma dentro il tunnel SSH);
 3. l'URL della mappa web (Dynmap, BlueMap o simili) se l'utente ne configura uno, aperto
    in una WebView.
 
-Non esistono altre destinazioni. Nessun server dello sviluppatore è coinvolto.
+Servizi pubblici, contattati solo quando serve alla funzione che l'utente sta usando, senza
+account e senza inviare dati del server:
+
+4. `api.modrinth.com` — ricerca dei mod (il download dei file lo fa il server, non il
+   telefono, da `cdn.modrinth.com`);
+5. `piston-meta.mojang.com` — elenco delle versioni di Minecraft;
+6. `meta.fabricmc.net` — versioni del loader Fabric;
+7. `api.github.com` — controllo degli aggiornamenti dell'app e della versione di LinuxGSM.
+
+Il servizio che scrive le macro, **solo se l'utente ne configura uno** inserendo una propria
+chiave:
+
+8. `generativelanguage.googleapis.com` (Google AI Studio) oppure `api.groq.com` (Groq), a
+   scelta dell'utente. Vengono inviati: la descrizione che l'utente scrive, la versione di
+   Minecraft e il mod loader del server. Non vengono inviati indirizzi, credenziali, log,
+   nomi di giocatori né altri dati del server. La chiave è dell'utente, resta sul
+   dispositivo e non è preinstallata nell'app: senza, la funzione non si attiva e tutto il
+   resto dell'app funziona lo stesso. Il trattamento dei dati inviati è regolato
+   dall'informativa del servizio scelto.
+
+Nessun server dello sviluppatore è coinvolto in nessuno di questi casi.
 
 ## Dati letti dal server
 

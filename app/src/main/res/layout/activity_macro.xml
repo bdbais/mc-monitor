@@ -109,6 +109,15 @@
                 android:layout_marginTop="4dp"
                 android:text="Scrivi una macro nuova" />
 
+            <!-- Serve una chiave gratuita del servizio, presa da chi usa l'app:
+                 nell'app non ce n'è nessuna. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAi"
+                style="@style/McButton.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Fattela scrivere: descrivi cosa vuoi" />
+
             <TextView
                 style="@style/CardTitle"
                 android:layout_width="wrap_content"

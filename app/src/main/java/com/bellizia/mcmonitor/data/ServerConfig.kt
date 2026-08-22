@@ -316,6 +316,25 @@ object Prefs {
         sp.edit().putString("macros", array.toString()).apply()
     }
 
+    /**
+     * La chiave del servizio che scrive le macro, e quale servizio e'.
+     *
+     * E' di chi usa l'app, presa gratis dal servizio, e resta su questo telefono:
+     * nell'app non c'e' nessuna chiave nostra, e senza questa il generatore non
+     * si accende. Tutto il resto funziona lo stesso.
+     */
+    var aiProvider: String
+        get() = sp.getString("aiProvider", "google") ?: "google"
+        set(value) {
+            sp.edit().putString("aiProvider", value).apply()
+        }
+
+    var aiKey: String
+        get() = sp.getString("aiKey", "") ?: ""
+        set(value) {
+            sp.edit().putString("aiKey", value.trim()).apply()
+        }
+
     /** Segna l apertura di un server: serve all ordinamento per ultimo utilizzo. */
     fun markUsed(id: String) {
         val server = servers().firstOrNull { it.id == id } ?: return

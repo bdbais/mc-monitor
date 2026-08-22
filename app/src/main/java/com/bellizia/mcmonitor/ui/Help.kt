@@ -102,6 +102,14 @@ object Help {
 
         Le macro stanno sul telefono, non sul server: sono un modo tuo di comandare, non una cosa del mondo di Minecraft. Se cambi telefono si riscrivono.
 
+        FATTELA SCRIVERE
+
+        "Fattela scrivere: descrivi cosa vuoi" chiede la macro a un servizio di intelligenza artificiale. Serve una chiave del servizio, che si prende gratis in due minuti da Google AI Studio o da Groq: è tua, resta su questo telefono, e nell'app non ce n'è nessuna. Senza, tutto il resto funziona lo stesso.
+
+        Al servizio arrivano la frase che scrivi tu, la versione di Minecraft e il mod loader. Non ci vanno indirizzi, password, log né nomi di giocatori.
+
+        Quello che torna indietro non viene creduto sulla parola: i comandi che spengono il server o decidono chi può entrare (stop, op, ban, kick, whitelist…) vengono tolti, e ti viene detto quali. Poi la macro te la fa leggere prima di salvarla, e la puoi correggere. Non è una regola per te — dalla Console quei comandi li scrivi quando vuoi — è una regola per quello che scrive qualcun altro al posto tuo.
+
         L'elenco dei comandi di Minecraft, se ne cerchi uno:
         https://minecraft.wiki/w/Commands
         """.trimIndent()

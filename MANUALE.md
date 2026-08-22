@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.21.
+Versione 1.22.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -356,6 +356,34 @@ una macro tua e l'originale resta dov'è.
 già partiti: non tornano indietro. Se un comando fallisce la macro si ferma lì.
 
 Le macro stanno sul telefono, non sul server.
+
+### Fattela scrivere
+
+**"Fattela scrivere: descrivi cosa vuoi"** chiede la macro a un servizio di intelligenza
+artificiale: scrivi *"prepara il server per una gara di costruzione"* e ti torna indietro la
+sequenza di comandi, con un nome e una descrizione.
+
+Serve una chiave del servizio, gratuita, che si prende in due minuti:
+
+- [Google AI Studio](https://aistudio.google.com/apikey) (Gemini)
+- [Groq](https://console.groq.com/keys)
+
+La chiave è tua e resta su questo telefono: **nell'app non ce n'è nessuna**, e senza tutto il
+resto funziona lo stesso. Al servizio arrivano la frase che scrivi tu, la versione di
+Minecraft e il mod loader — non indirizzi, non password, non log, non nomi di giocatori.
+
+Quello che torna indietro non viene creduto sulla parola. Un modello può scrivere `stop`
+mentre stanno giocando in venti, o `op` a un nome che non hai mai sentito: comandi
+legittimi, che però non hai chiesto tu. Passano solo i verbi di una lista — parlare in chat,
+cambiare tempo e meteo, dare oggetti ed effetti, teletrasportare, salvare — e quelli tolti
+te li elenca invece di farli sparire in silenzio.
+
+Poi la macro te la fa **leggere prima di salvarla**, con il pulsante per correggerla. Nasce
+segnata come delicata, così la conferma prima di lanciarla lo ricorda.
+
+Non è una regola per te: dalla Console `stop` e `ban` li scrivi quando vuoi. È una regola
+per quello che scrive qualcun altro al posto tuo, e che nessuno ha riletto prima che
+diventasse un pulsante da premere.
 
 ## 10. Giocatori
 
