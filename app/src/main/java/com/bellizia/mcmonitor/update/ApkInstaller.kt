@@ -3,6 +3,7 @@ package com.bellizia.mcmonitor.update
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -56,4 +57,50 @@ object ApkInstaller {
         }
         context.startActivity(intent)
     }
+
+    /** La pagina da cui si scarica a mano, quando l'app non può farlo da sola. */
+    const val PAGINA_VERSIONI = "https://github.com/bdbais/mc-monitor/releases/latest"
+
+    /**
+     * Se questa copia dell'app è in grado di passare un file all'installer.
+     *
+     * La variante di prova nasce senza FileProvider — è tolto apposta, serviva a
+     * capire quale componente un telefono rifiutasse — e senza quello il file non
+     * si può consegnare a nessuno. Meglio saperlo prima di scaricare venti
+     * megabyte, e dirlo con parole invece che con l'eccezione di Android.
+     */
+    fun puoInstallare(context: Context): Boolean =
+        context.packageManager.resolveContentProvider("${context.packageName}.updates", 0) != null
+
+    /**
+     * Se manca solo il consenso di sistema a installare app da questa app.
+     *
+     * È una cosa diversa dalla precedente: qui l'app potrebbe, ma Android non la
+     * lascia finché non si dice di sì una volta nelle impostazioni.
+     */
+    fun servePermesso(context: Context): Boolean =
+        !context.packageManager.canRequestPackageInstalls()
+
+    /**
+     * La schermata di sistema dove si dà quel consenso.
+     *
+     * Se il telefono non ha quella schermata — capita su certe versioni — si
+     * ripiega sui dettagli dell'app, da cui ci si arriva comunque.
+     */
+    fun impostazioniPermesso(context: Context): Intent {
+        val diretto = Intent(
+            Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+            Uri.parse("package:${context.packageName}")
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (diretto.resolveActivity(context.packageManager) != null) return diretto
+
+        return Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:${context.packageName}")
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    fun paginaVersioni(): Intent =
+        Intent(Intent.ACTION_VIEW, Uri.parse(PAGINA_VERSIONI))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 }

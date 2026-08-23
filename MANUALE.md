@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.24.
+Versione 1.25.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -649,6 +649,27 @@ l'installer di sistema, **Più tardi** lo nasconde fino al prossimo avvio.
 
 La prima volta Android chiede di autorizzare MC Monitor a installare app: è una conferma
 di sistema, l'app non installa nulla da sola.
+
+
+### Se l'installazione non parte
+
+Android non lascia che un'app ne installi un'altra finche' non glielo dici una volta. Se
+succede, l'app apre da sola il riquadro **"Serve il tuo consenso"** con il pulsante che
+porta dritto alla schermata giusta: *Installa app sconosciute · MC Monitor · Consenti da
+questa origine*. Accendi l'interruttore, torna indietro e tocca di nuovo Aggiorna — il file
+e' gia' scaricato e non si riscarica.
+
+### La variante di prova
+
+Esiste una seconda versione dell'app che si chiama **"MC Monitor prova"**: e' un attrezzo
+di diagnosi, nato per capire quale componente un certo telefono rifiutasse, e per questo le
+mancano apposta il permesso di installare e il pezzo che consegna i file alle altre app.
+
+Da quella copia **l'aggiornamento non puo' funzionare**, e non e' un guasto: adesso l'app te
+lo dice prima di scaricare, invece di lasciarti un errore di Android in inglese. Per passare
+a quella normale: salva la configurazione con *Impostazioni · Fai un backup ora* in una
+cartella (quello funziona anche li'), scarica l'APK dalla pagina delle versioni, installalo
+— e' un'app separata e si affianca — e riprendi la configurazione con *Importa*.
 
 ## 18. Se qualcosa non funziona
 

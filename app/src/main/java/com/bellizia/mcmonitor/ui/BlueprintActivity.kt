@@ -78,6 +78,15 @@ class BlueprintActivity : AppCompatActivity() {
     // ------------------------------------------------------------- esporta
 
     private fun esporta() {
+        if (!puoCondividereFile()) {
+            mostra(
+                "Questa copia non puo' mandare file",
+                "Stai usando la variante di prova di MC Monitor, fatta apposta senza la " +
+                        "parte che consegna i file alle altre app. Il progetto si esporta " +
+                        "dalla versione normale."
+            )
+            return
+        }
         val conGiocatori = binding.includiGiocatori.isChecked
         occupato(true)
         lifecycleScope.launch {

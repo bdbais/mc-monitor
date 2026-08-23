@@ -218,6 +218,10 @@ class SettingsFragment : Fragment() {
             toast("Non c'è nessun server da esportare")
             return
         }
+        if (!requireContext().puoCondividereFile()) {
+            noSharing()
+            return
+        }
         askPassword(
             title = "Esporta ${servers.size} server",
             message = "Il file conterrà le credenziali SSH e RCON, protette da questa password. " +
@@ -244,6 +248,25 @@ class SettingsFragment : Fragment() {
                 )
             }.onFailure { showText("Esportazione fallita", it.message.orEmpty()) }
         }
+    }
+
+    /**
+     * La variante di prova non ha il FileProvider, quindi non puo' mandare un
+     * file da nessuna parte. Il backup in una cartella pero' funziona: passa dal
+     * selettore di sistema e non da lui.
+     */
+    private fun noSharing() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Questa copia non puo' mandare file")
+            .setMessage(
+                "Stai usando la variante di prova di MC Monitor, che e' stata fatta " +
+                        "apposta senza la parte che consegna i file alle altre app.\n\n" +
+                        "Per portare via la configurazione usa \"Fai un backup ora\" qui " +
+                        "sotto, scegliendo una cartella: quello funziona, e il file si " +
+                        "riprende con \"Importa\" da qualsiasi copia dell'app."
+            )
+            .setPositiveButton("Ho capito", null)
+            .show()
     }
 
     private fun askImportPassword(uri: Uri) {

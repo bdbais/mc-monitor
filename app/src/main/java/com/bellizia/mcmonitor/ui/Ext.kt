@@ -1,5 +1,6 @@
 package com.bellizia.mcmonitor.ui
 
+import android.content.Context
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
@@ -38,3 +39,13 @@ fun View.visible(show: Boolean) {
 fun EditText.dialogoVisibile(): EditText = apply {
     imeOptions = imeOptions or EditorInfo.IME_FLAG_NO_EXTRACT_UI
 }
+
+/**
+ * Se questa copia dell'app puo' consegnare un file a un'altra app.
+ *
+ * Passa tutto dal FileProvider, che la variante di prova non ha: li' condividere
+ * un file non fallisce con un messaggio, esplode con un'eccezione di Android in
+ * inglese. Meglio chiederlo prima e dire cosa fare.
+ */
+fun Context.puoCondividereFile(): Boolean =
+    packageManager.resolveContentProvider("$packageName.updates", 0) != null
