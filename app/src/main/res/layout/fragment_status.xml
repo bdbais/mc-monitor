@@ -200,6 +200,41 @@
                     android:text="Riavvia" />
             </LinearLayout>
 
+            <!-- Le copie di sicurezza e i comandi dello script: due cose che si
+                 fanno spesso e che prima si potevano fare solo da terminale. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnBackup"
+                    style="@style/McButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:text="Backup" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnComandi"
+                    style="@style/McButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Comandi" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/ultimoBackup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
+
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

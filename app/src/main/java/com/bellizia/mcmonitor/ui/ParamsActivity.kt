@@ -6,6 +6,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -15,7 +16,6 @@ import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.databinding.ActivityParamsBinding
 import com.bellizia.mcmonitor.databinding.ItemParamBinding
 import com.bellizia.mcmonitor.lgsm.GameVersion
-import com.bellizia.mcmonitor.lgsm.ServerParam
 import com.bellizia.mcmonitor.lgsm.ServerParams
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
@@ -32,7 +32,8 @@ import kotlinx.coroutines.launch
 class ParamsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityParamsBinding
-    private var params: List<ServerParam> = emptyList()
+    private var params: List<ServerParams.ParamEffettivo> = emptyList()
+    private var filtro: String = ""
 
     /** Le chiavi scritte in questa sessione: solo alcune chiedono un riavvio. */
     private val toccati = mutableSetOf<String>()
@@ -50,6 +51,10 @@ class ParamsActivity : AppCompatActivity() {
         binding.btnHelp.setOnClickListener { HelpDialog.show(this, Help.PARAMS) }
         binding.swipe.setOnRefreshListener { load() }
         binding.btnAltro.setOnClickListener { editDialog("", "", nuovo = true) }
+        binding.cerca.doAfterTextChanged {
+            filtro = it?.toString()?.trim().orEmpty()
+            if (params.isNotEmpty()) render()
+        }
         binding.btnRiavvia.setOnClickListener { riavvia() }
         load()
     }
@@ -57,7 +62,7 @@ class ParamsActivity : AppCompatActivity() {
     private fun load() {
         binding.swipe.isRefreshing = true
         lifecycleScope.launch {
-            val esito = runCatching { McRepository.params() }
+            val esito = runCatching { McRepository.paramsChain() }
             binding.swipe.isRefreshing = false
             esito.fold(
                 onSuccess = {
@@ -73,72 +78,119 @@ class ParamsActivity : AppCompatActivity() {
     }
 
     private fun render() {
-        val attivi = params.filter { !it.commented }
-        val file = GameVersion.configPath(Prefs.load()).substringAfterLast('/')
+        val cerca = filtro.lowercase()
+        val visibili = params.filter { cerca.isBlank() || it.key.lowercase().contains(cerca) }
+        val nostri = params.count { it.nostro != null }
+
         binding.intestazione.text = buildString {
-            if (attivi.isEmpty()) {
-                append("In $file non c'è scritto niente, ed è normale: è il file delle tue ")
-                append("modifiche, e nasce vuoto.\n\n")
-                append("Il server sta girando lo stesso, con i valori di fabbrica di LinuxGSM ")
-                append("(memoria 1024, quattro backup, log tenuti sette giorni). Quelli stanno ")
-                append("in un altro file, che non si tocca: qui si scrivono le differenze.")
+            append("${params.size} parametri in vigore su questo server, ")
+            append("letti da tutti i file di LinuxGSM messi in fila.\n\n")
+            if (nostri == 0) {
+                append("Nessuno è scritto nel file di questo server, ed è normale: ")
+                append("quel file nasce vuoto e contiene solo le differenze. ")
+                append("Tutto quello che vedi qui viene dai valori di fabbrica.")
             } else {
-                append("$file, l'unico file che questa schermata legge e modifica: ")
-                append("${attivi.size} righe scritte.\n\n")
-                append("Quello che qui non compare non è spento: sta usando il valore di ")
-                append("fabbrica di LinuxGSM.")
+                append("$nostri sono scritti nel file di questo server; ")
+                append("gli altri vengono dai valori di fabbrica o dal file comune.")
             }
             append("\n\nOgni modifica tiene una copia datata del file.")
         }
 
         binding.elenco.removeAllViews()
-        attivi.sortedBy { it.key }.forEach { param ->
-            binding.elenco.addView(
-                riga(param.key, param.value, param.description, binding.elenco, nuovo = false)
-            )
+        if (visibili.isEmpty()) {
+            binding.elenco.addView(TextView(this).apply {
+                text = if (cerca.isBlank()) "Niente da mostrare." else "Nessun parametro con \"$filtro\"."
+                textSize = 13f
+            })
         }
+        visibili.forEach { binding.elenco.addView(riga(it, binding.elenco)) }
 
+        // Restano da proporre solo quelli del catalogo che non compaiono in
+        // nessuno dei file: tutto il resto e' gia' li sopra, con il suo valore.
+        val presenti = params.map { it.key }.toSet()
+        val mancanti = ServerParams.catalogue.filterNot { it.key in presenti }
         binding.aggiungibili.removeAllViews()
-        ServerParams.addable(params).forEach { info ->
+        mancanti.forEach { info ->
             binding.aggiungibili.addView(
-                riga(info.key, "", info.what, binding.aggiungibili, nuovo = true)
+                riga(
+                    ServerParams.ParamEffettivo(
+                        key = info.key,
+                        value = "",
+                        da = ServerParams.Da.ISTANZA,
+                        nostro = null,
+                        coperto = false
+                    ),
+                    binding.aggiungibili,
+                    daAggiungere = true
+                )
             )
         }
-        // Il riavvio butta fuori i giocatori: si propone solo per le righe che
-        // finiscono davvero nella riga di lancio. Il resto LinuxGSM lo rilegge da sé.
         binding.btnRiavvia.visible(ServerParams.needsRestart(toccati))
     }
 
     /**
      * Una riga dell'elenco.
      *
-     * [nuovo] lo decide il chiamante, non il valore. Deducendolo dal valore vuoto,
-     * una riga presente nel file ma vuota — cioè proprio quella che impedisce al
-     * server di partire — si riapriva come "Aggiungi un parametro" e perdeva il
-     * pulsante "Togli": l'unica riga da cancellare era anche l'unica che l'app
-     * non lasciava più cancellare.
+     * Accanto al valore c'e' scritto da dove viene: e' l'informazione che
+     * mancava del tutto. Un parametro che non e' scritto nel file di questo
+     * server non e' "non impostato" — ha un valore, e il server lo sta usando.
      */
     private fun riga(
-        chiave: String,
-        valore: String,
-        spiegazione: String,
+        p: ServerParams.ParamEffettivo,
         parent: LinearLayout,
-        nuovo: Boolean
+        daAggiungere: Boolean = false
     ): View {
         val item = ItemParamBinding.inflate(layoutInflater, parent, false)
-        item.chiave.text = chiave
+        item.chiave.text = p.key
         item.valore.text = when {
-            nuovo -> "valore di fabbrica"
-            valore.isBlank() -> "riga vuota: il server potrebbe non partire"
-            else -> valore
+            daAggiungere -> "non c'è in nessun file"
+            p.value.isBlank() -> "(vuoto)"
+            else -> p.value
         }
-        val effetto = ServerParams.effectLabel(chiave)
-        item.spiegazione.visible(spiegazione.isNotBlank())
-        item.spiegazione.text = if (effetto.isBlank()) spiegazione else "$spiegazione\n$effetto"
-        val apri = { editDialog(chiave, valore, nuovo) }
+
+        item.spiegazione.visible(true)
+        item.spiegazione.text = buildString {
+            val spiega = ServerParams.describe(p.key)
+            if (spiega.isNotBlank()) append(spiega).append('\n')
+            if (daAggiungere) {
+                append("Non compare in nessun file: vale il valore di fabbrica di LinuxGSM.")
+            } else {
+                append("da ").append(p.da.etichetta)
+                if (p.nostro != null && p.da != ServerParams.Da.ISTANZA) {
+                    append(" — qui c'è scritto \"").append(p.nostro).append("\", ma non comanda")
+                }
+                val effetto = ServerParams.effectLabel(p.key)
+                if (effetto.isNotBlank()) append('\n').append(effetto)
+            }
+        }
+
+        val apri = {
+            if (p.coperto) spiegaCoperto(p) else editDialog(p.key, p.nostro ?: p.value, daAggiungere || p.nostro == null)
+        }
         item.card.setOnClickListener { apri() }
         item.btnModifica.setOnClickListener { apri() }
         return item.root
+    }
+
+    /**
+     * Il caso in cui scrivere non servirebbe a niente.
+     *
+     * LinuxGSM carica i file dei segreti DOPO quello dell'istanza: se una chiave
+     * sta li, quella comanda. Scrivendola qui, l'app mostrerebbe il valore nuovo
+     * e il server continuerebbe a usare il vecchio.
+     */
+    private fun spiegaCoperto(p: ServerParams.ParamEffettivo) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(p.key)
+            .setMessage(
+                "Questo parametro vale \"${p.value}\" e viene da ${p.da.etichetta}.\n\n" +
+                        "${p.da.spiegazione}\n\n" +
+                        "Quel file viene caricato dopo quello su cui l'app scrive: cambiarlo " +
+                        "da qui non avrebbe nessun effetto, e la schermata ti direbbe una " +
+                        "cosa non vera. Va modificato collegandosi al computer."
+            )
+            .setPositiveButton("Ho capito", null)
+            .show()
     }
 
     private fun editDialog(chiave: String, valore: String, nuovo: Boolean) {

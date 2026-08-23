@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.23.
+Versione 1.24.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -10,16 +10,18 @@ Versione 1.23.
 - [5. Stato e controllo](#5-stato-e-controllo)
 - [6. Le impostazioni del server](#6-le-impostazioni-del-server)
 - [6bis. Le impostazioni tecniche di LinuxGSM](#6bis-le-impostazioni-tecniche-di-linuxgsm)
-- [7. Il progetto: rifare questo server altrove](#7-il-progetto-rifare-questo-server-altrove)
-- [8. Console](#8-console)
-- [9. Le macro](#9-le-macro)
-- [10. Giocatori](#10-giocatori)
-- [11. Mappa](#11-mappa)
-- [12. Mod e modpack](#12-mod-e-modpack)
-- [13. Cambiare versione di Minecraft](#13-cambiare-versione-di-minecraft)
-- [14. RCON](#14-rcon)
-- [15. Aggiornamenti dell'app](#15-aggiornamenti-dellapp)
-- [16. Se qualcosa non funziona](#16-se-qualcosa-non-funziona)
+- [7. Il backup](#7-il-backup)
+- [8. I comandi di LinuxGSM](#8-i-comandi-di-linuxgsm)
+- [9. Il progetto: rifare questo server altrove](#9-il-progetto-rifare-questo-server-altrove)
+- [10. Console](#10-console)
+- [11. Le macro](#11-le-macro)
+- [12. Giocatori](#12-giocatori)
+- [13. Mappa](#13-mappa)
+- [14. Mod e modpack](#14-mod-e-modpack)
+- [15. Cambiare versione di Minecraft](#15-cambiare-versione-di-minecraft)
+- [16. RCON](#16-rcon)
+- [17. Aggiornamenti dell'app](#17-aggiornamenti-dellapp)
+- [18. Se qualcosa non funziona](#18-se-qualcosa-non-funziona)
 
 ---
 
@@ -273,11 +275,21 @@ Sono gli interruttori del programma che accende e spegne il server: memoria per 
 versione da scaricare, quanti backup tenere, dove mandare gli avvisi. Vivono in
 `lgsm/config-lgsm/<script>/<script>.cfg`.
 
-**Se questa schermata è vuota è normale, e non vuol dire che il server non abbia
-impostazioni.** LinuxGSM ha cinque file di configurazione in fila e questo è quello delle
-tue modifiche: nasce vuoto. I valori veri — memoria 1024, quattro backup, log tenuti sette
-giorni — stanno nel file di fabbrica, che non si tocca perché LinuxGSM lo riscrive a ogni
-suo aggiornamento. Qui si scrivono soltanto le differenze.
+La schermata mostra **tutti** i parametri in vigore, non solo quelli scritti nel file di
+questo server: LinuxGSM ha cinque file di configurazione che legge in fila, e l'app li legge
+tutti e cinque e mette insieme il risultato come farebbe lui. Accanto a ogni valore c'è
+scritto **da dove viene**: di fabbrica, dal file comune a tutti i server, o scritto qui.
+
+Il file di questo server nasce vuoto ed è normale: contiene solo le differenze rispetto ai
+valori di fabbrica. Prima la schermata leggeva solo quello e diceva "nessun parametro"
+mentre il server ne stava usando una ventina.
+
+C'è un caso in cui l'app **non** ti lascia scrivere, e te lo spiega: quando il valore in
+vigore viene da un file dei segreti, che LinuxGSM carica dopo quello su cui l'app scrive.
+Scrivendolo lì l'app mostrerebbe il valore nuovo e il server continuerebbe a usare il
+vecchio. Quello si cambia collegandosi al computer.
+
+Con tutti i parametri in elenco c'è un campo di ricerca in cima.
 
 Sotto ogni parametro c'è scritto **quando avrà effetto**. Quasi tutti — backup, log,
 avvisi — LinuxGSM li rilegge da solo e non serve riavviare niente: il pulsante di riavvio
@@ -298,7 +310,77 @@ L'elenco completo con le spiegazioni ufficiali è nella
 [documentazione di LinuxGSM](https://docs.linuxgsm.com/configuration/game-server-config),
 richiamata anche dall'aiuto della pagina.
 
-## 7. Il progetto: rifare questo server altrove
+## 7. Il backup
+
+Il pulsante **Backup** nella scheda Stato. Sotto ai pulsanti c'è anche scritto quando è
+stato fatto l'ultimo: è la domanda che ci si fa prima di toccare qualsiasi cosa di
+delicato, e prima per avere la risposta bisognava collegarsi al computer.
+
+Il backup è una copia compressa di tutto il server — mondo, mod, configurazioni — che
+LinuxGSM mette in `lgsm/backup`. In cima alla schermata vedi quando è stato fatto l'ultimo,
+quanti ce ne sono, quanto occupano e quanto spazio resta. Se lo spazio libero è poco l'app
+lo dice: un backup che si ferma a metà per il disco pieno lascia un archivio rotto che poi
+sembra un backup buono.
+
+**Farlo adesso** — il pulsante lo fa partire subito. Di fabbrica LinuxGSM ferma il server
+per tutta la durata: chi sta giocando viene disconnesso e rientra quando è finita.
+
+**Farlo fare da solo** — scegli ogni quanto (ogni giorno, ogni settimana, ogni mese) e a
+che ora. L'ora è quella del computer dove vive il server, non quella del telefono.
+
+LinuxGSM non ha un suo modo di programmare i backup: lo fa `cron`, il pezzo del sistema che
+manda avanti le cose a orario. L'app scrive una riga lì dentro e il backup parte anche a
+telefono spento.
+
+Quel file però non è dell'app: può contenere righe scritte da qualcun altro, magari anni
+fa. Per questo:
+
+- si legge prima, e se non si capisce cosa c'è **non si tocca niente** — scrivere partendo
+  da una lettura fallita vorrebbe dire cancellare il crontab di qualcun altro;
+- si tiene una copia di com'era **sul telefono**, che si rimette con "Rimetti il crontab
+  com'era";
+- dopo aver scritto si rilegge per controllare, perché su alcuni sistemi `crontab` dice di
+  aver scritto anche quando non ha scritto niente;
+- se sul computer non c'è cron, o non sta girando, l'app lo dice invece di lasciarti
+  credere che sia tutto a posto.
+
+Il giorno del mese si ferma al 28: dal 29 in poi ci sono mesi che quel giorno non ce
+l'hanno, e il backup salterebbe senza dire niente.
+
+> Dentro l'archivio c'è tutto il server, quindi anche i file di configurazione con le
+> password e i token degli avvisi. Se lo copi da qualche parte, tienine conto.
+
+Quante copie tenere e per quanti giorni si decide dalle impostazioni tecniche
+(`maxbackups`, `maxbackupdays`).
+
+## 8. I comandi di LinuxGSM
+
+Il pulsante **Comandi** nella scheda Stato.
+
+Sono gli stessi comandi che si darebbero da terminale scrivendo `./mcserver` seguito da una
+parola, e girano con i valori che hai messo nelle impostazioni: LinuxGSM rilegge i suoi file
+a ogni esecuzione, quindi quello che parte da qui è esattamente quello che partirebbe da là.
+
+Ognuno ha scritto cosa fa e, quando serve, cosa succede a chi sta giocando. Quelli che
+fermano il server, scaricano roba o cambiano file chiedono conferma. `postdetails`, che
+pubblica una pagina in rete, la chiede due volte.
+
+**Non ci sono tutti, e non è prudenza.** `console`, `debug` e `install` aspettano una
+risposta dalla tastiera. Senza un terminale vero quella risposta non arriva mai, e LinuxGSM
+non si ferma: ripete "Please answer yes or no." all'infinito finché non si stacca la
+connessione. `debug` in più spegne il server prima di partire, quindi lanciarlo e chiudere
+l'app lascerebbe il mondo spento.
+
+**Come si capisce se è andata.** Non dal codice di uscita: LinuxGSM lo usa per dire la
+gravità dell'ultima riga scritta nel suo registro, non se il comando è riuscito — un
+comando che non esiste esce con "tutto bene". Per questo l'app legge cosa ha scritto e ti
+fa vedere il testo intero.
+
+Un comando che ci mette troppo viene interrotto **sul computer**, non solo staccando la
+connessione: altrimenti resterebbe a girare là senza che nessuno lo sappia, e un backup
+interrotto lascia un blocco che per un'ora impedisce di rifarne un altro.
+
+## 9. Il progetto: rifare questo server altrove
 
 Il pulsante con la cassa, nella scheda Stato.
 
@@ -333,7 +415,7 @@ Di ogni file toccato resta una copia con la data. Le impostazioni valgono dal ri
 > Il file dei **collegamenti** — host, utente, password SSH — è un'altra cosa, e si esporta
 > dalle Impostazioni. Se sbagli file, l'app te lo dice invece di aprirlo vuoto.
 
-## 8. Console
+## 10. Console
 
 <img src="store/screenshots/06-console.png" width="320" alt="Console">
 
@@ -366,7 +448,7 @@ che esce dallo schermo: serve per incollare un errore in una ricerca o in un mes
 
 I comandi viaggiano su `tmux send-keys`, oppure via RCON se l'hai attivato.
 
-## 9. Le macro
+## 11. Le macro
 
 Il pulsante con il fulmine, nella Console.
 
@@ -433,7 +515,7 @@ Non è una regola per te: dalla Console `stop` e `ban` li scrivi quando vuoi. È
 per quello che scrive qualcun altro al posto tuo, e che nessuno ha riletto prima che
 diventasse un pulsante da premere.
 
-## 10. Giocatori
+## 12. Giocatori
 
 <img src="store/screenshots/03-giocatori.png" width="320" alt="Giocatori">
 
@@ -469,7 +551,7 @@ Accanto al nome di chi non è collegato compare **l'ultima volta che si è visto
 
 Le voci che richiedono il giocatore in gioco sono disattivate quando è offline.
 
-## 11. Mappa
+## 13. Mappa
 
 <img src="store/screenshots/04-mappa.png" width="320" alt="Mappa">
 
@@ -492,7 +574,7 @@ Quando la mappa è vuota dice **perché** lo è: nessuno collegato, nessuna posi
 tutti in un'altra dimensione rispetto al filtro scelto. Erano tre casi diversi che
 sembravano lo stesso guasto.
 
-## 12. Mod e modpack
+## 14. Mod e modpack
 
 <img src="store/screenshots/05-mod.png" width="320" alt="Scheda Mod">
 
@@ -534,7 +616,7 @@ recupera in un tocco) o **rimuovere**.
 
 Dopo ogni modifica compare il pulsante per riavviare il server.
 
-## 13. Cambiare versione di Minecraft
+## 15. Cambiare versione di Minecraft
 
 Nella scheda Stato, **Cambia versione** mostra l'elenco ufficiale delle release preso dal
 manifesto di Mojang. Scegliendone una, l'app scrive `mcversion` nella configurazione
@@ -545,7 +627,7 @@ Prima di procedere ti viene proposto **Backup e cambio**: usalo. Un mondo salvat
 versione recente spesso non si riapre con una precedente, e l'app te lo segnala quando
 stai tornando indietro.
 
-## 14. RCON
+## 16. RCON
 
 Senza RCON l'app scrive nella console tmux e rilegge il log: ogni aggiornamento lascia
 righe di servizio in `latest.log`. Con RCON le risposte arrivano subito e il log resta
@@ -559,7 +641,7 @@ Il **tunnel SSH** è attivo di default: la porta RCON viaggia dentro la connessi
 quindi non devi aprire porte sul firewall e la password — che il protocollo trasmette in
 chiaro — non esce dal tunnel.
 
-## 15. Aggiornamenti dell'app
+## 17. Aggiornamenti dell'app
 
 All'avvio l'app controlla se sul repository c'è una release più recente. In tal caso
 compare un banner con versione, dimensione e le note: **Aggiorna** scarica l'APK e apre
@@ -568,7 +650,7 @@ l'installer di sistema, **Più tardi** lo nasconde fino al prossimo avvio.
 La prima volta Android chiede di autorizzare MC Monitor a installare app: è una conferma
 di sistema, l'app non installa nulla da sola.
 
-## 16. Se qualcosa non funziona
+## 18. Se qualcosa non funziona
 
 **Diagnostica connessione** (in Impostazioni) prova gli stadi separatamente — DNS, porta
 TCP, handshake SSH, autenticazione — e poi verifica sul server tmux, le sessioni attive,

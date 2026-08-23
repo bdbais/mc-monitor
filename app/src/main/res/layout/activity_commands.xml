@@ -33,7 +33,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/press_start_2p"
-                    android:text="Tecniche"
+                    android:text="Comandi"
                     android:textColor="@color/grass"
                     android:textSize="13sp" />
 
@@ -67,6 +67,7 @@
         android:layout_weight="1">
 
         <androidx.core.widget.NestedScrollView
+            android:id="@+id/scorrevole"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="12dp">
@@ -80,27 +81,9 @@
                     android:id="@+id/intestazione"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="10dp"
                     android:textColor="@color/text_dim"
                     android:textSize="12sp" />
-
-                <!-- Con tutti i parametri di LinuxGSM in elenco, senza un filtro
-                     non si trova piu' niente. -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:hint="cerca un parametro"
-                    app:boxBackgroundColor="@color/surface">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/cerca"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:imeOptions="actionSearch"
-                        android:inputType="text"
-                        android:maxLines="1" />
-                </com.google.android.material.textfield.TextInputLayout>
 
                 <LinearLayout
                     android:id="@+id/elenco"
@@ -109,43 +92,21 @@
                     android:orientation="vertical" />
 
                 <TextView
-                    style="@style/CardTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="Altro" />
-
-                <TextView
+                    android:id="@+id/esclusi"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="6dp"
-                    android:text="Parametri che LinuxGSM conosce ma che non compaiono in nessuno dei suoi file su questo computer."
+                    android:layout_marginTop="14dp"
                     android:textColor="@color/text_dim"
                     android:textSize="12sp" />
-
-                <LinearLayout
-                    android:id="@+id/aggiungibili"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnAltro"
-                    style="@style/McButton.Text"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Aggiungi un parametro non in elenco" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRiavvia"
-                    style="@style/McButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:text="Riavvia il server per applicare"
-                    android:visibility="gone" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone" />
 </LinearLayout>

@@ -61,6 +61,12 @@ class StatusFragment : Fragment() {
         b.btnProgetto.setOnClickListener {
             if (configured()) startActivity(Intent(requireContext(), BlueprintActivity::class.java))
         }
+        b.btnBackup.setOnClickListener {
+            if (configured()) startActivity(Intent(requireContext(), BackupActivity::class.java))
+        }
+        b.btnComandi.setOnClickListener {
+            if (configured()) startActivity(Intent(requireContext(), CommandsActivity::class.java))
+        }
         b.btnGoMods.setOnClickListener {
             (activity as? com.bellizia.mcmonitor.MainActivity)?.openTab("Mod")
         }
@@ -103,6 +109,7 @@ class StatusFragment : Fragment() {
         b.swipe.isRefreshing = true
         loadMods()
         loadVersion()
+        loadUltimoBackup()
         viewLifecycleOwner.lifecycleScope.launch {
             runCatching { McRepository.details() }
                 .onSuccess {
@@ -115,6 +122,29 @@ class StatusFragment : Fragment() {
                     b.fields.removeAllViews()
                 }
             _b?.swipe?.isRefreshing = false
+        }
+    }
+
+    /**
+     * Quando e' stato fatto l'ultimo backup, sotto il pulsante.
+     *
+     * E' la domanda che si fa prima di toccare qualsiasi cosa di delicato, e
+     * finora per avere la risposta bisognava collegarsi al computer.
+     */
+    private fun loadUltimoBackup() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val stato = runCatching { McRepository.backupState() }.getOrNull()
+            val bind = _b ?: return@launch
+            val ultimo = stato?.last
+            bind.ultimoBackup.text = when {
+                stato == null -> ""
+                ultimo == null -> "Nessun backup: non ne e' mai stato fatto uno."
+                else -> when (val giorni = stato.daysSinceLast ?: 0) {
+                    0L -> "Ultimo backup: oggi."
+                    1L -> "Ultimo backup: ieri."
+                    else -> "Ultimo backup: $giorni giorni fa."
+                }
+            }
         }
     }
 

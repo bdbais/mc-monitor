@@ -57,6 +57,122 @@ object ServerParams {
         return "[ -f $f ] || { echo 'CONFIG NON TROVATA'; exit $EXIT_NO_CONFIG; }; cat $f"
     }
 
+    // ------------------------------------------------- la catena dei cinque file
+
+    /**
+     * I cinque file che LinuxGSM legge in fila, dal primo all'ultimo.
+     *
+     * L'ordine è quello di caricamento e conta: l'ultimo che assegna una chiave
+     * è quello che comanda. `_default.cfg` porta i valori di fabbrica e non si
+     * tocca — LinuxGSM lo riscrive a ogni suo aggiornamento — mentre il file
+     * dell'istanza è quello su cui scriviamo noi.
+     */
+    enum class Da(val file: String, val etichetta: String, val spiegazione: String) {
+        FABBRICA("_default", "di fabbrica", "Valore di fabbrica di LinuxGSM. Non si modifica lì: si sovrascrive qui."),
+        COMUNE("common", "comune", "Vale per tutti i server di questo computer."),
+        SEGRETI_COMUNI("secrets-common", "segreti comuni", "File dei segreti comune a tutti i server."),
+        ISTANZA("istanza", "scritto qui", "Scritto nel file di questo server: è quello che l'app modifica."),
+        SEGRETI_ISTANZA("secrets-istanza", "segreti di questo server", "File dei segreti di questo server.")
+    }
+
+    /**
+     * Un parametro come lo vede LinuxGSM davvero: il valore in vigore, da dove
+     * viene, e cosa c'è scritto (se c'è) nel file su cui l'app scrive.
+     */
+    data class ParamEffettivo(
+        val key: String,
+        val value: String,
+        val da: Da,
+        /** Il valore nel file dell'istanza, se quella riga esiste. */
+        val nostro: String?,
+        /**
+         * Un file caricato DOPO quello dell'istanza assegna la stessa chiave.
+         *
+         * È il caso che farebbe dire una bugia alla schermata: si scrive, si
+         * mostra il valore nuovo, e il server continua a usare quello vecchio.
+         */
+        val coperto: Boolean
+    ) {
+        val description: String get() = describe(key)
+        val modificabile: Boolean get() = !coperto
+    }
+
+    private fun configDir(cfg: ServerConfig) =
+        "${cfg.lgsmDir.trimEnd('/')}/lgsm/config-lgsm/${cfg.script}"
+
+    /**
+     * Legge tutti e cinque i file in un colpo solo, marcando da quale viene ogni
+     * riga. I file che non esistono si saltano: su un'installazione normale ce ne
+     * sono due o tre.
+     */
+    fun readChain(cfg: ServerConfig): String {
+        val d = Lgsm.path(configDir(cfg))
+        val istanza = Lgsm.sq(cfg.script)
+        return """
+            d=$d
+            [ -d "${'$'}d" ] || { echo 'CONFIG NON TROVATA'; exit $EXIT_NO_CONFIG; }
+            s=$istanza
+            for n in _default common secrets-common "${'$'}s" "secrets-${'$'}s"; do
+              f="${'$'}d/${'$'}n.cfg"
+              [ -f "${'$'}f" ] || continue
+              case "${'$'}n" in
+                _default) marca=_default ;;
+                common) marca=common ;;
+                secrets-common) marca=secrets-common ;;
+                "secrets-${'$'}s") marca=secrets-istanza ;;
+                *) marca=istanza ;;
+              esac
+              echo "--- ${'$'}marca"
+              cat "${'$'}f"
+            done
+            echo '--- fine'
+        """.trimIndent()
+    }
+
+    /**
+     * Mette insieme la catena come farebbe LinuxGSM: si scorre dal primo file
+     * all'ultimo e ogni assegnazione sovrascrive la precedente. Alla fine si sa
+     * anche chi ha vinto, che è l'informazione che mancava del tutto.
+     */
+    fun parseChain(raw: String): List<ParamEffettivo> {
+        val text = Lgsm.clean(raw)
+        val sezioni = linkedMapOf<Da, MutableList<String>>()
+        var corrente: Da? = null
+        text.lines().forEach { linea ->
+            val t = linea.trim()
+            if (t.startsWith("--- ")) {
+                val nome = t.removePrefix("--- ")
+                corrente = Da.entries.firstOrNull { it.file == nome }
+                corrente?.let { sezioni.getOrPut(it) { mutableListOf() } }
+            } else {
+                corrente?.let { sezioni.getOrPut(it) { mutableListOf() }.add(linea) }
+            }
+        }
+
+        val vincitore = linkedMapOf<String, Pair<String, Da>>()
+        val nostro = mutableMapOf<String, String>()
+        // In ordine di caricamento: l'ultimo che assegna comanda.
+        Da.entries.forEach { da ->
+            val righe = sezioni[da] ?: return@forEach
+            parse(righe.joinToString("\n")).filter { !it.commented }.forEach { p ->
+                vincitore[p.key] = p.value to da
+                if (da == Da.ISTANZA) nostro[p.key] = p.value
+            }
+        }
+
+        val dopoIstanza = Da.entries.filter { it.ordinal > Da.ISTANZA.ordinal }
+        return vincitore.map { (chiave, coppia) ->
+            val (valore, da) = coppia
+            ParamEffettivo(
+                key = chiave,
+                value = valore,
+                da = da,
+                nostro = nostro[chiave],
+                coperto = da in dopoIstanza
+            )
+        }.sortedBy { it.key }
+    }
+
     /**
      * Il valore di una riga, senza le virgolette e senza il commento in coda.
      *

@@ -67,6 +67,22 @@
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Le copie di sicurezza, e l'orario a cui farle da sole. -->
+        <activity
+            android:name=".ui.BackupActivity"
+            android:exported="false"
+            android:label="Backup"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- I comandi dello script di LinuxGSM. -->
+        <activity
+            android:name=".ui.CommandsActivity"
+            android:exported="false"
+            android:label="Comandi"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Le impostazioni del gioco: server.properties. -->
         <activity
             android:name=".ui.GameSettingsActivity"

@@ -1,6 +1,13 @@
 package com.bellizia.mcmonitor.data
 
+import com.bellizia.mcmonitor.lgsm.BackupState
+import com.bellizia.mcmonitor.lgsm.Backups
 import com.bellizia.mcmonitor.lgsm.ChatMessage
+import com.bellizia.mcmonitor.lgsm.ComandoLgsm
+import com.bellizia.mcmonitor.lgsm.Cron
+import com.bellizia.mcmonitor.lgsm.Crontab
+import com.bellizia.mcmonitor.lgsm.LgsmCommands
+import com.bellizia.mcmonitor.lgsm.PianoBackup
 import com.bellizia.mcmonitor.lgsm.GameSettings
 import com.bellizia.mcmonitor.lgsm.GameVersion
 import com.bellizia.mcmonitor.lgsm.JoinAttempt
@@ -95,6 +102,26 @@ object McRepository {
         return ServerParams.parse(r.text)
     }
 
+    /**
+     * Tutti i parametri di LinuxGSM con il valore in vigore.
+     *
+     * Legge tutti e cinque i file della catena, non solo quello dell'istanza:
+     * su un server appena installato quello e' vuoto, e leggerlo da solo faceva
+     * dire alla schermata che non c'era nessuna impostazione mentre il server ne
+     * stava usando una ventina.
+     */
+    suspend fun paramsChain(): List<ServerParams.ParamEffettivo> {
+        val c = cfg()
+        val r = SshManager.exec(c, ServerParams.readChain(c), 45_000)
+        if (r.exitCode == ServerParams.EXIT_NO_CONFIG) {
+            throw SshException(
+                "Cartella di configurazione non trovata: " +
+                        "${c.lgsmDir.trimEnd('/')}/lgsm/config-lgsm/${c.script}"
+            )
+        }
+        return ServerParams.parseChain(r.text)
+    }
+
     /** Scrive un parametro, tenendo una copia datata del file. */
     suspend fun setParam(key: String, value: String): String {
         val c = cfg()
@@ -158,6 +185,141 @@ object McRepository {
                 "salvato nel file, ma il server non ha ricevuto i comandi: varrà dal prossimo avvio"
             else -> "salvato; $falliti comandi su ${comandi.size} non sono arrivati al server"
         }
+    }
+
+    // ------------------------------------------------- backup e programmazione
+
+    /** Le copie di sicurezza che ci sono adesso, con lo spazio che resta. */
+    suspend fun backupState(): BackupState {
+        val c = cfg()
+        val r = SshManager.exec(c, Backups.list(c), 60_000)
+        return Backups.parse(r.text)
+    }
+
+    /**
+     * Fa la copia adesso. Ci mette quanto ci mette: su un mondo grande sono
+     * minuti, e di fabbrica LinuxGSM tiene il server fermo per tutto il tempo.
+     */
+    suspend fun backupNow(): String {
+        val c = cfg()
+        val r = SshManager.exec(c, Backups.now(c), 3_600_000)
+        return Lgsm.clean(r.text).trim()
+    }
+
+    /** Il crontab dell'utente, letto senza interpretarlo. */
+    suspend fun cronRead(): Crontab {
+        val c = cfg()
+        val r = SshManager.exec(c, Cron.read(), 30_000)
+        return Cron.parseRead(r.text)
+    }
+
+    /**
+     * Se sul computer c'è davvero un cron che gira, non solo il comando.
+     *
+     * Se non si riesce a chiedere, l'errore esce: dire "questo computer non ha
+     * crontab" quando in realtà non ci si è nemmeno collegati è la stessa bugia
+     * che si sta togliendo dalle altre schermate.
+     */
+    suspend fun cronDaemon(): Pair<Boolean, String> {
+        val c = cfg()
+        val t = Lgsm.clean(SshManager.exec(c, Cron.demone(), 20_000).text)
+        val comando = t.contains("comando=si")
+        val stato = when {
+            !comando -> "Su questo computer non c'è il comando crontab: la programmazione non è possibile."
+            t.contains("demone=no") -> "Il comando c'è, ma non vedo nessun cron in esecuzione: l'orario potrebbe non far partire niente."
+            t.contains("demone=boh") -> "Non riesco a controllare se cron sta girando: se il backup non parte, è la prima cosa da guardare."
+            else -> ""
+        }
+        return comando to stato
+    }
+
+    /**
+     * Scrive (o toglie) la riga di backup nel crontab.
+     *
+     * Tre cose in fila, e nessuna si salta: si legge — e se non si è capito cosa
+     * c'era ci si ferma, perché scrivere partendo da una lettura fallita vuol dire
+     * cancellare il crontab di qualcun altro — si tiene una copia di com'era sul
+     * telefono, e alla fine si rilegge per controllare che ci sia davvero.
+     */
+    suspend fun cronSchedule(piano: PianoBackup?): String {
+        val c = cfg()
+
+        val letto = cronRead()
+        if (letto is Crontab.Illeggibile) {
+            throw SshException(
+                "Non riesco a leggere il crontab, quindi non lo tocco: ${letto.motivo}"
+            )
+        }
+        val attuale = (letto as Crontab.Letto).testo
+
+        // La copia di com'era resta sul telefono: è l'unico modo di rimettere le
+        // cose a posto se qualcosa va storto.
+        Prefs.saveCronBackup(c.id, attuale)
+
+        val nuovo = Cron.componi(attuale, c, piano?.let { Cron.blocco(c, it) })
+        val problemi = Cron.problemi(nuovo)
+        if (problemi.isNotEmpty()) throw SshException(problemi.joinToString("\n"))
+
+        SshManager.exec(c, "mkdir -p \"\$HOME\"/.mcmonitor && chmod 700 \"\$HOME\"/.mcmonitor", 20_000)
+        SshManager.upload(c, nuovo.toByteArray(Charsets.ISO_8859_1).inputStream(), Cron.FILE_NUOVO)
+
+        val r = SshManager.exec(c, Cron.install(), 45_000)
+        val testo = Lgsm.clean(r.text)
+        if (testo.contains("@@CR")) {
+            throw SshException("Il file conteneva un ritorno a capo di Windows: non l'ho installato.")
+        }
+        val rc = Cron.installato(testo)
+        if (rc == null || rc != 0) {
+            throw SshException(
+                "crontab ha rifiutato il file" + (rc?.let { " (uscita $it)" } ?: "") +
+                        ". Il crontab di prima è rimasto com'era."
+            )
+        }
+
+        // crontab può uscire con zero senza aver scritto niente: si controlla.
+        val riletto = Cron.parseRead(r.text)
+        if (riletto is Crontab.Letto) {
+            val esiste = Cron.programmato(riletto.testo, c)
+            if (piano != null && !esiste) throw SshException("Scritto, ma rileggendo non c'è: controlla il crontab a mano.")
+            if (piano == null && esiste) throw SshException("Tolto, ma rileggendo c'è ancora: controlla il crontab a mano.")
+        }
+
+        return if (piano == null) "Backup automatico tolto." else "Backup automatico: ${piano.descrizione()}."
+    }
+
+    /** Rimette il crontab com'era prima dell'ultima modifica fatta dall'app. */
+    suspend fun cronRestore(): String {
+        val c = cfg()
+        val prima = Prefs.cronBackup(c.id)
+            ?: throw SshException("Non ho nessuna copia di com'era: non è mai stato modificato da qui.")
+        val testo = if (prima.isEmpty() || prima.endsWith("\n")) prima else prima + "\n"
+
+        SshManager.exec(c, "mkdir -p \"\$HOME\"/.mcmonitor && chmod 700 \"\$HOME\"/.mcmonitor", 20_000)
+        SshManager.upload(c, testo.toByteArray(Charsets.ISO_8859_1).inputStream(), Cron.FILE_NUOVO)
+        val r = SshManager.exec(c, Cron.install(), 45_000)
+        val rc = Cron.installato(Lgsm.clean(r.text))
+        if (rc != 0) throw SshException("Ripristino non riuscito: il crontab è rimasto com'è adesso.")
+        return "Crontab rimesso com'era."
+    }
+
+    /** La coda del registro dei backup automatici, per capire perché non è partito. */
+    suspend fun cronLog(): String {
+        val c = cfg()
+        val comando = "f=\"\$HOME\"/.mcmonitor/backup.log; " +
+                "[ -f \"\$f\" ] || { echo 'nessun registro: il backup automatico non e mai partito'; exit 0; }; " +
+                // Si accorcia mentre lo si legge: cosi non cresce all'infinito.
+                "tail -n 400 \"\$f\" > \"\$f.tmp\" && mv \"\$f.tmp\" \"\$f\"; tail -n 60 \"\$f\""
+        return Lgsm.clean(SshManager.exec(c, comando, 30_000).text).trim()
+    }
+
+    // ------------------------------------------------- comandi dello script
+
+    /** Lancia un comando di LinuxGSM fra quelli in elenco. */
+    suspend fun runLgsm(comando: ComandoLgsm): Pair<String, String> {
+        val c = cfg()
+        val r = SshManager.exec(c, LgsmCommands.run(c, comando), comando.secondi * 1000L + 30_000L)
+        val testo = Lgsm.clean(r.text).trim()
+        return LgsmCommands.esito(testo) to Privacy.text(testo, c)
     }
 
     /** Quando quel giocatore ha lasciato l'ultima traccia nel log. */

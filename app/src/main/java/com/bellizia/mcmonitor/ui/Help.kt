@@ -59,6 +59,54 @@ object Help {
         """.trimIndent()
     )
 
+    val BACKUP = Page(
+        "Il backup",
+        """
+        Il backup è una copia compressa di tutto il server — mondo, mod, configurazioni — che LinuxGSM mette in lgsm/backup dentro la cartella del server.
+
+        In cima vedi quando è stato fatto l'ultimo, quanti ce ne sono e quanto spazio resta. Se lo spazio libero è poco l'app lo dice: un backup che finisce a metà per il disco pieno lascia un archivio rotto che poi sembra un backup buono.
+
+        FARLO ADESSO
+
+        Il pulsante fa la copia subito. Di fabbrica LinuxGSM ferma il server per tutta la durata: chi sta giocando viene disconnesso e rientra quando è finita. Su un mondo grande sono diversi minuti.
+
+        FARLO FARE DA SOLO
+
+        Scegli ogni quanto — ogni giorno, ogni settimana, ogni mese — e a che ora. L'ora è quella del computer dove vive il server, non quella del telefono. Di notte è meglio, visto che il server si ferma.
+
+        LinuxGSM non ha un suo modo di programmare i backup: lo fa il cron del computer, che è il pezzo che manda avanti le cose a orario. L'app scrive una riga lì dentro, e il backup parte anche a telefono spento.
+
+        Quel file può contenere righe scritte da qualcun altro, magari anni fa, che non c'entrano niente con Minecraft. Per questo l'app: legge prima, e se non capisce cosa c'è si ferma senza toccare niente; tiene una copia di com'era sul telefono, che si rimette con "Rimetti il crontab com'era"; e dopo aver scritto rilegge per controllare che ci sia davvero.
+
+        Se il computer non ha cron, o se cron non sta girando, l'app lo dice invece di lasciarti credere che sia tutto a posto.
+
+        DUE COSE DA SAPERE
+
+        Dentro l'archivio ci finisce tutto il server, quindi anche i file di configurazione con le password e i token degli avvisi. Se lo copi da qualche parte, tienine conto.
+
+        Quante copie tenere e per quanti giorni si decidono da "Impostazioni tecniche": sono maxbackups e maxbackupdays. La pulizia gira dopo aver creato la copia nuova, quindi per un momento ce n'è una in più.
+        """.trimIndent()
+    )
+
+    val COMANDI = Page(
+        "I comandi di LinuxGSM",
+        """
+        Sono i comandi che si darebbero da terminale scrivendo ./mcserver seguito da una parola. Qui ci sono quelli che si possono lanciare da un telefono, ognuno con scritto cosa fa e cosa succede al server.
+
+        Quelli che chiedono conferma la chiedono per un motivo: fermano il server, scaricano roba o cambiano file. Nella conferma c'è scritto esattamente cosa succede a chi sta giocando.
+
+        NON CI SONO TUTTI, E NON È PRUDENZA
+
+        console, debug e install aspettano una risposta dalla tastiera. Senza un terminale vero quella risposta non arriva mai, e LinuxGSM non si ferma: entra in un ciclo che ripete "Please answer yes or no." all'infinito finché non si stacca la connessione. debug in più ferma il server prima di partire, quindi lanciarlo e chiudere l'app lascerebbe il mondo spento.
+
+        COME SI CAPISCE SE È ANDATA BENE
+
+        Non dal codice di uscita: LinuxGSM lo usa per dire la gravità dell'ultima riga che ha scritto nel suo registro, non se il comando è riuscito. Un comando che non esiste esce con "tutto bene". Per questo l'app guarda cosa ha scritto, e ti fa vedere il testo intero.
+
+        Un comando che ci mette troppo viene interrotto sul computer, non solo staccando la connessione: altrimenti resterebbe a girare là senza che nessuno lo sappia.
+        """.trimIndent()
+    )
+
     val GAME_SETTINGS = Page(
         "Le impostazioni del server",
         """

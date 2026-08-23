@@ -284,6 +284,22 @@ object Prefs {
             sp.edit().putString("sortMode", value).apply()
         }
 
+    // ------------------------------------------------------------------ cron
+
+    /**
+     * Com'era il crontab prima che l'app lo toccasse, server per server.
+     *
+     * E' l'unica cosa che l'app scrive su un file che non e' suo: li dentro
+     * possono esserci righe scritte da qualcun altro anni fa. La copia resta sul
+     * telefono e serve al pulsante "rimetti com'era". I byte si conservano come
+     * sono, senza interpretarli.
+     */
+    fun cronBackup(serverId: String): String? = sp.getString("cronBackup_$serverId", null)
+
+    fun saveCronBackup(serverId: String, testo: String) {
+        sp.edit().putString("cronBackup_$serverId", testo).apply()
+    }
+
     // ------------------------------------------------------------------ macro
 
     /**
