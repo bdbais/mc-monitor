@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.25.
+Versione 1.26.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -12,16 +12,17 @@ Versione 1.25.
 - [6bis. Le impostazioni tecniche di LinuxGSM](#6bis-le-impostazioni-tecniche-di-linuxgsm)
 - [7. Il backup](#7-il-backup)
 - [8. I comandi di LinuxGSM](#8-i-comandi-di-linuxgsm)
-- [9. Il progetto: rifare questo server altrove](#9-il-progetto-rifare-questo-server-altrove)
-- [10. Console](#10-console)
-- [11. Le macro](#11-le-macro)
-- [12. Giocatori](#12-giocatori)
-- [13. Mappa](#13-mappa)
-- [14. Mod e modpack](#14-mod-e-modpack)
-- [15. Cambiare versione di Minecraft](#15-cambiare-versione-di-minecraft)
-- [16. RCON](#16-rcon)
-- [17. Aggiornamenti dell'app](#17-aggiornamenti-dellapp)
-- [18. Se qualcosa non funziona](#18-se-qualcosa-non-funziona)
+- [9. Quando qualcosa va storto](#9-quando-qualcosa-va-storto)
+- [10. Il progetto: rifare questo server altrove](#10-il-progetto-rifare-questo-server-altrove)
+- [11. Console](#11-console)
+- [12. Le macro](#12-le-macro)
+- [13. Giocatori](#13-giocatori)
+- [14. Mappa](#14-mappa)
+- [15. Mod e modpack](#15-mod-e-modpack)
+- [16. Cambiare versione di Minecraft](#16-cambiare-versione-di-minecraft)
+- [17. RCON](#17-rcon)
+- [18. Aggiornamenti dell'app](#18-aggiornamenti-dellapp)
+- [19. Se qualcosa non funziona](#19-se-qualcosa-non-funziona)
 
 ---
 
@@ -225,6 +226,10 @@ Sulla riga **Impostazioni del server** ci sono due pulsanti: la **cassa** apre i
 (sezione 7), la **matita** apre le impostazioni del gioco (sezione 6), da cui si arriva
 anche a quelle tecniche di LinuxGSM.
 
+Sotto i tre pulsanti principali ce ne sono altri quattro: **Backup** (sezione 7),
+**Comandi** (sezione 8), **Sicurezza** e **Ripristino** (sezione 9). E quando il server
+non riparte compare **Perché non è partito**, che è il posto da cui cominciare.
+
 Trascina verso il basso per aggiornare.
 
 ## 6. Le impostazioni del server
@@ -380,7 +385,68 @@ Un comando che ci mette troppo viene interrotto **sul computer**, non solo stacc
 connessione: altrimenti resterebbe a girare là senza che nessuno lo sappia, e un backup
 interrotto lascia un blocco che per un'ora impedisce di rifarne un altro.
 
-## 9. Il progetto: rifare questo server altrove
+## 9. Quando qualcosa va storto
+
+Tre schermate che servono solo nel momento in cui qualcosa smette di funzionare.
+I pulsanti stanno nella scheda Stato, sotto Avvia / Ferma / Riavvia.
+
+### Perché non è partito
+
+Quando il server non riparte, **la scheda Console non serve**: mostra il log del gioco, che
+è quello dell'ultimo avvio *riuscito*. Mostrandolo senza dirlo faceva credere che andasse
+tutto bene.
+
+In cima a questa schermata c'è **la riga di avvio**: il comando esatto con cui LinuxGSM
+lancia il server. Nove volte su dieci il guasto si vede lì — per esempio se contiene due
+volte `-jar`, o delle opzioni di memoria dopo il nome del programma — e fino alla 1.25 non
+era visibile da nessuna parte nell'app.
+
+Sotto, il motivo probabile scritto in italiano e il pulsante che porta dove si ripara.
+Sono riconosciuti i casi che capitano davvero: programma non trovato, riga di avvio
+sbagliata, Java troppo vecchio, memoria finita, mod incompatibili, condizioni d'uso non
+accettate, porta occupata. Se non riconosce niente lo dice, invece di inventare.
+
+Poi ci sono i quattro pezzi per intero:
+
+- **Cosa ha deciso LinuxGSM** — il suo registro: se ha rinunciato ad avviare, qui c'è perché
+- **Cosa ha detto il server** — quello che ha stampato Java prima di morire
+- **Log di gioco** — l'ultimo avvio riuscito; se il server non parte, è vecchio
+- **Segnali di stato** — se era partito, se è stato fermato apposta, o se è caduto da solo
+
+I primi due vengono riscritti a ogni avvio, quindi sono sempre l'ultimo tentativo.
+"Copia tutto" mette il quadro completo negli appunti, da incollare a chi ti sta aiutando:
+ci sono i percorsi del tuo server, non le password.
+
+### Ripristino
+
+Ogni volta che l'app modifica un file del server ne lascia prima una copia, con la data nel
+nome. Da qui quelle copie si rimettono.
+
+Toccando una copia vedi **prima** cosa cambierebbe, riga per riga: quelle con il meno
+spariscono, quelle con il più tornano. Solo dopo decidi. E rimettere una copia lascia a sua
+volta una copia di com'era, così se torni indietro dalla cosa sbagliata puoi tornare avanti.
+
+Riguarda i file che l'app tocca — la configurazione di LinuxGSM e `server.properties` — non
+il mondo: per quello c'è il backup. Dopo aver rimesso un file, riavvia il server.
+
+### Il controllo di sicurezza
+
+Un giudizio in una parola — **alta, media o bassa** — su quanto è chiuso il server, con
+l'elenco di cosa lo abbassa e come si sistema. Toccando una voce si arriva dove si ripara.
+
+Legge solo la configurazione: non prova a entrare nel server e non manda niente fuori dal
+telefono. Non è un esame completo, guarda le poche cose che su un server piccolo fanno la
+differenza fra "ci entrano i tuoi amici" e "ci entra chiunque abbia trovato l'indirizzo".
+
+Il voto è severo di proposito: basta una cosa grave per farlo scendere in fondo. Su queste
+cose non si fa la media — un server con la whitelist spenta non è "abbastanza sicuro"
+perché il resto è a posto, è aperto.
+
+Le due che pesano più di tutte sono il controllo degli account Minecraft e la whitelist.
+Poi guarda la password di RCON, come l'app ci parla, i blocchi comando, la zona protetta
+allo spawn, con quale utente ti colleghi al computer, e se l'app ha una password.
+
+## 10. Il progetto: rifare questo server altrove
 
 Il pulsante con la cassa, nella scheda Stato.
 
@@ -415,7 +481,7 @@ Di ogni file toccato resta una copia con la data. Le impostazioni valgono dal ri
 > Il file dei **collegamenti** — host, utente, password SSH — è un'altra cosa, e si esporta
 > dalle Impostazioni. Se sbagli file, l'app te lo dice invece di aprirlo vuoto.
 
-## 10. Console
+## 11. Console
 
 <img src="store/screenshots/06-console.png" width="320" alt="Console">
 
@@ -448,7 +514,7 @@ che esce dallo schermo: serve per incollare un errore in una ricerca o in un mes
 
 I comandi viaggiano su `tmux send-keys`, oppure via RCON se l'hai attivato.
 
-## 11. Le macro
+## 12. Le macro
 
 Il pulsante con il fulmine, nella Console.
 
@@ -515,7 +581,7 @@ Non è una regola per te: dalla Console `stop` e `ban` li scrivi quando vuoi. È
 per quello che scrive qualcun altro al posto tuo, e che nessuno ha riletto prima che
 diventasse un pulsante da premere.
 
-## 12. Giocatori
+## 13. Giocatori
 
 <img src="store/screenshots/03-giocatori.png" width="320" alt="Giocatori">
 
@@ -551,7 +617,7 @@ Accanto al nome di chi non è collegato compare **l'ultima volta che si è visto
 
 Le voci che richiedono il giocatore in gioco sono disattivate quando è offline.
 
-## 13. Mappa
+## 14. Mappa
 
 <img src="store/screenshots/04-mappa.png" width="320" alt="Mappa">
 
@@ -574,7 +640,7 @@ Quando la mappa è vuota dice **perché** lo è: nessuno collegato, nessuna posi
 tutti in un'altra dimensione rispetto al filtro scelto. Erano tre casi diversi che
 sembravano lo stesso guasto.
 
-## 14. Mod e modpack
+## 15. Mod e modpack
 
 <img src="store/screenshots/05-mod.png" width="320" alt="Scheda Mod">
 
@@ -616,7 +682,7 @@ recupera in un tocco) o **rimuovere**.
 
 Dopo ogni modifica compare il pulsante per riavviare il server.
 
-## 15. Cambiare versione di Minecraft
+## 16. Cambiare versione di Minecraft
 
 Nella scheda Stato, **Cambia versione** mostra l'elenco ufficiale delle release preso dal
 manifesto di Mojang. Scegliendone una, l'app scrive `mcversion` nella configurazione
@@ -627,7 +693,7 @@ Prima di procedere ti viene proposto **Backup e cambio**: usalo. Un mondo salvat
 versione recente spesso non si riapre con una precedente, e l'app te lo segnala quando
 stai tornando indietro.
 
-## 16. RCON
+## 17. RCON
 
 Senza RCON l'app scrive nella console tmux e rilegge il log: ogni aggiornamento lascia
 righe di servizio in `latest.log`. Con RCON le risposte arrivano subito e il log resta
@@ -641,7 +707,7 @@ Il **tunnel SSH** è attivo di default: la porta RCON viaggia dentro la connessi
 quindi non devi aprire porte sul firewall e la password — che il protocollo trasmette in
 chiaro — non esce dal tunnel.
 
-## 17. Aggiornamenti dell'app
+## 18. Aggiornamenti dell'app
 
 All'avvio l'app controlla se sul repository c'è una release più recente. In tal caso
 compare un banner con versione, dimensione e le note: **Aggiorna** scarica l'APK e apre
@@ -671,7 +737,7 @@ a quella normale: salva la configurazione con *Impostazioni · Fai un backup ora
 cartella (quello funziona anche li'), scarica l'APK dalla pagina delle versioni, installalo
 — e' un'app separata e si affianca — e riprendi la configurazione con *Importa*.
 
-## 18. Se qualcosa non funziona
+## 19. Se qualcosa non funziona
 
 **Diagnostica connessione** (in Impostazioni) prova gli stadi separatamente — DNS, porta
 TCP, handshake SSH, autenticazione — e poi verifica sul server tmux, le sessioni attive,
@@ -685,6 +751,7 @@ lo script LinuxGSM, RCON e i file di log. Il report è copiabile.
 | Nessuna posizione dei giocatori | server precedente alla 1.13, oppure server in pausa perché vuoto (`pause-when-empty-seconds`) |
 | Chat vuota | manca `zgrep` sul server: si legge solo `latest.log` |
 | Mod non caricati | server vanilla senza mod loader |
+| Il server non riparte | apri **Perché non è partito** nella scheda Stato: la Console mostra l'ultimo avvio riuscito, non questo (sezione 9) |
 
 ---
 

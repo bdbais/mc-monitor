@@ -67,6 +67,28 @@
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Perche' il server non e' partito: i log, letti e spiegati. -->
+        <activity
+            android:name=".ui.AvvioActivity"
+            android:exported="false"
+            android:label="Avvio"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- Quanto e' chiuso il server. -->
+        <activity
+            android:name=".ui.SecurityActivity"
+            android:exported="false"
+            android:label="Sicurezza"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- Rimettere a posto un file che l'app ha cambiato. -->
+        <activity
+            android:name=".ui.RestoreActivity"
+            android:exported="false"
+            android:label="Ripristino"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Le copie di sicurezza, e l'orario a cui farle da sole. -->
         <activity
             android:name=".ui.BackupActivity"

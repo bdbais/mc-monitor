@@ -137,6 +137,30 @@ object Lgsm {
     /** Codice di uscita convenzionale: server.properties non trovato. */
     const val EXIT_NO_PROPERTIES = 91
 
+    /** Codice di uscita convenzionale: la copia di sicurezza non si è potuta fare. */
+    const val EXIT_NO_BACKUP = 97
+
+    /**
+     * La copia di sicurezza da fare PRIMA di scrivere su un file del server.
+     *
+     * Due errori vivevano qui, e insieme rendevano finta la rete di sicurezza.
+     *
+     * Il primo: [path] e [sq] restituiscono un percorso già quotato per la shell,
+     * per esempio `"$HOME"/'server1/mcserver.cfg'`. Rimetterlo dentro altre
+     * virgolette per comporre il nome della copia faceva finire gli apici dentro
+     * il nome del file di destinazione, e `cp` falliva con "No such file or
+     * directory". Qui il percorso passa da una variabile di shell, una volta sola.
+     *
+     * Il secondo: dopo il `cp` c'era un punto e virgola. Se la copia falliva, lo
+     * script proseguiva e modificava il file lo stesso — l'errore finiva su
+     * stderr, che nessuno guardava. Adesso c'è `||`: se la rete non si tende, il
+     * file non si tocca.
+     */
+    fun backupFirst(quotedPath: String): String =
+        "mcm_f=$quotedPath; " +
+                "cp \"\$mcm_f\" \"\$mcm_f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\" || " +
+                "{ echo 'COPIA DI SICUREZZA NON RIUSCITA'; exit $EXIT_NO_BACKUP; }; "
+
     /**
      * Caratteri ammessi nella password RCON: restano fuori quelli che avrebbero un
      * significato per la shell o per `sed`, così il comando non può essere alterato.
@@ -151,7 +175,9 @@ object Lgsm {
     fun enableRcon(cfg: ServerConfig, port: Int, password: String): String {
         require(PASSWORD_CHARSET.matches(password)) { "password RCON non valida" }
         val file = "${cfg.serverFiles.trimEnd('/')}/server.properties"
-        val f = sq(file)
+        // path e non sq: dentro apici singoli la tilde non viene espansa, e con
+        // lgsmDir "~/server1" il file non veniva trovato mai.
+        val f = path(file)
 
         fun setProp(key: String, value: String): String {
             val escaped = key.replace(".", "\\.")
@@ -161,7 +187,7 @@ object Lgsm {
         }
 
         return "[ -f $f ] || { echo 'server.properties non trovato in $file'; exit $EXIT_NO_PROPERTIES; }; " +
-                "cp $f \"$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\" && echo 'copia di sicurezza creata'; " +
+                backupFirst(f) +
                 setProp("enable-rcon", "true") + "; " +
                 setProp("rcon.port", port.toString()) + "; " +
                 setProp("rcon.password", password) + "; " +

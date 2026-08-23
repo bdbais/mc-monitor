@@ -201,18 +201,89 @@ object Mods {
                 "echo \"scaricato $LAUNCH_JAR (\$(stat -c %s $LAUNCH_JAR) byte), cartella mods pronta\""
     }
 
+    const val EXIT_NO_LOADER = 98
+
     /**
-     * Fa avviare LinuxGSM con il jar di Fabric: sostituisce solo la parte `-jar x.jar`
-     * della riga startparameters, lasciando intatto il resto (memoria, nogui, ecc.).
+     * Fa avviare a LinuxGSM il jar di Fabric invece di quello vanilla.
+     *
+     * LinuxGSM compone la riga di avvio così: `preexecutable executable
+     * startparameters`, cioè di fabbrica `java -Xmx1024M -jar
+     * ./minecraft_server.jar nogui`. La variabile che decide QUALE jar viene
+     * eseguito è quindi `executable`, e solo quella.
+     *
+     * Fino alla 1.25 l'app scriveva invece dentro `startparameters`, e su un file
+     * di istanza vuoto — che è il caso normale, quel file nasce vuoto — finiva per
+     * aggiungere un secondo `-jar` DOPO il primo:
+     *
+     *     java -Xmx1024M -jar ./minecraft_server.jar -Xmx1024M -jar fabric... nogui
+     *
+     * Java smette di leggere opzioni appena incontra `-jar <file>`: partiva il
+     * server vanilla e tutto il resto gli arrivava come argomenti, che il suo
+     * lettore di argomenti non riconosce. Il server moriva subito, e Fabric non
+     * veniva caricato mai.
      */
-    fun useLoaderInConfig(cfg: ServerConfig): String {
+    fun useLoaderInConfig(cfg: ServerConfig, jarName: String = LAUNCH_JAR): String {
+        require(safeFileName(jarName)) { "nome file non valido: $jarName" }
+        val f = Lgsm.path(GameVersion.configPath(cfg))
+        val jar = Lgsm.path("${cfg.serverFiles.trimEnd('/')}/$jarName")
+
+        // Se il jar non c'è, scrivere executable lascerebbe il server incapace di
+        // partire: LinuxGSM si ferma con "executable was not found".
+        val controllo = "[ -f $f ] || { echo 'CONFIG NON TROVATA'; exit ${GameVersion.EXIT_NO_CONFIG}; }; " +
+                "[ -f $jar ] || { echo 'IL JAR DI FABRIC NON CE'; exit $EXIT_NO_LOADER; }; "
+
+        // Una riga startparameters con dentro un -jar è sbagliata comunque: gli
+        // argomenti dopo il nome del jar non sono opzioni della macchina Java, e
+        // se è quella scritta dalla versione rotta dell'app è la causa del guasto.
+        // Si commenta, non si cancella: resta lì da leggere.
+        val togliVecchia = "awk '/^[[:space:]]*startparameters=.*-jar/{ print \"# tolta da MC Monitor: \" \$0; next } " +
+                "{print}' $f > \"\$mcm_f.mcmonitor.tmp\" && mv \"\$mcm_f.mcmonitor.tmp\" $f; "
+
+        val riga = Lgsm.sq("executable=\"./$jarName\"")
+        val scrivi = "MCM_RIGA=$riga awk 'BEGIN{fatto=0; riga=ENVIRON[\"MCM_RIGA\"]} " +
+                "/^[[:space:]]*executable=/{ if(!fatto){print riga; fatto=1} next } " +
+                "{print} END{ if(!fatto) print riga }' $f > \"\$mcm_f.mcmonitor.tmp\" && " +
+                "mv \"\$mcm_f.mcmonitor.tmp\" $f; "
+
+        return controllo + Lgsm.backupFirst(f) + togliVecchia + scrivi +
+                "echo 'avvio configurato:'; " +
+                "grep -E '^[[:space:]]*(executable|startparameters|javaram)=' $f"
+    }
+
+    /**
+     * Rimette il server sul jar vanilla, per tornare indietro senza aprire un
+     * terminale. Il mondo non si tocca: cambia solo quale programma lo apre.
+     */
+    fun useVanillaInConfig(cfg: ServerConfig): String {
         val f = Lgsm.path(GameVersion.configPath(cfg))
         return "[ -f $f ] || { echo 'CONFIG NON TROVATA'; exit ${GameVersion.EXIT_NO_CONFIG}; }; " +
-                "cp $f \"$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
-                "if grep -qE '^[[:space:]]*startparameters=' $f; then " +
-                "sed -i -E '/^[[:space:]]*startparameters=/ s|-jar[[:space:]]+[^[:space:]\"]+|-jar $LAUNCH_JAR|' $f; " +
-                "else printf '%s\\n' 'startparameters=\"-Xmx\${javaram}M -Xms\${javaram}M -jar $LAUNCH_JAR nogui\"' >> $f; fi; " +
-                "echo 'avvio configurato:'; grep -E '^[[:space:]]*startparameters=' $f"
+                Lgsm.backupFirst(f) +
+                "awk '/^[[:space:]]*executable=/{ print \"# tolta da MC Monitor: \" \$0; next } " +
+                "{print}' $f > \"\$mcm_f.mcmonitor.tmp\" && mv \"\$mcm_f.mcmonitor.tmp\" $f; " +
+                "echo 'tornato al programma di fabbrica:'; " +
+                "grep -E '^[[:space:]]*(executable|startparameters)=' $f || echo '(nessuna riga: vale il valore di fabbrica)'"
+    }
+
+    /**
+     * La riga con cui LinuxGSM avvierà davvero il server, presa da `details`.
+     *
+     * È la prova del nove, e non costa niente: `details` legge la configurazione
+     * e non avvia niente. Prima l'app dichiarava l'installazione riuscita sul solo
+     * codice di uscita, che qui non dice assolutamente niente.
+     */
+    fun parseLaunchLine(details: String): String? {
+        val text = Lgsm.clean(details)
+        val righe = text.lines().map { it.trim() }
+        val i = righe.indexOfFirst { it.contains("Command-line Parameters", ignoreCase = true) }
+        val candidate = if (i >= 0) righe.drop(i + 1) else righe
+        return candidate.firstOrNull { it.contains("java") && it.contains("-jar") }
+    }
+
+    /** Se la riga di avvio è sana: un solo `-jar`, e punta al jar che ci aspettiamo. */
+    fun launchLineOk(riga: String?, jarName: String = LAUNCH_JAR): Boolean {
+        if (riga == null) return false
+        val quanti = Regex("""(^|\s)-jar(\s|$)""").findAll(riga).count()
+        return quanti == 1 && riga.contains(jarName)
     }
 
     // ----------------------------------------------------------- modpack

@@ -226,6 +226,40 @@
                     android:text="Comandi" />
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSicurezza"
+                    style="@style/McButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:text="Sicurezza" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRipristino"
+                    style="@style/McButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Ripristino" />
+            </LinearLayout>
+
+            <!-- Quando il server non e' acceso, questa e' la domanda che ci si fa:
+                 il pulsante deve essere li', non nascosto in un menu. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPerche"
+                style="@style/McButton.Primary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Perché non è partito" />
+
             <TextView
                 android:id="@+id/ultimoBackup"
                 android:layout_width="match_parent"

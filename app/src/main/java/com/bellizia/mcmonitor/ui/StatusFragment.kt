@@ -67,6 +67,15 @@ class StatusFragment : Fragment() {
         b.btnComandi.setOnClickListener {
             if (configured()) startActivity(Intent(requireContext(), CommandsActivity::class.java))
         }
+        b.btnSicurezza.setOnClickListener {
+            if (configured()) startActivity(Intent(requireContext(), SecurityActivity::class.java))
+        }
+        b.btnRipristino.setOnClickListener {
+            if (configured()) startActivity(Intent(requireContext(), RestoreActivity::class.java))
+        }
+        b.btnPerche.setOnClickListener {
+            if (configured()) startActivity(Intent(requireContext(), AvvioActivity::class.java))
+        }
         b.btnGoMods.setOnClickListener {
             (activity as? com.bellizia.mcmonitor.MainActivity)?.openTab("Mod")
         }
@@ -151,6 +160,13 @@ class StatusFragment : Fragment() {
     private fun render(details: String) {
         val status = Lgsm.parseStatus(details) ?: "SCONOSCIUTO"
         setStatus(status.uppercase(), colorFor(status))
+        // Con il server acceso resta disponibile ma non urla: la domanda "perche'
+        // non e' partito" se la fa chi il server acceso non ce l'ha.
+        b.btnPerche.text = if (status.equals("STARTED", true)) {
+            "Log e stato dell'avvio"
+        } else {
+            "Perché non è partito"
+        }
 
         val parsed = Lgsm.parseDetails(details)
         showAddress(parsed)

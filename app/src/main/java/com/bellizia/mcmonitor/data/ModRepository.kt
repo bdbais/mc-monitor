@@ -101,17 +101,54 @@ object ModRepository {
         }
         log("     $downloadText")
 
-        log("\n3/3 · Configuro LinuxGSM per avviare Fabric…")
+        log("\n3/4 · Dico a LinuxGSM di avviare Fabric invece del programma di serie…")
         val patch = SshManager.exec(c, Mods.useLoaderInConfig(c), 45_000)
         Lgsm.clean(patch.text).trim().lineSequence().forEach { log("     $it") }
         if (!patch.ok) {
-            log("\nIl jar è pronto ma la riga di avvio non è stata modificata: " +
-                    "controlla startparameters nella configurazione LinuxGSM.")
+            log(
+                "\nIl jar è pronto ma la configurazione non è stata cambiata, " +
+                        "quindi il server continuerà a partire come prima. " +
+                        "Non è rimasto a metà: non c'è niente da rimettere a posto."
+            )
             return report.toString()
         }
 
-        log("\nFatto. Riavvia il server per partire con Fabric.")
-        return report.toString()
+        // La prova del nove: `details` legge la configurazione e stampa la riga
+        // con cui il server verrà avviato, senza avviare niente. Prima l'app
+        // dichiarava "fatto" sul solo codice di uscita, che qui non dice niente.
+        log("\n4/4 · Controllo com'è venuta la riga di avvio…")
+        val dettagli = runCatching { SshManager.exec(c, Lgsm.details(c), 120_000).text }.getOrNull()
+        val riga = dettagli?.let { Mods.parseLaunchLine(it) }
+        if (riga != null) log("     $riga")
+
+        return report.toString() + when {
+            riga == null ->
+                "\nNon sono riuscito a rileggere la riga di avvio. Prima di riavviare, " +
+                        "guarda in Comandi · Dettagli che ci sia scritto fabric."
+            Mods.launchLineOk(riga) ->
+                "\nFatto, e la riga è quella giusta. Riavvia il server.\n\n" +
+                        "Al primo avvio Fabric scarica una cinquantina di megabyte " +
+                        "(il caricatore e le sue librerie): ci mette qualche minuto e serve " +
+                        "che il computer arrivi a internet.\n\n" +
+                        "Con i mod, 1024 MB di memoria quasi sempre non bastano: se il " +
+                        "server muore subito, alza javaram dalle impostazioni tecniche."
+            else ->
+                "\nATTENZIONE: la riga di avvio non è come dovrebbe. Non riavviare: " +
+                        "il server potrebbe non ripartire.\n\n" +
+                        "Da \"Ripristino\" puoi rimettere la configurazione com'era un " +
+                        "minuto fa, e da \"Perché non è partito\" vedere cosa dicono i log."
+        }
+    }
+
+    /** Rimette il server sul programma di serie, senza aprire un terminale. */
+    suspend fun tornaAVanilla(): String {
+        val c = cfg()
+        val r = SshManager.exec(c, Mods.useVanillaInConfig(c), 45_000)
+        val testo = Lgsm.clean(r.text).trim()
+        if (!r.ok) throw SshException(testo.ifBlank { "Non riuscito." })
+        val dettagli = runCatching { SshManager.exec(c, Lgsm.details(c), 120_000).text }.getOrNull()
+        val riga = dettagli?.let { Mods.parseLaunchLine(it) }
+        return testo + (riga?.let { "\n\nAdesso il server partirà così:\n$it" } ?: "")
     }
 
     // ------------------------------------------------------------- modpack

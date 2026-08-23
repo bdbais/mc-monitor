@@ -79,7 +79,7 @@ object Provision {
                     "else printf '%s\\n' '$key=$value' >> $f; fi"
         }
         return "[ -f $f ] || { echo 'server.properties non trovato: il server non è ancora stato installato'; exit ${GameVersion.EXIT_NO_CONFIG}; }; " +
-                "cp $f \"$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
+                Lgsm.backupFirst(f) +
                 writes + "; " +
                 "chmod 600 $f && echo 'permessi di server.properties ristretti al solo proprietario'; " +
                 "echo 'impostazioni applicate:'; " +

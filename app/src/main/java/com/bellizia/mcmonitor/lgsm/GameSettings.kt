@@ -361,7 +361,7 @@ object GameSettings {
         }
 
         return "f=$f; [ -f \"\$f\" ] || { echo 'PROPERTIES NON TROVATO'; exit $EXIT_NO_PROPERTIES; }; " +
-                "cp \"\$f\" \"\$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
+                "cp \"\$f\" \"\$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\" || { echo 'COPIA DI SICUREZZA NON RIUSCITA'; exit ${Lgsm.EXIT_NO_BACKUP}; }; " +
                 "$ambiente awk '$programma' \"\$f\" > \"\$f.mcmonitor.tmp\" && " +
                 "mv \"\$f.mcmonitor.tmp\" \"\$f\" && echo 'SCRITTO ${values.size}'"
     }

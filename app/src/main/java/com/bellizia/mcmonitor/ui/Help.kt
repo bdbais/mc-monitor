@@ -59,6 +59,71 @@ object Help {
         """.trimIndent()
     )
 
+    val AVVIO = Page(
+        "Perché non è partito",
+        """
+        Quando il server non riparte, questa è la schermata da aprire.
+
+        La scheda Console non serve, in quel momento: mostra il log del gioco, che è quello dell'ultimo avvio riuscito. Il motivo vero sta in altri due file, che l'app fino alla 1.25 non guardava mai.
+
+        In cima c'è LA RIGA DI AVVIO: il comando esatto con cui LinuxGSM lancia il server. Nove volte su dieci il guasto si vede lì, e prima non era visibile da nessuna parte. Se contiene due volte "-jar", o delle opzioni di memoria dopo il nome del programma, è quella la causa.
+
+        Sotto, il motivo probabile in italiano e il pulsante che porta dove si ripara. I motivi riconosciuti sono quelli che capitano davvero: programma non trovato, riga di avvio sbagliata, Java troppo vecchio, memoria finita, mod incompatibili, condizioni d'uso non accettate, porta occupata.
+
+        Se non riconosce niente lo dice, invece di inventare: le ultime righe dei log sono lì sotto, e quasi sempre la risposta è nelle ultime venti.
+
+        I QUATTRO PEZZI
+
+        • Cosa ha deciso LinuxGSM — il suo registro: se ha rinunciato ad avviare, qui c'è il perché
+        • Cosa ha detto il server — quello che ha stampato Java prima di morire
+        • Log di gioco — l'ultimo avvio riuscito; se il server non parte, è vecchio
+        • Segnali di stato — i file che dicono se era partito, se è stato fermato apposta o se è caduto
+
+        I primi due vengono riscritti a ogni avvio, quindi contengono sempre l'ultimo tentativo.
+
+        "Copia tutto" mette il quadro completo negli appunti, da incollare a chi ti sta aiutando. Ci sono i percorsi del tuo server, non le password.
+        """.trimIndent()
+    )
+
+    val SICUREZZA = Page(
+        "Il controllo di sicurezza",
+        """
+        Un giudizio in una parola — alta, media o bassa — su quanto è chiuso il tuo server, con l'elenco di cosa lo abbassa e come si sistema.
+
+        Non è un esame completo e non pretende di esserlo: guarda le poche cose che su un server piccolo fanno la differenza fra "ci entrano i tuoi amici" e "ci entra chiunque abbia trovato l'indirizzo". Legge solo la configurazione: non prova a entrare nel server e non manda niente fuori dal telefono.
+
+        Il voto è severo di proposito. Basta una cosa grave per farlo scendere in fondo, e non è severità gratuita: su queste cose non si fa la media. Un server con la whitelist spenta non è "abbastanza sicuro" perché il resto è a posto — è aperto.
+
+        LE DUE CHE CONTANO PIÙ DI TUTTE
+
+        • Il controllo degli account Minecraft. Spento, chiunque può entrare con il nome di un altro, anche il tuo. Si spegne solo su una rete di casa isolata
+        • La whitelist. Spenta, entra chiunque conosca l'indirizzo — e l'indirizzo gira più di quanto si pensi: ci sono motori di ricerca che scandagliano internet in cerca di server Minecraft aperti
+
+        Poi guarda la password di RCON (chi ce l'ha comanda il server), come l'app ci parla, i blocchi comando, la zona protetta allo spawn, con quale utente ti colleghi al computer, e se l'app sul telefono ha una password.
+
+        Toccando una voce si arriva dove si sistema. Tornando indietro il voto si rifà da solo.
+        """.trimIndent()
+    )
+
+    val RESTORE = Page(
+        "Rimettere a posto",
+        """
+        Ogni volta che l'app modifica un file del tuo server ne lascia prima una copia, con la data nel nome. Questa schermata è il posto da cui quelle copie si rimettono.
+
+        Serve quando qualcosa smette di funzionare dopo una modifica fatta da qui: una riga sbagliata nelle impostazioni tecniche, un'installazione di Fabric andata storta, un valore cambiato che non era quello giusto. Prima bisognava collegarsi al computer e sapere cosa cercare.
+
+        Toccando una copia vedi PRIMA cosa cambierebbe: le righe con il meno spariscono, quelle con il più tornano. Solo dopo decidi.
+
+        Rimettere una copia lascia a sua volta una copia di com'era: se torni indietro dalla cosa sbagliata, puoi tornare avanti.
+
+        Le copie riguardano solo i file che l'app tocca: la configurazione di LinuxGSM e server.properties. Il mondo, i mod e i mondi salvati non c'entrano — per quelli c'è il backup.
+
+        Dopo aver rimesso un file, riavvia il server perché lo rilegga.
+
+        Le copie restano sul computer e non si cancellano da qui. Occupano pochissimo: sono file di testo.
+        """.trimIndent()
+    )
+
     val BACKUP = Page(
         "Il backup",
         """

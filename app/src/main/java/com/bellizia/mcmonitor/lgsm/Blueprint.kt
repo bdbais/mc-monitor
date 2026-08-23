@@ -192,7 +192,7 @@ object Blueprints {
         // pescherebbe anche "rcon-port". Qui i punti si scrivono come punti.
         val modello = "^[[:space:]]*" + key.replace(".", "\\.") + "="
         return "f=$f; [ -f \"\$f\" ] || { echo 'PROPERTIES NON TROVATO'; exit $EXIT_NO_CONFIG; }; " +
-                "cp \"\$f\" \"\$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
+                "cp \"\$f\" \"\$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\" || { echo 'COPIA DI SICUREZZA NON RIUSCITA'; exit ${Lgsm.EXIT_NO_BACKUP}; }; " +
                 "MCM_RIGA=$riga awk 'BEGIN{fatto=0; riga=ENVIRON[\"MCM_RIGA\"]} " +
                 "/$modello/{ if(!fatto){print riga; fatto=1} next } " +
                 "{print} END{ if(!fatto) print riga }' \"\$f\" > \"\$f.mcmonitor.tmp\" && " +

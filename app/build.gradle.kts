@@ -32,8 +32,8 @@ android {
         applicationId = "com.bellizia.mcmonitor"
         minSdk = 26
         targetSdk = 35
-        versionCode = 28
-        versionName = "1.25"
+        versionCode = 29
+        versionName = "1.26"
     }
 
     signingConfigs {

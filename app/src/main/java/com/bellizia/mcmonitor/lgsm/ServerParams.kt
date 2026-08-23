@@ -229,7 +229,7 @@ object ServerParams {
         // da riga di comando interpreta a sua volta le sequenze di escape, e
         // disferebbe la protezione appena messa da quoteValue.
         return "f=$f; [ -f \"\$f\" ] || { echo 'CONFIG NON TROVATA'; exit $EXIT_NO_CONFIG; }; " +
-                "cp \"\$f\" \"\$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
+                "cp \"\$f\" \"\$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\" || { echo 'COPIA DI SICUREZZA NON RIUSCITA'; exit ${Lgsm.EXIT_NO_BACKUP}; }; " +
                 "MCM_RIGA=$riga awk 'BEGIN{fatto=0; riga=ENVIRON[\"MCM_RIGA\"]} " +
                 "/^[[:space:]]*$key=/{ if(!fatto){print riga; fatto=1} next } " +
                 "{print} END{ if(!fatto) print riga }' \"\$f\" > \"\$f.mcmonitor.tmp\" && " +
@@ -245,7 +245,7 @@ object ServerParams {
         require(isValidKey(key)) { "chiave non valida: $key" }
         val f = Lgsm.path(GameVersion.configPath(cfg))
         return "f=$f; [ -f \"\$f\" ] || { echo 'CONFIG NON TROVATA'; exit $EXIT_NO_CONFIG; }; " +
-                "cp \"\$f\" \"\$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
+                "cp \"\$f\" \"\$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\" || { echo 'COPIA DI SICUREZZA NON RIUSCITA'; exit ${Lgsm.EXIT_NO_BACKUP}; }; " +
                 "awk '/^[[:space:]]*$key=/{ print \"#\" \$0; next } {print}' \"\$f\" > \"\$f.mcmonitor.tmp\" && " +
                 "mv \"\$f.mcmonitor.tmp\" \"\$f\" && echo 'DISATTIVATO'"
     }

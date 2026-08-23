@@ -1,10 +1,13 @@
 package com.bellizia.mcmonitor.data
 
+import com.bellizia.mcmonitor.lgsm.Avvio
 import com.bellizia.mcmonitor.lgsm.BackupState
 import com.bellizia.mcmonitor.lgsm.Backups
 import com.bellizia.mcmonitor.lgsm.ChatMessage
 import com.bellizia.mcmonitor.lgsm.ComandoLgsm
+import com.bellizia.mcmonitor.lgsm.Copia
 import com.bellizia.mcmonitor.lgsm.Cron
+import com.bellizia.mcmonitor.lgsm.Diagnosi
 import com.bellizia.mcmonitor.lgsm.Crontab
 import com.bellizia.mcmonitor.lgsm.LgsmCommands
 import com.bellizia.mcmonitor.lgsm.PianoBackup
@@ -19,6 +22,9 @@ import com.bellizia.mcmonitor.lgsm.PlayerEntry
 import com.bellizia.mcmonitor.lgsm.PlayerPos
 import com.bellizia.mcmonitor.lgsm.Provision
 import com.bellizia.mcmonitor.lgsm.RequirementResult
+import com.bellizia.mcmonitor.lgsm.Rapporto
+import com.bellizia.mcmonitor.lgsm.Restore
+import com.bellizia.mcmonitor.lgsm.SecurityCheck
 import com.bellizia.mcmonitor.lgsm.ServerInspection
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.ssh.SshException
@@ -310,6 +316,52 @@ object McRepository {
                 // Si accorcia mentre lo si legge: cosi non cresce all'infinito.
                 "tail -n 400 \"\$f\" > \"\$f.tmp\" && mv \"\$f.tmp\" \"\$f\"; tail -n 60 \"\$f\""
         return Lgsm.clean(SshManager.exec(c, comando, 30_000).text).trim()
+    }
+
+    // --------------------------------------------- perche non e partito
+
+    /** Log e stato raccolti in un giro solo, gia' interpretati. */
+    suspend fun diagnosiAvvio(): Diagnosi {
+        val c = cfg()
+        val r = SshManager.exec(c, Avvio.raccogli(c), 120_000)
+        return Avvio.leggi(r.text)
+    }
+
+    // ------------------------------------------------------- sicurezza
+
+    /** Il controllo veloce su quanto e' chiuso il server. */
+    suspend fun controlloSicurezza(): Rapporto {
+        val c = cfg()
+        val props = runCatching { properties() }.getOrDefault(emptyMap())
+        return SecurityCheck.valuta(props, c, Prefs.lockConfigured)
+    }
+
+    // -------------------------------------------------------- ripristino
+
+    /** Le copie datate che l'app ha lasciato modificando i file del server. */
+    suspend fun copie(): List<Copia> {
+        val c = cfg()
+        val r = SshManager.exec(c, Restore.list(c), 45_000)
+        return Restore.parse(r.text).filter { Restore.accettabile(c, it) }
+    }
+
+    /** Cosa cambierebbe rimettendo quella copia. */
+    suspend fun differenza(copia: Copia): String {
+        val c = cfg()
+        require(Restore.accettabile(c, copia)) { "copia non riconosciuta" }
+        return Lgsm.clean(SshManager.exec(c, Restore.differenza(copia), 30_000).text).trim()
+    }
+
+    /** Rimette la copia al suo posto, tenendo da parte com'e' adesso. */
+    suspend fun ripristina(copia: Copia): String {
+        val c = cfg()
+        require(Restore.accettabile(c, copia)) { "copia non riconosciuta" }
+        val r = SshManager.exec(c, Restore.restore(copia), 45_000)
+        val testo = Lgsm.clean(r.text).trim()
+        if (!Restore.ripristinato(testo)) {
+            throw SshException(testo.ifBlank { "Ripristino non riuscito." })
+        }
+        return testo
     }
 
     // ------------------------------------------------- comandi dello script

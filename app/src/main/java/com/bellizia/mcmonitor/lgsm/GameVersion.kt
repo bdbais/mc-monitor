@@ -41,7 +41,7 @@ object GameVersion {
 
         val f = Lgsm.path(configPath(cfg))
         return "[ -f $f ] || { echo 'CONFIG NON TROVATA'; exit $EXIT_NO_CONFIG; }; " +
-                "cp $f \"$f.mcmonitor.bak.\$(date +%Y%m%d%H%M%S)\"; " +
+                Lgsm.backupFirst(f) +
                 "if grep -qE '^[[:space:]]*mcversion=' $f; then " +
                 "sed -i 's|^[[:space:]]*mcversion=.*|mcversion=\"$version\"|' $f; " +
                 "else printf '%s\\n' 'mcversion=\"$version\"' >> $f; fi; " +
