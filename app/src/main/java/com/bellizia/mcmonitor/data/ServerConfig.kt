@@ -605,7 +605,17 @@ object Prefs {
     }
 
     /** Usata quando l'app scopre da sola che "lgsm send" non esiste su questo server. */
-    fun setUseLgsmSend(enabled: Boolean) = save(load().copy(useLgsmSend = enabled))
+    /**
+     * Segna che su quel server il comando `send` di LinuxGSM non c'e'.
+     *
+     * Il server va detto: mandando un comando a un server che non e' quello
+     * aperto adesso, scrivere sul profilo attivo cambierebbe l'impostazione di
+     * un altro, e da li' in poi anche quello parlerebbe per la strada sbagliata.
+     */
+    fun setUseLgsmSend(serverId: String, enabled: Boolean) {
+        val quale = servers().firstOrNull { it.id == serverId } ?: return
+        save(quale.copy(useLgsmSend = enabled))
+    }
 
     // ----------------------------------------------------------- migrazioni
 

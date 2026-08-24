@@ -215,16 +215,15 @@ class PlayersFragment : Fragment() {
                 if (attempt.stamp.isNotBlank()) append(" · ultimo tentativo ${attempt.stamp}")
                 if (attempt.uuid.isNotBlank()) append(" · ${attempt.uuid.take(8)}")
             }
+            // Dalla porta, come tutti: e' il gesto piu' corto e piu' probabile
+            // per bannare qualcuno, ed era l'unico che non chiedeva se ripeterlo
+            // sugli altri mondi. Lo stesso gesto non puo' comportarsi in due
+            // modi a seconda di dove lo si tocca.
             row.btnWhitelist.setOnClickListener {
-                commandWithNote(
-                    "whitelist add ${attempt.name}",
-                    "${attempt.name} ammesso",
-                    attempt.name,
-                    "ammesso"
-                )
+                esegui("whitelist add ${attempt.name}", "${attempt.name} ammesso")
             }
             row.btnBan.setOnClickListener {
-                commandWithNote("ban ${attempt.name}", "${attempt.name} bannato", attempt.name, "bannato")
+                esegui("ban ${attempt.name}", "${attempt.name} bannato")
             }
             row.root.setOnClickListener { playerActions(attempt.name) }
             list.addView(row.root)
@@ -277,7 +276,9 @@ class PlayersFragment : Fragment() {
             ).joinToString(" · ").ifBlank { "—" }
             row.action.text = actionLabel
             row.action.setOnClickListener {
-                command("$action ${entry.name}", "${entry.name}: $actionLabel eseguito")
+                // "Sbanna" e "Rimuovi": due dei quattro gesti che esistono per
+                // essere ripetuti altrove, e da qui non si ripetevano mai.
+                esegui("$action ${entry.name}", "${entry.name}: $actionLabel eseguito")
             }
             row.root.setOnClickListener { playerActions(entry.name) }
             list.addView(row.root)
@@ -370,6 +371,14 @@ class PlayersFragment : Fragment() {
         val name = raw?.trim().orEmpty()
         if (name.isEmpty()) {
             toast("Inserisci un nome giocatore")
+            return
+        }
+        // Da qui un refuso non finisce piu' su un server solo: finisce su tutti
+        // quelli spuntati. Un nome Minecraft e' fatto di lettere, cifre e
+        // trattini bassi, al massimo 16: tutto il resto e' quasi certamente un
+        // errore di battitura, e conviene fermarlo prima.
+        if (!Regex("^[A-Za-z0-9_]{1,16}$").matches(name)) {
+            toast("«$name» non è un nome Minecraft: lettere, cifre e _, al massimo 16")
             return
         }
         if (!configured()) return
@@ -494,14 +503,23 @@ class PlayersFragment : Fragment() {
         if (!configured()) return
         val giocatore = name(comando)
         b.swipe.isRefreshing = true
-        viewLifecycleOwner.lifecycleScope.launch {
+        // lifecycleScope del fragment e non della vista: ruotando lo schermo la
+        // vista muore, e con viewLifecycleOwner il giro veniva tagliato a meta'
+        // in silenzio -- alcuni server bannati, altri no, e nessuno che lo dica.
+        // Cosi' invece arriva in fondo, e il riassunto compare se c'e' ancora
+        // qualcuno a guardarlo.
+        lifecycleScope.launch {
             // Il server aperto adesso per primo: e' quello che l'utente sta
             // guardando, ed e' l'unico di cui vedra' cambiare le liste.
             val tutti = listOf(Prefs.load()) + altri
             val esiti = McRepository.mandaSuPiuServer(comando, tutti)
-            if (!isAdded) return@launch
+            if (!isAdded || isRemoving) return@launch
             _b?.swipe?.isRefreshing = false
             mostraEsiti(tipo, giocatore, comando, esiti)
+            // La stessa attesa del percorso a un server solo: senza, la lista si
+            // ricarica prima che il server abbia scritto il file, e mostra il
+            // contrario di quello che il riassunto ha appena detto.
+            delay(1_500)
             refresh()
         }
     }
@@ -521,6 +539,12 @@ class PlayersFragment : Fragment() {
     ) {
         if (!isAdded) return
         val riusciti = esiti.filter { it.riuscito }.map { it.server }
+        // "Annulla tutto" chiude il dialogo come qualsiasi altro pulsante, e
+        // faceva scattare lo stesso la richiesta della nota: si finiva per
+        // scrivere "bannato Pippo: entrava con nomi finti" dieci secondi dopo
+        // aver tolto quel ban, e il collega che apre Pippo la settimana dopo
+        // legge un provvedimento che non esiste piu'.
+        var annullato = false
         val dialogo = MaterialAlertDialogBuilder(requireContext())
             .setTitle(tipo.etichetta)
             .setMessage(
@@ -530,6 +554,7 @@ class PlayersFragment : Fragment() {
             .setPositiveButton("Ho capito", null)
         if (riusciti.isNotEmpty()) {
             dialogo.setNegativeButton("Annulla tutto") { _, _ ->
+                annullato = true
                 disfa(tipo, giocatore, riusciti)
             }
         }
@@ -541,7 +566,7 @@ class PlayersFragment : Fragment() {
         val chiedeNota = riusciti.isNotEmpty() &&
                 (tipo == Provvedimenti.Tipo.BAN || tipo == Provvedimenti.Tipo.AMMETTI)
         dialogo.setOnDismissListener {
-            if (chiedeNota) {
+            if (chiedeNota && !annullato) {
                 nota(giocatore, if (tipo == Provvedimenti.Tipo.BAN) "bannato" else "ammesso")
             }
         }
@@ -554,17 +579,29 @@ class PlayersFragment : Fragment() {
         dove: List<ServerConfig>
     ) {
         b.swipe.isRefreshing = true
-        viewLifecycleOwner.lifecycleScope.launch {
-            val esiti = McRepository.mandaSuPiuServer(
-                Provvedimenti.perDisfare(tipo, giocatore), dove
-            )
-            if (!isAdded) return@launch
+        lifecycleScope.launch {
+            val comando = Provvedimenti.perDisfare(tipo, giocatore)
+            val esiti = McRepository.mandaSuPiuServer(comando, dove)
+            if (!isAdded || isRemoving) return@launch
             _b?.swipe?.isRefreshing = false
-            val no = esiti.count { !it.riuscito }
-            toast(
-                if (no == 0) "Annullato su tutti."
-                else "Annullato su ${esiti.size - no} server su ${esiti.size}."
-            )
+            val no = esiti.filterNot { it.riuscito }
+            if (no.isEmpty()) {
+                toast("Annullato su tutti.")
+            } else {
+                // Un toast con un numero non basta: se il giocatore resta
+                // bannato da qualche parte, bisogna sapere DOVE, altrimenti
+                // l'unico modo di scoprirlo e' che se ne lamenti lui.
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Annullato solo in parte")
+                    .setMessage(
+                        Provvedimenti.riassunto(
+                            Provvedimenti.tipoDi(comando) ?: tipo, giocatore, esiti
+                        )
+                    )
+                    .setPositiveButton("Ho capito", null)
+                    .show()
+            }
+            delay(1_500)
             refresh()
         }
     }

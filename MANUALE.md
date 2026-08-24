@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.31.
+Versione 1.32.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -677,8 +677,9 @@ Quindi **ammetti**, **banna**, **sbanna** e **togli dalla whitelist** chiedono, 
 farlo, su quali altri server ripeterlo. Quelli sullo stesso computer arrivano già spuntati;
 gli altri no, perché chi ha un mondo altrove di solito ha un motivo per tenerlo separato.
 
-Vale per tutte e due le strade: il pannello di un giocatore e i due campi in cima alla
-scheda.
+Vale da **tutte** le strade: il pannello di un giocatore, i due campi in cima alla scheda,
+i pulsanti **Ammetti** e **Banna** della lista d'attesa, e **Sbanna** e **Rimuovi** nelle
+liste. Lo stesso gesto non può comportarsi in due modi a seconda di dove lo si tocca.
 
 Alla fine l'app dice **dove è andata e dove no**, con il motivo. Riuscire a metà è normale,
 non è un'eccezione: un server è spento, un altro sta su una macchina che in quel momento non

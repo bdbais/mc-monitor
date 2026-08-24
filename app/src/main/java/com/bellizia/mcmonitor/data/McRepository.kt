@@ -83,7 +83,7 @@ object McRepository {
             val text = Lgsm.clean(r.text).trim()
             if (r.ok && !looksUnsupported(text)) return text.ifBlank { "comando inviato" }
             // "send" non c'è (o non ha funzionato): da qui in poi si usa tmux.
-            Prefs.setUseLgsmSend(false)
+            Prefs.setUseLgsmSend(c.id, false)
         }
 
         val tmux = c.copy(useLgsmSend = false)
