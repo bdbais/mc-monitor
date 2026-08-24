@@ -14,6 +14,9 @@ import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.MainActivity
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.lgsm.Provvedimenti
+import com.bellizia.mcmonitor.lgsm.EsitoSuServer
+import com.bellizia.mcmonitor.data.ServerConfig
 import com.bellizia.mcmonitor.data.PresenceRepository
 import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.databinding.FragmentPlayersBinding
@@ -47,13 +50,13 @@ class PlayersFragment : Fragment() {
         b.btnPosta.setOnClickListener { apriPosta() }
         b.btnWhitelistAdd.setOnClickListener {
             withName(b.whitelistInput.text?.toString()) { name ->
-                command("whitelist add $name", "Aggiunto $name alla whitelist")
+                esegui("whitelist add $name", "Aggiunto $name alla whitelist")
                 b.whitelistInput.setText("")
             }
         }
         b.btnBanAdd.setOnClickListener {
             withName(b.banInput.text?.toString()) { name ->
-                command("ban $name", "$name bannato")
+                esegui("ban $name", "$name bannato")
                 b.banInput.setText("")
             }
         }
@@ -297,15 +300,7 @@ class PlayersFragment : Fragment() {
             pos = lastPositions.firstOrNull { it.name.equals(name, ignoreCase = true) },
             online = lastNames.any { it.equals(name, ignoreCase = true) },
             onlineNames = lastNames,
-            run = { cmd, feedback ->
-                // Solo i due gesti che gli altri amministratori devono capire.
-                val nome = cmd.substringAfterLast(' ')
-                when {
-                    cmd.startsWith("ban ") -> commandWithNote(cmd, feedback, nome, "bannato")
-                    cmd.startsWith("whitelist add ") -> commandWithNote(cmd, feedback, nome, "ammesso")
-                    else -> command(cmd, feedback)
-                }
-            },
+            run = { cmd, feedback -> esegui(cmd, feedback) },
             showOnMap = { player -> (requireActivity() as MainActivity).showPlayerOnMap(player) },
             showChat = { player -> showChat(player) },
             scriviPosta = { player -> apriPosta(player) }
@@ -386,8 +381,189 @@ class PlayersFragment : Fragment() {
      * Dopo il comando si puo' lasciare due righe agli altri amministratori, che
      * restano legate al giocatore e compaiono nel suo pannello.
      */
+    /** Il nome del giocatore dentro un comando di console. */
+    private fun name(comando: String) = comando.trim().substringAfterLast(' ')
+
+    /**
+     * L'unica porta da cui passano i comandi su un giocatore.
+     *
+     * Ce n'erano due: il pannello del giocatore e i due campi in cima alla
+     * scheda. Quelli in cima scavalcavano la domanda sugli altri server, cioe'
+     * proprio dalla strada piu' corta per bannare qualcuno il ban restava su un
+     * mondo solo.
+     */
+    private fun esegui(comando: String, feedback: String) {
+        val tipo = Provvedimenti.tipoDi(comando)
+        val altri = Provvedimenti.altriServer(Prefs.servers(), Prefs.load())
+        if (tipo != null && altri.isNotEmpty()) {
+            // Ammettere e bannare riguardano tutti i mondi di chi ne ha piu' di
+            // uno: si chiede prima di farlo qui, non dopo.
+            chiediDoveApplicare(comando, feedback, tipo, altri)
+        } else {
+            soloQui(comando, feedback)
+        }
+    }
+
+    // ------------------------------------ lo stesso provvedimento altrove
+
+    /**
+     * Chiede su quali altri server ripetere il provvedimento.
+     *
+     * Si chiede prima di eseguire, e non dopo: chi banna un vandalo lo vuole
+     * fuori da tutti i suoi mondi nello stesso momento, non fra due schermate.
+     * Quelli sullo stesso computer arrivano gia' spuntati, perche' quasi sempre
+     * sono la stessa comunita'.
+     */
+    private fun chiediDoveApplicare(
+        comando: String,
+        feedback: String,
+        tipo: Provvedimenti.Tipo,
+        altri: List<ServerConfig>
+    ) {
+        if (!isAdded) return
+        val ctx = requireContext()
+        val preScelti = Provvedimenti.daSpuntare(altri, Prefs.load())
+
+        // Le caselle stanno in una vista fatta a mano, non in setMultiChoiceItems:
+        // un AlertDialog non puo' avere insieme un messaggio e una lista, e la
+        // lista sparirebbe in silenzio. Provato: il dialogo compariva senza
+        // nessuna casella, e "Applica" non applicava niente.
+        val colonna = android.widget.LinearLayout(ctx).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            val m = (20 * resources.displayMetrics.density).toInt()
+            setPadding(m, m / 2, m, 0)
+        }
+        colonna.addView(TextView(ctx).apply {
+            textSize = 13f
+            text = "Su ${Prefs.load().displayName} lo faccio comunque. Su quali altri?\n\n" +
+                    "Devono essere accesi: il comando passa dalla console, e per mettere " +
+                    "qualcuno in whitelist il server deve chiedere a Mojang chi è."
+        })
+        val caselle = altri.mapIndexed { i, srv ->
+            android.widget.CheckBox(ctx).apply {
+                text = srv.displayName
+                isChecked = preScelti[i]
+                colonna.addView(this)
+            }
+        }
+
+        colonna.addView(TextView(ctx).apply {
+            textSize = 12f
+            setPadding(0, (12 * resources.displayMetrics.density).toInt(), 0, 0)
+            text = "Tocca qui per sapere cosa non si propaga e perche'."
+            setOnClickListener { HelpDialog.show(ctx, Help.PROVVEDIMENTI) }
+        })
+
+        MaterialAlertDialogBuilder(ctx)
+            .setTitle("${tipo.etichetta}: dove?")
+            .setView(android.widget.ScrollView(ctx).apply { addView(colonna) })
+            .setNeutralButton("Solo qui") { _, _ -> soloQui(comando, feedback) }
+            .setNegativeButton("Annulla", null)
+            .setPositiveButton("Applica") { _, _ ->
+                val bersagli = altri.filterIndexed { i, _ -> caselle[i].isChecked }
+                if (bersagli.isEmpty()) soloQui(comando, feedback)
+                else applicaSuTutti(comando, feedback, tipo, bersagli)
+            }
+            .show()
+    }
+
+    private fun soloQui(comando: String, feedback: String) {
+        when {
+            comando.startsWith("ban ") -> commandWithNote(comando, feedback, name(comando), "bannato")
+            comando.startsWith("whitelist add ") ->
+                commandWithNote(comando, feedback, name(comando), "ammesso")
+            else -> command(comando, feedback)
+        }
+    }
+
+    private fun applicaSuTutti(
+        comando: String,
+        feedback: String,
+        tipo: Provvedimenti.Tipo,
+        altri: List<ServerConfig>
+    ) {
+        if (!configured()) return
+        val giocatore = name(comando)
+        b.swipe.isRefreshing = true
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Il server aperto adesso per primo: e' quello che l'utente sta
+            // guardando, ed e' l'unico di cui vedra' cambiare le liste.
+            val tutti = listOf(Prefs.load()) + altri
+            val esiti = McRepository.mandaSuPiuServer(comando, tutti)
+            if (!isAdded) return@launch
+            _b?.swipe?.isRefreshing = false
+            mostraEsiti(tipo, giocatore, comando, esiti)
+            refresh()
+        }
+    }
+
+    /**
+     * Il riassunto, con la strada per tornare indietro.
+     *
+     * Sbagliare bersaglio su cinque server insieme deve costare un tocco, non
+     * cinque: senza il pulsante, si dovrebbe rifare il giro a mano ricordandosi
+     * quali erano andati a buon fine.
+     */
+    private fun mostraEsiti(
+        tipo: Provvedimenti.Tipo,
+        giocatore: String,
+        comando: String,
+        esiti: List<EsitoSuServer>
+    ) {
+        if (!isAdded) return
+        val riusciti = esiti.filter { it.riuscito }.map { it.server }
+        val dialogo = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(tipo.etichetta)
+            .setMessage(Provvedimenti.riassunto(tipo, giocatore, esiti))
+            .setPositiveButton("Ho capito", null)
+        if (riusciti.isNotEmpty()) {
+            dialogo.setNegativeButton("Annulla tutto") { _, _ ->
+                disfa(tipo, giocatore, riusciti)
+            }
+        }
+        // La nota si chiede DOPO, quando il riassunto e' stato letto e chiuso.
+        // Aprendola subito si metteva sopra al riassunto: l'utente non vedeva
+        // su quali server era andata, e "Annulla tutto" restava irraggiungibile.
+        // E non si chiede affatto se non e' riuscito da nessuna parte: sarebbe
+        // una nota su un provvedimento che non esiste.
+        val chiedeNota = riusciti.isNotEmpty() &&
+                (tipo == Provvedimenti.Tipo.BAN || tipo == Provvedimenti.Tipo.AMMETTI)
+        dialogo.setOnDismissListener {
+            if (chiedeNota) {
+                nota(giocatore, if (tipo == Provvedimenti.Tipo.BAN) "bannato" else "ammesso")
+            }
+        }
+        dialogo.show()
+    }
+
+    private fun disfa(
+        tipo: Provvedimenti.Tipo,
+        giocatore: String,
+        dove: List<ServerConfig>
+    ) {
+        b.swipe.isRefreshing = true
+        viewLifecycleOwner.lifecycleScope.launch {
+            val esiti = McRepository.mandaSuPiuServer(
+                Provvedimenti.perDisfare(tipo, giocatore), dove
+            )
+            if (!isAdded) return@launch
+            _b?.swipe?.isRefreshing = false
+            val no = esiti.count { !it.riuscito }
+            toast(
+                if (no == 0) "Annullato su tutti."
+                else "Annullato su ${esiti.size - no} server su ${esiti.size}."
+            )
+            refresh()
+        }
+    }
+
     private fun commandWithNote(command: String, success: String, player: String, azione: String) {
         command(command, success)
+        nota(player, azione)
+    }
+
+    /** La nota per gli altri amministratori: perche' quel nome sta in quella lista. */
+    private fun nota(player: String, azione: String) {
         if (!isAdded) return
         val campo = android.widget.EditText(requireContext()).apply {
             hint = "perche' (facoltativo)"

@@ -9,6 +9,7 @@ import com.bellizia.mcmonitor.lgsm.Consegna
 import com.bellizia.mcmonitor.lgsm.Copia
 import com.bellizia.mcmonitor.lgsm.Cron
 import com.bellizia.mcmonitor.lgsm.Diagnosi
+import com.bellizia.mcmonitor.lgsm.EsitoSuServer
 import com.bellizia.mcmonitor.lgsm.Crontab
 import com.bellizia.mcmonitor.lgsm.LgsmCommands
 import com.bellizia.mcmonitor.lgsm.Messaggio
@@ -64,8 +65,14 @@ object McRepository {
      * LinuxGSM senza il comando `send` non fallisce: stampa l'elenco dei comandi e
      * esce con 0. Per questo l'esito non si giudica dal solo codice di uscita.
      */
-    suspend fun send(command: String): String {
-        val c = cfg()
+    suspend fun send(command: String): String = send(cfg(), command)
+
+    /**
+     * Variante con il server esplicito: serve per ripetere lo stesso
+     * provvedimento su piu' server senza cambiare quello attivo sotto
+     * l'interfaccia.
+     */
+    suspend fun send(c: ServerConfig, command: String): String {
         if (c.rconUsable) {
             // Con RCON la risposta del server arriva subito e non finisce nel log.
             return RconManager.exec(c, command.trimStart('/')).ifBlank { "comando eseguito" }
@@ -738,6 +745,30 @@ object McRepository {
             onFailure = { "     ERRORE: ${it.message}" }
         ))
         return report.toString()
+    }
+
+    // ------------------------------------ provvedimenti su piu' server
+
+    /**
+     * Ripete lo stesso comando su piu' server, uno alla volta.
+     *
+     * Uno alla volta e non tutti insieme: SshManager tiene una connessione sola
+     * e la riapre a ogni computer diverso, quindi lanciarli in parallelo
+     * significherebbe farli litigare per la stessa. E su rete mobile un server
+     * lento non deve impedire agli altri di ricevere il ban.
+     *
+     * Non lancia mai: un server spento o irraggiungibile e' un esito, non un
+     * errore che ferma il giro. Quello che conta e' che l'utente sappia dove e'
+     * arrivato e dove no.
+     */
+    suspend fun mandaSuPiuServer(
+        comando: String,
+        servers: List<ServerConfig>
+    ): List<EsitoSuServer> = servers.map { s ->
+        runCatching { send(s, comando) }.fold(
+            onSuccess = { EsitoSuServer(s, true, it) },
+            onFailure = { EsitoSuServer(s, false, it.message.orEmpty().lines().first().take(120)) }
+        )
     }
 
     // ------------------------------------------- rimettere un backup

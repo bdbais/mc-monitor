@@ -105,6 +105,26 @@ object Help {
         """.trimIndent()
     )
 
+    val PROVVEDIMENTI = Page(
+        "Su più server insieme",
+        """
+        Chi ha due mondi sulla stessa macchina non ha due comunità: ha una comunità e due mondi. Bannare un vandalo di là e non di qua vuol dire che fra dieci minuti è di qua.
+
+        Per questo ammetti, banna, sbanna e togli dalla whitelist chiedono prima su quali altri server ripeterlo. Quelli sullo stesso computer arrivano già spuntati; gli altri no.
+
+        Alla fine l'app dice dove è andata e dove no, con il motivo. Riuscire a metà è normale: un server è spento, un altro non risponde. Quelli non fatti restano come prima.
+
+        Se hai sbagliato bersaglio, "Annulla tutto" disfa il provvedimento esattamente dove era riuscito.
+
+        NON SI PROPAGANO
+
+        • Il ban di un indirizzo (ban-ip): colpisce un indirizzo, che su una rete di casa è di tutta la famiglia
+        • Espelli, op e deop: riguardano quel momento e quel mondo
+
+        Il server di destinazione dev'essere acceso: il comando passa dalla console, e per mettere qualcuno in whitelist il server deve chiedere a Mojang chi è.
+        """.trimIndent()
+    )
+
     val POSTA = Page(
         "La posta",
         """

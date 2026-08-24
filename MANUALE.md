@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.29.
+Versione 1.30.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -667,6 +667,36 @@ Accanto al nome di chi non è collegato compare **l'ultima volta che si è visto
 - **Whitelist**, **op/deop**
 - **Espelli** e **banna** con motivo, **rimuovi ban**
 - **Lascia un messaggio**, per quando non c'è (qui sotto)
+
+### Ammettere e bannare su più server
+
+Chi ha due mondi sulla stessa macchina non ha due comunità: ha una comunità e due mondi.
+Bannare un vandalo di là e non di qua vuol dire che fra dieci minuti è di qua.
+
+Quindi **ammetti**, **banna**, **sbanna** e **togli dalla whitelist** chiedono, prima di
+farlo, su quali altri server ripeterlo. Quelli sullo stesso computer arrivano già spuntati;
+gli altri no, perché chi ha un mondo altrove di solito ha un motivo per tenerlo separato.
+
+Vale per tutte e due le strade: il pannello di un giocatore e i due campi in cima alla
+scheda.
+
+Alla fine l'app dice **dove è andata e dove no**, con il motivo. Riuscire a metà è normale,
+non è un'eccezione: un server è spento, un altro sta su una macchina che in quel momento non
+risponde. Quelli non fatti restano come prima, e si riprova quando sono accesi.
+
+Se hai sbagliato bersaglio, **Annulla tutto** disfa il provvedimento esattamente sui server
+dove era riuscito — non su quelli dove non era passato.
+
+Due cose che non si propagano:
+
+- il **ban di un indirizzo** (`ban-ip`): colpisce un indirizzo, che su una rete di casa è di
+  tutta la famiglia, e ripeterlo altrove moltiplicherebbe il danno di uno sbaglio
+- **espelli**, **op** e **deop**: riguardano quel momento e quel mondo
+
+Il server di destinazione dev'essere **acceso**. Il comando passa dalla console, e per
+mettere qualcuno in whitelist il server deve chiedere a Mojang chi è: una riga scritta a mano
+nel file, senza quell'identificativo, un server in online-mode la ignora. Se è spento l'app
+lo dice invece di far finta.
 
 ### La posta per chi non c'è
 
