@@ -795,7 +795,9 @@ object McRepository {
                             "occupa spazio."
                 )
             }
-            append("\n\nLa configurazione di LinuxGSM non è stata toccata: è rimasta quella " +
+            append("\n\nSono tornati indietro anche i mod e server.properties: sono " +
+                    "dentro la cartella del gioco. Le impostazioni di LinuxGSM no, " +
+                    "quelle sono rimaste quelle " +
                     "di adesso, non quella del giorno del backup.")
         }
     }

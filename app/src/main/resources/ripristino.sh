@@ -3,11 +3,11 @@
 #
 # È l'operazione da cui non si torna indietro da soli, quindi tre scelte:
 #
-# - SI TOCCA SOLO serverfiles. L'archivio di LinuxGSM contiene tutta la cartella
-#   del server, configurazioni comprese. Estrarre tutto riporterebbe indietro
-#   anche le impostazioni, i mod e le riparazioni fatte dopo: chi chiede di
-#   rimettere un backup vuole il mondo di quel giorno, non il server di quel
-#   giorno.
+# - SI TOCCA SOLO serverfiles, cioe' la cartella del gioco. Torna indietro
+#   tutto quello che c'e' dentro: il mondo, ma anche i mod, server.properties e
+#   i jar. NON tornano indietro le impostazioni di LinuxGSM (lgsm/), che sono
+#   quelle da cui dipende se il server parte: dopo una riparazione della riga di
+#   avvio, rimettere un backup non la rimangia.
 # - QUELLO CHE C'È ADESSO NON SI CANCELLA, SI SPOSTA. Una rinomina è istantanea
 #   e non occupa un byte in più, e se il ripristino delude si torna indietro.
 #   Cancellarla è una decisione dell'utente, e la prende dopo aver guardato.
@@ -50,7 +50,21 @@ fi
 SF="$D/serverfiles"
 DAPARTE=''
 if [ -d "$SF" ]; then
-    DAPARTE="$SF.prima-del-ripristino.$(date +%Y%m%d%H%M%S)"
+    # La data arriva al secondo: due ripristini nello stesso secondo
+    # sceglierebbero lo stesso nome, e il secondo mv finirebbe DENTRO la
+    # cartella del primo. Il rollback poi non la ritroverebbe, e l'app direbbe
+    # "rimesso" con il mondo sparito.
+    BASE="$SF.prima-del-ripristino.$(date +%Y%m%d%H%M%S)"
+    DAPARTE="$BASE"
+    n=1
+    while [ -e "$DAPARTE" ]; do
+        DAPARTE="$BASE-$n"
+        n=$((n + 1))
+        [ "$n" -gt 50 ] && {
+            echo 'NON RIESCO A METTERE DA PARTE IL MONDO DI ADESSO'
+            exit @@EXIT_ESTRAZIONE@@
+        }
+    done
     mv "$SF" "$DAPARTE" || {
         echo 'NON RIESCO A METTERE DA PARTE IL MONDO DI ADESSO'
         exit @@EXIT_ESTRAZIONE@@

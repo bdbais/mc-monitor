@@ -489,11 +489,13 @@ class BackupActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Copia del $quandoTesto")
             .setMessage(
-                "Pesa ${b.sizeLabel} e contiene $vociMondo file del mondo.\n\n" +
+                "Pesa ${b.sizeLabel} e contiene almeno $vociMondo file della cartella " +
+                        "del gioco.\n\n" +
                         anteprima.take(8).joinToString("\n") { "· $it" } +
                         (if (anteprima.size > 8) "\n· …" else "") +
-                        "\n\nRimettendola, il mondo torna com'era quel giorno. Tutto quello " +
-                        "che è stato costruito dopo sparisce dal mondo attivo."
+                        "\n\nRimettendola torna indietro tutta la cartella del gioco di quel " +
+                        "giorno: il mondo, ma anche i mod e server.properties. Tutto quello " +
+                        "che è stato fatto dopo sparisce."
             )
             .setPositiveButton("Rimettila…") { _, _ -> confermaRipristino(b, quandoTesto) }
             .setNegativeButton("Lascia stare", null)
@@ -510,12 +512,14 @@ class BackupActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle("Sicuro?")
             .setMessage(
-                "Il mondo tornerà quello del $quandoTesto.\n\n" +
+                "La cartella del gioco tornerà quella del $quandoTesto.\n\n" +
                         "· Il server deve essere fermo: se è acceso non faccio niente\n" +
-                        "· Il mondo di adesso non lo cancello: lo sposto di fianco, con la " +
-                        "data nel nome, e resta lì finché non lo togli tu\n" +
-                        "· Le impostazioni di LinuxGSM restano quelle di adesso: torna " +
-                        "indietro il mondo, non il server\n\n" +
+                        "· Quello che c'è adesso non lo cancello: lo sposto di fianco, con " +
+                        "la data nel nome, e resta lì finché non lo togli tu\n" +
+                        "· Tornano indietro mondo, mod e server.properties: stanno tutti " +
+                        "dentro la cartella del gioco\n" +
+                        "· Le impostazioni di LinuxGSM restano quelle di adesso, così una " +
+                        "riparazione della riga di avvio non se ne va\n\n" +
                         "Su un mondo grande ci vuole qualche minuto."
             )
             .setPositiveButton("Rimetti il mondo") { _, _ -> ripristina(b) }

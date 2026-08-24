@@ -30,8 +30,11 @@
 # Che tmux abbia accettato i tasti non vuol dire niente: la sessione puo'
 # esistere senza che dentro ci sia la console del gioco. La prova buona e'
 # positiva e la da' il server, che rieccheggia il sussurro dicendo a chi
-# ("You whisper to Pippo: ..."). Una riga di chat non puo' fabbricarla, perche'
-# le manca il prefisso del server.
+# ("You whisper to Pippo: ...").
+#
+# Attenzione: nel log ANCHE LA CHAT ha il prefisso del server, perche' e' il
+# server a scriverla. Quello che distingue una riga sua da una riga di un
+# giocatore non e' il prefisso, e' cosa viene subito dopo: vedi dice().
 #
 # Se quella prova non arriva si guarda se il server si e' lamentato (vanilla,
 # Paper e Spigot lo dicono con parole diverse): in quel caso il messaggio torna
@@ -195,12 +198,36 @@ FATTI=0
 # lavora a lotti, il resto al minuto dopo.
 MAX_PER_GIRO=8
 
-# Cerca nel log, DOPO la posizione data, una riga del server che contenga la
-# frase. Il prefisso e' obbligatorio: senza, basterebbe che un giocatore la
-# scrivesse in chat.
+# Il server ha detto questa frase, dopo la posizione data?
+#
+# Il prefisso NON basta, ed e' l'errore che questa funzione ha fatto per due
+# versioni: nel log anche la chat ha il prefisso del server, perche' e' il
+# server a scriverla. Cercare la frase "da qualche parte dopo il prefisso"
+# lasciava passare
+#     [10:00:05] [Server thread/INFO]: <Pluto> You whisper to Pippo: ahah
+# e un giocatore qualsiasi poteva far dare per consegnata, e quindi cancellare,
+# la posta di chiunque scrivendo quella riga in chat. Con l'altra frase poteva
+# fare l'opposto: far tornare in coda per sempre un messaggio gia' arrivato, e
+# far sussurrare il bersaglio ogni minuto.
+#
+# Quindi la frase deve cominciare ESATTAMENTE dove finisce il prefisso, e la
+# riga deve passare dallo stesso setaccio della presenza: se subito dopo il
+# prefisso c'e' <, [ o * l'ha scritta un giocatore e non vale.
 dice() {
     tail -c "+$(($1 + 1))" "$LOG" 2>/dev/null | tr -d '\r' |
-        grep -aE "$PREFISSO.*$2" >/dev/null 2>&1
+        MCM_PRE="$PREFISSO" MCM_FRASE="$2" awk '
+        BEGIN { pre = ENVIRON["MCM_PRE"]; frase = ENVIRON["MCM_FRASE"]; trovato = 0 }
+        $0 ~ pre {
+            match($0, pre)
+            t = substr($0, RLENGTH + 1)
+            c = substr(t, 1, 1)
+            if (c == "<" || c == "[" || c == "*") next
+            # index e non un modello: la frase contiene apostrofi e punti, e
+            # come espressione regolare vorrebbe dire un altra cosa.
+            if (index(t, frase) == 1) trovato = 1
+        }
+        END { exit (trovato ? 0 : 1) }
+        '
 }
 
 while IFS="$TAB" read -r quando chi testo64; do

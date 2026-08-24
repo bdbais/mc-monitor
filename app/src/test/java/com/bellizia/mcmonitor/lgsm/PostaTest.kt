@@ -214,6 +214,23 @@ class PostaTest {
     }
 
     @Test
+    fun `anche la prova della consegna passa dal setaccio della chat`() {
+        // Il buco che e' rimasto aperto due versioni: nel log ANCHE LA CHAT ha
+        // il prefisso del server, perche' e' il server a scriverla. Cercare la
+        // frase "da qualche parte dopo il prefisso" lasciava passare
+        //     [10:00:05] [Server thread/INFO]: <Pluto> You whisper to Pippo: ahah
+        // e un giocatore qualsiasi poteva far dare per consegnata -- cioe'
+        // cancellare -- la posta di chiunque.
+        val s = Posta.script(cfg)
+        val dice = s.substringAfter("dice() {").substringBefore("\n}")
+        assertFalse(dice, dice.contains("PREFISSO.*"))
+        // La frase deve cominciare dove finisce il prefisso...
+        assertTrue(dice, dice.contains("index(t, frase) == 1"))
+        // ...e la riga deve passare dallo stesso setaccio della presenza.
+        assertTrue(dice, dice.contains("c == \"<\" || c == \"[\" || c == \"*\""))
+    }
+
+    @Test
     fun `quando nessuno conferma, il testo resta nel registro`() {
         // Server non standard, in un'altra lingua o troppo lento: si considera
         // partito per non consegnarlo all'infinito, ma si scrive che nessuno
@@ -221,14 +238,6 @@ class PostaTest {
         val s = Posta.script(cfg)
         assertTrue(s, s.contains("NON CONFERMATO"))
         assertTrue(s, s.contains("nonconfermato"))
-    }
-
-    @Test
-    fun `le prove sul log pretendono il prefisso del server`() {
-        // Senza, basterebbe che un giocatore scrivesse in chat "No player was
-        // found" per far tornare in coda una consegna gia' andata a buon fine.
-        val s = Posta.script(cfg)
-        assertTrue(s, s.contains("grep -aE \"\$PREFISSO"))
     }
 
     @Test

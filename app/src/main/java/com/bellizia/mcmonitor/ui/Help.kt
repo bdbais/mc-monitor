@@ -124,7 +124,7 @@ object Help {
 
         "Consegnato" vuol dire che il server l'ha confermato, non che il comando sia stato accettato. Se il server risponde che quel giocatore non c'è, il messaggio torna in coda. Se non dice né l'una né l'altra cosa — server lento o non standard — il messaggio si considera partito ma nel registro resta scritto "non confermato", con il testo per intero.
 
-        Con il server fermo, o se la consegna non parte, il messaggio resta in coda e ci si riprova. Nel dubbio arriva due volte, mai zero.
+        Con il server fermo, o se la consegna non parte, il messaggio resta in coda e ci si riprova. Il caso "non confermato" è l'unico in cui potrebbe non essere arrivato a nessuno: è il prezzo per non risussurrarlo a ogni ingresso per sempre. Il testo però resta nel registro, e si riscrive da lì.
 
         Del crontab l'app tiene una copia di com'era prima, e quello che c'è dentro di altri non lo tocca. Spegnendo la consegna i messaggi in attesa restano dove sono.
 
@@ -190,7 +190,7 @@ object Help {
 
         • Il server deve essere fermo: se è acceso non fa niente
         • Il mondo di adesso non viene cancellato, viene spostato di fianco con la data nel nome. Lo togli tu quando sei sicuro
-        • Torna indietro il mondo, non il server: impostazioni, mod e riparazioni fatte dopo restano quelle di adesso
+        • Torna indietro tutta la cartella del gioco: mondo, mod, server.properties. Restano di adesso soltanto le impostazioni di LinuxGSM, così una riparazione della riga di avvio non se ne va
         • Se l'estrazione fallisce a metà, tutto torna com'era prima
 """.trimIndent()
     )

@@ -177,6 +177,11 @@ object Backups {
      * solo `serverfiles`, quello che c'è adesso si sposta invece di cancellarlo,
      * il server deve essere fermo -- sono spiegate lì, dove sta il codice che le
      * applica. Provato da `tools/prova-ripristino.sh`.
+     *
+     * "Si tocca solo serverfiles" vuol dire che torna indietro tutta la cartella
+     * del gioco: mondo, mod, `server.properties`, i jar. Restano di adesso solo
+     * le impostazioni di LinuxGSM, che sono quelle da cui dipende se il server
+     * parte.
      */
     fun ripristina(cfg: ServerConfig, nome: String): String {
         require(nomeValido(nome)) { "nome di archivio non valido" }

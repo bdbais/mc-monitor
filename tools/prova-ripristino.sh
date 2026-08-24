@@ -134,7 +134,24 @@ contiene "il mondo di oggi e' tornato al suo posto" "rovinato" "$(mondo)"
 uguale "e non e' rimasta nessuna cartella a meta'" "" "$(daparte)"
 rm -f "$BASE/bin/tar"
 
-echo "=== 8. rifarlo due volte non impila danni ==="
+echo "=== 8. due ripristini nello stesso secondo non si mangiano il mondo ==="
+# La data arriva al secondo: senza un nome libero, il secondo mv finirebbe
+# DENTRO la cartella del primo, il rollback non la ritroverebbe piu', e l'app
+# direbbe "rimesso" con il mondo sparito.
+prepara
+esegui > /dev/null
+mkdir -p "$BASE/server/serverfiles/world"
+echo "un altro mondo" > "$BASE/server/serverfiles/world/level.dat"
+esegui > /dev/null
+N=$(ls -d "$BASE/server/serverfiles.prima-del-ripristino."* 2>/dev/null | wc -l | tr -d ' ')
+if [ "$N" -ge 2 ]; then ok "due cartelle distinte ($N)"; else ko "cartelle" ">=2" "$N"; fi
+for d in "$BASE/server/serverfiles.prima-del-ripristino."*; do
+  if [ -d "$d/serverfiles" ]; then ko "annidamento" "nessuno" "$d contiene serverfiles"; fi
+done
+ok "e nessuna e' finita dentro l'altra"
+contiene "il mondo e' quello di ieri" "il mondo di ieri" "$(mondo)"
+
+echo "=== 9. rifarlo due volte non impila danni ==="
 prepara
 esegui > /dev/null
 sleep 1

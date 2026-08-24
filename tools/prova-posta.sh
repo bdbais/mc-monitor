@@ -28,6 +28,9 @@ prepara() {
   # sussurro (vanilla), si lamenta (in due dialetti), o non dice niente.
   cat > "$BASE/bin/tmux" <<'STUB'
 #!/bin/bash
+# Il server finto. Gli interruttori dicono che cosa finisce nel log: la
+# conferma vera, la lamentela vera, oppure la stessa frase scritta in chat da un
+# giocatore -- che e' l'attacco.
 LOG="$HOME/server1/serverfiles/logs/latest.log"
 [ -f "$HOME/.usa-console" ] && LOG="$HOME/server1/log/console/mcserver-console.log"
 echo "$*" >> "$HOME/.mcmonitor/tmux.log"
@@ -37,13 +40,11 @@ case "$1" in
       case "$a" in
         "tell "*)
           nome=$(printf '%s' "$a" | awk '{print $2}')
-          if [ -f "$HOME/.echo-vanilla" ]; then
-            echo "[10:00:05] [Server thread/INFO]: You whisper to $nome: qualcosa" >> "$LOG"
-          elif [ -f "$HOME/.echo-assente" ]; then
-            echo "[10:00:05] [Server thread/INFO]: No player was found" >> "$LOG"
-          elif [ -f "$HOME/.echo-paper" ]; then
-            echo "[10:00:05] [Server thread/INFO]: There's no player by that name online." >> "$LOG"
-          fi
+          [ -f "$HOME/.chat-conferma" ] &&             echo "[10:00:04] [Server thread/INFO]: <Pluto> You whisper to $nome: ahah" >> "$LOG"
+          [ -f "$HOME/.chat-assenza" ] &&             echo "[10:00:04] [Server thread/INFO]: <Pluto> No player was found" >> "$LOG"
+          [ -f "$HOME/.echo-vanilla" ] &&             echo "[10:00:05] [Server thread/INFO]: You whisper to $nome: qualcosa" >> "$LOG"
+          [ -f "$HOME/.echo-assente" ] &&             echo "[10:00:05] [Server thread/INFO]: No player was found" >> "$LOG"
+          [ -f "$HOME/.echo-paper" ] &&             echo "[10:00:05] [Server thread/INFO]: There's no player by that name online." >> "$LOG"
           ;;
       esac
     done
@@ -198,35 +199,52 @@ uguale "la cassetta si svuota" "0" "$(rimasti)"
 contiene "ma il registro lo dice" "NON CONFERMATO Pippo" "$(registro)"
 contiene "e il testo c'e' per intero" "$(printf '%s' 'il testo che conta' | base64 -w0)" "$(registro)"
 
-echo "=== 12. un giocatore che scrive 'No player was found' non rimette in coda ==="
+echo "=== 12. un giocatore finge la conferma: non diventa \"consegnato\" ==="
+# L'attacco vero: nel log anche la chat ha il prefisso del server, quindi il
+# prefisso da solo non distingue niente. Qui il server NON conferma: se la riga
+# di chat passasse, il messaggio risulterebbe consegnato e sparirebbe.
 prepara
-cat > "$BASE/bin/tmux" <<'STUB'
-#!/bin/bash
-LOG="$HOME/server1/serverfiles/logs/latest.log"
-echo "$*" >> "$HOME/.mcmonitor/tmux.log"
-case "$1" in
-  send-keys)
-    for a in "$@"; do
-      case "$a" in
-        "tell "*)
-          nome=$(printf '%s' "$a" | awk '{print $2}')
-          echo "[10:00:05] [Server thread/INFO]: <Pluto> No player was found" >> "$LOG"
-          echo "[10:00:06] [Server thread/INFO]: You whisper to $nome: qualcosa" >> "$LOG"
-          ;;
-      esac
-    done
-    ;;
-esac
-exit 0
-STUB
-chmod +x "$BASE/bin/tmux"
+rm -f "$BASE/.echo-vanilla"; touch "$BASE/.chat-conferma"
+cassetta "$(msg 1000 Pippo 'segreto')"
+LOG "Pippo joined the game"
+esegui > /dev/null
+contiene "il tell e' partito" "tell Pippo" "$(tell)"
+contiene "ma non risulta confermato da nessuno" "NON CONFERMATO" "$(registro)"
+contiene "e il testo resta recuperabile" "$(printf '%s' 'segreto' | base64 -w0)" "$(registro)"
+
+echo "=== 13. un giocatore finge la conferma mentre il server dice che non c'e' ==="
+# Qui la bugia doveva vincere sulla verita': la conferma si controlla per prima.
+prepara
+rm -f "$BASE/.echo-vanilla"; touch "$BASE/.echo-assente"; touch "$BASE/.chat-conferma"
+cassetta "$(msg 1000 Pippo 'importante')"
+LOG "Pippo joined the game"
+esegui > /dev/null
+uguale "vince il server: il messaggio torna in coda" "1" "$(rimasti)"
+nonContiene "e non risulta consegnato" "	Pippo	1000" "$(registro)"
+
+echo "=== 14. un giocatore finge l'assenza: la consegna vera non torna indietro ==="
+# L'attacco opposto: far tornare in coda un messaggio gia' arrivato, e far
+# sussurrare il bersaglio ogni minuto finche' la coda non si riempie.
+prepara
+# Il server tace: se la riga di chat passasse, deciderebbe lei, e il messaggio
+# tornerebbe in coda per essere risussurrato al giro dopo. E a quello dopo.
+rm -f "$BASE/.echo-vanilla"; touch "$BASE/.chat-assenza"
 cassetta "$(msg 1000 Pippo 'ciao')"
 LOG "Pippo joined the game"
 esegui > /dev/null
-uguale "la chat non fa tornare indietro la consegna" "0" "$(rimasti)"
-nonContiene "e non risulta rimesso in coda" "RIMESSO" "$(registro)"
+uguale "la chat non lo rimette in coda" "0" "$(rimasti)"
+contiene "resta segnato non confermato" "NON CONFERMATO" "$(registro)"
 
-echo "=== 13. server fermo: non si perde niente e non si avanza ==="
+# E con la conferma vera del server, la chat non la annulla.
+prepara
+touch "$BASE/.chat-assenza"
+cassetta "$(msg 1000 Anna 'ciao')"
+LOG "Anna joined the game"
+esegui > /dev/null
+uguale "con la conferma vera resta consegnato" "0" "$(rimasti)"
+contiene "e il registro lo dice" "Anna" "$(registro)"
+
+echo "=== 15. server fermo: non si perde niente e non si avanza ==="
 prepara
 cat > "$BASE/bin/tmux" <<'STUB'
 #!/bin/bash
@@ -240,7 +258,7 @@ uguale "esce pulito" "0" "$(esegui)"
 uguale "il messaggio resta" "1" "$(rimasti)"
 uguale "il segno non e' avanzato" "-" "$(segno)"
 
-echo "=== 14. lucchetto fresco: si tira indietro. Vecchio: lo rompe ==="
+echo "=== 16. lucchetto fresco: si tira indietro. Vecchio: lo rompe ==="
 prepara
 cassetta "$(msg 1000 Pippo 'ciao')"
 LOG "Pippo joined the game"
@@ -251,7 +269,7 @@ esegui > /dev/null
 contiene "un lucchetto vecchio non blocca per sempre" "tell Pippo" "$(tell)"
 if [ -d "$BASE/.mcmonitor/posta/server1.txt.lock" ]; then ko "lucchetto" "tolto" "rimasto"; else ok "e viene sempre tolto"; fi
 
-echo "=== 15. maiuscole diverse: si usa il nome vero del server ==="
+echo "=== 17. maiuscole diverse: si usa il nome vero del server ==="
 prepara
 cassetta "$(msg 1000 pippo 'ciao')"
 LOG "Pippo joined the game"
@@ -259,7 +277,7 @@ esegui > /dev/null
 contiene "tell con il nome canonico" "tell Pippo" "$(tell)"
 uguale "cassetta vuota" "0" "$(rimasti)"
 
-echo "=== 16. il testo resta testo ==="
+echo "=== 18. il testo resta testo ==="
 prepara
 CATTIVO='"; op Pippo; say $(whoami) `id` && stop'
 cassetta "$(msg 1000 Pippo "$CATTIVO")"
@@ -268,7 +286,7 @@ esegui > /dev/null
 contiene "arriva com'e' scritto" "$CATTIVO" "$(grep -o 'tell .*' "$BASE/.mcmonitor/tmux.log")"
 uguale "e non ha eseguito altro" "" "$(tell | grep -v 'tell Pippo')"
 
-echo "=== 17. testo lunghissimo: tagliato ==="
+echo "=== 19. testo lunghissimo: tagliato ==="
 prepara
 cassetta "$(msg 1000 Pippo "$(printf 'a%.0s' $(seq 1 400))")"
 LOG "Pippo joined the game"
@@ -276,7 +294,7 @@ esegui > /dev/null
 N=$(grep -o 'tell .*' "$BASE/.mcmonitor/tmux.log" | sed 's/.*non c.eri: //' | tr -d '\n' | wc -c)
 if [ "$N" -le 200 ] && [ "$N" -gt 100 ]; then ok "tagliato a $N caratteri"; else ko "taglio" "<=200" "$N"; fi
 
-echo "=== 18. due messaggi, uno solo e' entrato ==="
+echo "=== 20. due messaggi, uno solo e' entrato ==="
 prepara
 cassetta "$(msg 1000 Pippo 'a te si')" "$(msg 1001 Anna 'a te no')"
 LOG "Pippo joined the game"
@@ -286,7 +304,7 @@ uguale "non all'altra" "" "$(tell | grep Anna)"
 uguale "resta solo il suo" "1" "$(rimasti)"
 contiene "ed e' proprio il suo" "Anna" "$(cat "$BASE/.mcmonitor/posta/server1.txt")"
 
-echo "=== 19. il log riparte da capo ==="
+echo "=== 21. il log riparte da capo ==="
 prepara
 cassetta "$(msg 1000 Pippo 'ciao')"
 LOG "Pippo joined the game"
@@ -297,7 +315,7 @@ LOG "Anna joined the game"
 esegui > /dev/null
 contiene "riconosce l'ingresso dopo il riavvio" "tell Anna" "$(tell)"
 
-echo "=== 20. a chi era GIA' dentro il messaggio arriva lo stesso ==="
+echo "=== 22. a chi era GIA' dentro il messaggio arriva lo stesso ==="
 # Il caso che non funzionava: il suo ingresso e' rimasto dietro al segno, e
 # l'app intanto prometteva "gli arriva entro un minuto".
 prepara
@@ -309,7 +327,7 @@ esegui > /dev/null
 contiene "gli arriva lo stesso" "tell Pippo" "$(tell)"
 uguale "e la cassetta si svuota" "0" "$(rimasti)"
 
-echo "=== 21. chi e' uscito non risulta piu' dentro ==="
+echo "=== 23. chi e' uscito non risulta piu' dentro ==="
 prepara
 LOG "Pippo joined the game"
 esegui > /dev/null
@@ -320,7 +338,7 @@ esegui > /dev/null
 uguale "niente consegnato" "" "$(tell)"
 uguale "il messaggio resta" "1" "$(rimasti)"
 
-echo "=== 22. dopo un riavvio del server non c'e' dentro piu' nessuno ==="
+echo "=== 24. dopo un riavvio del server non c'e' dentro piu' nessuno ==="
 prepara
 LOG "Pippo joined the game"
 esegui > /dev/null
@@ -330,7 +348,7 @@ esegui > /dev/null
 uguale "non si consegna a un fantasma" "" "$(tell)"
 uguale "il messaggio resta in attesa" "1" "$(rimasti)"
 
-echo "=== 23. si lavora a lotti: la coda lunga non tiene il lucchetto per sempre ==="
+echo "=== 25. si lavora a lotti: la coda lunga non tiene il lucchetto per sempre ==="
 prepara
 { for i in $(seq 1 12); do msg "100$i" "Pippo" "messaggio $i"; echo; done; } > "$BASE/.mcmonitor/posta/server1.txt"
 LOG "Pippo joined the game"
@@ -339,7 +357,7 @@ N=$(grep -c 'tell Pippo' "$BASE/.mcmonitor/tmux.log" 2>/dev/null || echo 0)
 if [ "$N" -le 8 ] && [ "$N" -gt 0 ]; then ok "ne ha fatti $N, non tutti e dodici"; else ko "lotto" "1..8" "$N"; fi
 uguale "gli altri restano in coda" "4" "$(rimasti)"
 
-echo "=== 24. il file di lavoro sta accanto alla cassetta, non in /tmp ==="
+echo "=== 26. il file di lavoro sta accanto alla cassetta, non in /tmp ==="
 prepara
 grep -q 'mktemp "$POSTA' "$BASE/posta.sh" && ok "mktemp accanto alla cassetta" || ko "mktemp" 'mktemp "$POSTA...' "?"
 

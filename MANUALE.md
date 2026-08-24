@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.28.
+Versione 1.29.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -385,9 +385,10 @@ Poi chiede conferma una seconda volta, dicendo per esteso cosa succede. Poi:
   nome (`serverfiles.prima-del-ripristino.…`). È una rinomina, quindi è istantanea e non
   occupa un byte in più. Resta lì finché non la togli tu: guarda che sia tutto a posto
   prima, e ricordati che occupa spazio
-- **torna indietro il mondo, non il server.** Le impostazioni di LinuxGSM, i mod e le
-  riparazioni fatte dopo restano quelle di adesso. Chi chiede di rimettere un backup vuole
-  il mondo di quel giorno, non il server di quel giorno
+- **torna indietro tutta la cartella del gioco.** Non solo il mondo: anche i **mod** e
+  **server.properties**, che stanno lì dentro. Restano di adesso soltanto le impostazioni di
+  LinuxGSM — la riga di avvio, la memoria, il backup — così una riparazione fatta dopo non se
+  ne va insieme al resto
 - **se l'estrazione fallisce a metà, tutto torna esattamente com'era prima**
 
 Prima di cominciare l'app controlla anche che ci sia spazio: serve posto per il mondo che
@@ -706,7 +707,10 @@ messaggio si considera partito ma nel registro resta scritto **non confermato**,
 per intero: così non viene consegnato all'infinito, e se non è arrivato lo si riscrive da lì.
 
 Con il server fermo, o se la consegna non parte, il messaggio resta in coda e ci si riprova.
-Nel dubbio arriva due volte, mai zero.
+
+Il caso "non confermato" è l'unico in cui potrebbe non essere arrivato a nessuno: è il prezzo
+per non risussurrarlo a ogni ingresso per sempre. Il testo però resta nel registro, quindi non
+si perde — si riscrive da lì.
 
 Del crontab l'app tiene una copia di com'era prima, e quello che c'è dentro di altri non lo
 tocca. Spegnendo la consegna i messaggi in attesa restano dove sono.
