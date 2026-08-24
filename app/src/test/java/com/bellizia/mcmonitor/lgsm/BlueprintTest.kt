@@ -30,7 +30,7 @@ class BlueprintTest {
         #maxbackups="5"
         discordwebhook="https://discord.com/api/webhooks/123/abcSEGRETO"
         telegramtoken="55:AAA-segreto"
-        email="federico@example.com"
+        email="admin@example.com"
         --- properties
         level-seed=-4707391740600041947
         level-name=mondo

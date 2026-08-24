@@ -50,6 +50,14 @@
             android:text="Cronologia chat e comandi" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPosta"
+            style="@style/McButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Lascia un messaggio" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTeleport"
             style="@style/McButton"
             android:layout_width="match_parent"

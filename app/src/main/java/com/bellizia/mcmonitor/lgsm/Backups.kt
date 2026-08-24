@@ -109,4 +109,97 @@ object Backups {
 
     /** Il comando che fa la copia adesso. È lo stesso che si userebbe da terminale. */
     fun now(cfg: ServerConfig): String = Lgsm.action(cfg, "backup")
+
+    // ------------------------------------------------------- rimettere una copia
+
+    /** Codice di uscita convenzionale: l'archivio non c'è più. */
+    const val EXIT_NO_ARCHIVIO = 95
+
+    /** Codice di uscita convenzionale: il server è acceso. */
+    const val EXIT_ACCESO = 94
+
+    /** Codice di uscita convenzionale: non c'è spazio per estrarre. */
+    const val EXIT_SPAZIO = 93
+
+    /** Codice di uscita convenzionale: dentro l'archivio non c'è il mondo. */
+    const val EXIT_NIENTE_MONDO = 92
+
+    /** Codice di uscita convenzionale: l'estrazione è fallita ed è stato rimesso tutto com'era. */
+    const val EXIT_ESTRAZIONE = 91
+
+    private fun nomeValido(nome: String) =
+        nome.isNotBlank() &&
+                !nome.contains('/') &&
+                !nome.contains("..") &&
+                nome.all { it.isLetterOrDigit() || it in "-_." }
+
+    /**
+     * Cosa c'è dentro un archivio, prima di toccare qualcosa.
+     *
+     * Serve a due cose: far vedere all'utente cosa sta per tornare indietro, e
+     * accorgersi che l'archivio è rotto o che non contiene il mondo. Un
+     * `tar -tz` su un archivio da un giga non è gratis, ma è molto meno caro
+     * di un ripristino sbagliato.
+     */
+    fun contenuto(cfg: ServerConfig, nome: String): String {
+        require(nomeValido(nome)) { "nome di archivio non valido" }
+        val a = "${Lgsm.path(dir(cfg))}/${Lgsm.sq(nome)}"
+        return """
+            a=$a
+            [ -f "${'$'}a" ] || { echo 'ARCHIVIO NON TROVATO'; exit $EXIT_NO_ARCHIVIO; }
+            echo "peso=${'$'}(stat -c %s "${'$'}a" 2>/dev/null || echo 0)"
+            echo '### elenco'
+            tar -tzf "${'$'}a" 2>/dev/null | head -n 4000 > "${'$'}{TMPDIR:-/tmp}/mcm-tar.txt" || {
+                echo 'ARCHIVIO ILLEGGIBILE'; exit $EXIT_NO_ARCHIVIO; }
+            echo "voci=${'$'}(wc -l < "${'$'}{TMPDIR:-/tmp}/mcm-tar.txt" | tr -d ' ')"
+            echo "mondo=${'$'}(grep -c -E '^(\./)?serverfiles/' "${'$'}{TMPDIR:-/tmp}/mcm-tar.txt" || echo 0)"
+            echo '### prime'
+            head -n 25 "${'$'}{TMPDIR:-/tmp}/mcm-tar.txt"
+            rm -f "${'$'}{TMPDIR:-/tmp}/mcm-tar.txt"
+        """.trimIndent()
+    }
+
+    /** Quante voci dell'archivio riguardano il mondo. Null se non si e' capito. */
+    fun vociMondo(raw: String): Int? =
+        Regex("(?m)^mondo=(\\d+)$").find(Lgsm.clean(raw))?.groupValues?.get(1)?.toIntOrNull()
+
+    /** Le prime righe dell'elenco, da far vedere. */
+    fun anteprima(raw: String): List<String> =
+        Lgsm.clean(raw).substringAfter("### prime", "").trim().lines()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+
+    /**
+     * Rimette il mondo com'era in quella copia.
+     *
+     * Lo script sta in `resources/ripristino.sh` e non qui dentro: è lungo, e uno
+     * script sh si prova lanciandolo. Le tre scelte che lo governano -- si tocca
+     * solo `serverfiles`, quello che c'è adesso si sposta invece di cancellarlo,
+     * il server deve essere fermo -- sono spiegate lì, dove sta il codice che le
+     * applica. Provato da `tools/prova-ripristino.sh`.
+     */
+    fun ripristina(cfg: ServerConfig, nome: String): String {
+        require(nomeValido(nome)) { "nome di archivio non valido" }
+        return modello()
+            .replace("\r", "")
+            .replace("@@DIR@@", Lgsm.path(cfg.lgsmDir.trimEnd('/')))
+            .replace("@@ARCHIVIO@@", "${Lgsm.path(dir(cfg))}/${Lgsm.sq(nome)}")
+            .replace("@@SESSIONE@@", Lgsm.sq(cfg.session))
+            .replace("@@EXIT_NO_ARCHIVIO@@", EXIT_NO_ARCHIVIO.toString())
+            .replace("@@EXIT_ACCESO@@", EXIT_ACCESO.toString())
+            .replace("@@EXIT_SPAZIO@@", EXIT_SPAZIO.toString())
+            .replace("@@EXIT_NIENTE_MONDO@@", EXIT_NIENTE_MONDO.toString())
+            .replace("@@EXIT_ESTRAZIONE@@", EXIT_ESTRAZIONE.toString())
+    }
+
+    private fun modello(): String =
+        Backups::class.java.getResourceAsStream("/ripristino.sh")
+            ?.use { it.readBytes().toString(Charsets.UTF_8) }
+            ?: error("ripristino.sh non e' nel pacchetto")
+
+    /** Dove e' finito il mondo di prima, se il ripristino e' riuscito. */
+    fun messoDaParte(raw: String): String? =
+        Regex("@@RIMESSO\\s*(\\S*)").find(Lgsm.clean(raw))?.groupValues?.get(1)?.takeIf { it.isNotBlank() }
+
+    fun rimesso(raw: String): Boolean = Lgsm.clean(raw).contains("@@RIMESSO")
 }

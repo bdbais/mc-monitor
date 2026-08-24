@@ -1,5 +1,6 @@
 package com.bellizia.mcmonitor.ui
 
+import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -43,6 +44,7 @@ class PlayersFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.swipe.setOnRefreshListener { refresh() }
+        b.btnPosta.setOnClickListener { apriPosta() }
         b.btnWhitelistAdd.setOnClickListener {
             withName(b.whitelistInput.text?.toString()) { name ->
                 command("whitelist add $name", "Aggiunto $name alla whitelist")
@@ -305,8 +307,18 @@ class PlayersFragment : Fragment() {
                 }
             },
             showOnMap = { player -> (requireActivity() as MainActivity).showPlayerOnMap(player) },
-            showChat = { player -> showChat(player) }
+            showChat = { player -> showChat(player) },
+            scriviPosta = { player -> apriPosta(player) }
         ).show()
+    }
+
+    /** La posta, gia' puntata su un nome se si arriva dal pannello di un giocatore. */
+    private fun apriPosta(player: String? = null) {
+        if (!isAdded) return
+        startActivity(
+            Intent(requireContext(), PostaActivity::class.java)
+                .putExtra(PostaActivity.EXTRA_GIOCATORE, player)
+        )
     }
 
     /** Chat e comandi del giocatore, presi dai log del server con data e ora. */

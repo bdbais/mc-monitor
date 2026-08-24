@@ -15,6 +15,14 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPosta"
+                style="@style/McButton.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="Posta per chi non c'è" />
+
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/waitingCard"
                 android:layout_width="match_parent"

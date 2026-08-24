@@ -84,15 +84,58 @@ object Cron {
 
     const val EXIT_ILLEGGIBILE = 88
 
+    /**
+     * Il nome del lavoro nei marcatori.
+     *
+     * Sta scritto dentro il crontab di chi usa l'app da prima, quindi non si
+     * tocca: cambiarlo renderebbe orfani i blocchi gia' installati, e il
+     * backup della notte resterebbe li' senza che l'app lo riconosca piu'.
+     */
+    const val BACKUP = "backup"
+
     /** Assegnazioni che, scritte sopra il nostro blocco, cambiano cosa vuol dire un orario. */
     private val PERICOLOSE = listOf("CRON_TZ", "RANDOM_DELAY")
 
-    fun inizio(slug: String) = "# >>> MC Monitor: backup di ${pulisci(slug)} (scritto dall'app)"
+    fun inizio(slug: String, lavoro: String = BACKUP) =
+        "# >>> MC Monitor: ${pulisci(lavoro)} di ${pulisci(slug)} (scritto dall'app)"
 
-    fun fine(slug: String) = "# <<< MC Monitor: backup di ${pulisci(slug)}"
+    fun fine(slug: String, lavoro: String = BACKUP) =
+        "# <<< MC Monitor: ${pulisci(lavoro)} di ${pulisci(slug)}"
 
-    private fun pulisci(s: String) =
+    private fun pulisci(s: String) = normalizzaSlug(s)
+
+    /**
+     * Il nome tecnico come finisce davvero nei marcatori e nei percorsi.
+     *
+     * Sta qui e non in tre posti diversi perche' due slug che sembrano diversi
+     * ma dopo la ripulitura diventano uguali producono marcatori identici: il
+     * blocco di un server cancellerebbe quello dell'altro. Chi salva un profilo
+     * deve poter chiedere alla stessa funzione com'e' che finira'.
+     */
+    fun normalizzaSlug(s: String) =
         s.filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(24).ifBlank { "server" }
+
+    /** I due lavori che l'app puo' scrivere nel crontab. */
+    val LAVORI = listOf(BACKUP, "posta")
+
+    /**
+     * I blocchi scritti da noi per server che non esistono piu'.
+     *
+     * Capita rinominando il nome tecnico di un profilo o cancellandolo: il
+     * blocco resta nel crontab, continua a girare, e l'app non lo riconosce
+     * piu' ne' sa toglierlo. Non si cancella da soli -- potrebbe essere di un
+     * telefono di qualcun altro -- ma si fa vedere.
+     */
+    fun orfani(crontab: String, slugConosciuti: Collection<String>): List<Pair<String, String>> {
+        val vivi = slugConosciuti.map { normalizzaSlug(it) }.toSet()
+        val re = Regex("""^# >>> MC Monitor: (\S+) di (\S+) \(scritto dall'app\)$""")
+        return crontab.lineSequence()
+            .mapNotNull { re.find(it.trimEnd()) }
+            .map { it.groupValues[1] to it.groupValues[2] }
+            .filter { (lavoro, slug) -> lavoro in LAVORI && slug !in vivi }
+            .distinct()
+            .toList()
+    }
 
     // -------------------------------------------------------------- lettura
 
@@ -139,9 +182,14 @@ object Cron {
         if (rc == 0) return Crontab.Letto(out ?: return Crontab.Illeggibile("crontab illeggibile"))
 
         val motivo = (err ?: "").lowercase()
-        val nessunCrontab = motivo.contains("no crontab for") ||
-                motivo.contains("no crontab") ||
-                (out.isNullOrBlank() && motivo.isBlank())
+        // "Uscito male e muto" veniva letto come "non ha nessun crontab", e da lì
+        // si ripartiva da zero: il crontab di chi lo aveva veniva sostituito dal
+        // solo blocco nostro. Il silenzio vale come "non ce l'ha" soltanto con
+        // uscita 1, che è quella documentata per questo caso; 127 (comando che
+        // non c'è), 126, o un'uscita per segnale non vogliono dire niente di
+        // simile, e allora non si tocca niente.
+        val nessunCrontab = motivo.contains("no crontab") ||
+                (rc == 1 && out.isNullOrBlank() && motivo.isBlank())
         return if (nessunCrontab) {
             Crontab.Letto("")
         } else {
@@ -195,9 +243,47 @@ object Cron {
      * Toglie il vecchio blocco e, se c'è, mette il nuovo. Tutto quello che sta
      * fuori dai due marcatori resta esattamente com'era.
      */
-    fun componi(attuale: String, cfg: ServerConfig, blocco: String?): String {
-        val apre = inizio(cfg.slug)
-        val chiude = fine(cfg.slug)
+    /**
+     * I nostri due marcatori devono stare in coppia, e una volta sola.
+     *
+     * Se qualcuno apre il crontab e cancella a mano la riga di chiusura, tutto
+     * quello che sta sotto il marcatore di apertura resta "dentro il nostro
+     * blocco" fino alla fine del file: alla prima modifica lo porteremmo via
+     * senza dire niente, comprese le righe di altri programmi. In quel caso non
+     * si scrive: si chiede all'utente di sistemare il crontab a mano.
+     */
+    fun marcatoriInOrdine(attuale: String, cfg: ServerConfig, lavoro: String = BACKUP): Boolean {
+        val apre = inizio(cfg.slug, lavoro)
+        val chiude = fine(cfg.slug, lavoro)
+        var dentro = false
+        var aperture = 0
+        attuale.split("\n").forEach { riga ->
+            when (riga.trimEnd()) {
+                apre -> {
+                    if (dentro) return false
+                    dentro = true
+                    aperture++
+                }
+                chiude -> {
+                    if (!dentro) return false
+                    dentro = false
+                }
+            }
+        }
+        return !dentro && aperture <= 1
+    }
+
+    fun componi(
+        attuale: String,
+        cfg: ServerConfig,
+        blocco: String?,
+        lavoro: String = BACKUP
+    ): String {
+        check(marcatoriInOrdine(attuale, cfg, lavoro)) {
+            "i marcatori di MC Monitor nel crontab non sono in coppia"
+        }
+        val apre = inizio(cfg.slug, lavoro)
+        val chiude = fine(cfg.slug, lavoro)
         val tenute = mutableListOf<String>()
         var dentro = false
         attuale.split("\n").forEach { riga ->
@@ -302,8 +388,26 @@ object Cron {
         }
     }
 
-    fun programmato(crontab: String, cfg: ServerConfig): Boolean =
-        crontab.contains(inizio(cfg.slug))
+    fun programmato(crontab: String, cfg: ServerConfig, lavoro: String = BACKUP): Boolean =
+        crontab.contains(inizio(cfg.slug, lavoro))
+
+    /**
+     * Un blocco che gira ogni minuto: la consegna della posta.
+     *
+     * Ogni minuto sembra tanto e non lo e': lo script guarda se la cassetta e'
+     * vuota e, quando lo e' (cioe' quasi sempre), esce senza fare altro.
+     */
+    fun bloccoOgniMinuto(
+        cfg: ServerConfig,
+        comando: String,
+        lavoro: String,
+        descrizione: String
+    ): String = buildString {
+        append(inizio(cfg.slug, lavoro)).append('\n')
+        append("# ").append(descrizione).append('\n')
+        append("* * * * * ").append(protezione(comando)).append('\n')
+        append(fine(cfg.slug, lavoro)).append('\n')
+    }
 
     // --------------------------------------------------------- installazione
 

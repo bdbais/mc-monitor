@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
+import com.bellizia.mcmonitor.lgsm.Cron
 import com.bellizia.mcmonitor.lgsm.Macro
 import java.util.UUID
 
@@ -294,10 +295,35 @@ object Prefs {
      * telefono e serve al pulsante "rimetti com'era". I byte si conservano come
      * sono, senza interpretarli.
      */
+    /**
+     * La copia del crontab di prima, tenuta separata per ogni lavoro.
+     *
+     * Con una copia sola, accendere la posta sovrascriveva la copia salvata dal
+     * backup: "rimetti com'era" nella schermata Backup riportava indietro anche
+     * la posta, riaccendendo una consegna appena spenta.
+     */
     fun cronBackup(serverId: String): String? = sp.getString("cronBackup_$serverId", null)
 
-    fun saveCronBackup(serverId: String, testo: String) {
-        sp.edit().putString("cronBackup_$serverId", testo).apply()
+    /**
+     * Con quale modifica e quando è stata presa la copia.
+     *
+     * "Rimetti com'era" rimette il crontab di prima dell'ultima modifica fatta
+     * dall'app, qualunque schermata l'abbia fatta. Senza dire quale, chi ha
+     * appena spento la consegna della posta e poi tocca quel pulsante nella
+     * schermata Backup se la ritrova riaccesa senza capire perché.
+     */
+    fun cronBackupEtichetta(serverId: String): Pair<String, Long>? {
+        val raw = sp.getString("cronBackupChi_$serverId", null) ?: return null
+        val p = raw.split('|')
+        if (p.size != 2) return null
+        return p[0] to (p[1].toLongOrNull() ?: return null)
+    }
+
+    fun saveCronBackup(serverId: String, testo: String, lavoro: String = "backup") {
+        sp.edit()
+            .putString("cronBackup_$serverId", testo)
+            .putString("cronBackupChi_$serverId", "$lavoro|${System.currentTimeMillis()}")
+            .apply()
     }
 
     // ------------------------------------------------------------------ macro
@@ -448,12 +474,44 @@ object Prefs {
 
     /** Aggiorna il server con lo stesso id, o lo inserisce se non c'è. */
     fun save(cfg: ServerConfig) {
-        val config = if (cfg.id.isBlank()) cfg.copy(id = UUID.randomUUID().toString()) else cfg
+        val conId = if (cfg.id.isBlank()) cfg.copy(id = UUID.randomUUID().toString()) else cfg
         val all = servers().toMutableList()
+        val config = conId.copy(slug = slugLibero(conId, all))
         val index = all.indexOfFirst { it.id == config.id }
         if (index >= 0) all[index] = config else all.add(config)
         writeAll(all)
         if (activeId().isBlank() || activeId() == config.id) setActive(config.id)
+    }
+
+    /**
+     * Un nome tecnico che sullo stesso computer non sia già di un altro.
+     *
+     * Lo slug finisce nei marcatori del crontab e nei percorsi della posta, e ci
+     * finisce ripulito: due nomi diversi che dopo la ripulitura diventano uguali
+     * — "mio server!" e "mio-server" no, ma "abc/def" e "abcdef" sì — produrrebbero
+     * marcatori identici, e il blocco di un server cancellerebbe quello dell'altro.
+     * [add] lo garantiva già per i profili nuovi; qui si copre anche chi lo cambia
+     * a mano nelle impostazioni o chi lo prende dalla ricerca dei mondi.
+     *
+     * Il confronto è per computer: due server su macchine diverse non si toccano.
+     */
+    private fun slugLibero(cfg: ServerConfig, altri: List<ServerConfig>): String {
+        // Un profilo che c'era gia' e non ha cambiato nome tecnico si lascia
+        // stare. markUsed() chiama save() a ogni apertura: rinominare li' vorrebbe
+        // dire orfanare, in silenzio, il blocco di cron gia' installato con il
+        // nome vecchio.
+        val precedente = altri.firstOrNull { it.id == cfg.id }
+        if (precedente != null && precedente.slug == cfg.slug) return cfg.slug
+
+        val base = Cron.normalizzaSlug(cfg.slug)
+        val occupati = altri
+            .filter { it.id != cfg.id && it.host.equals(cfg.host, ignoreCase = true) && it.user == cfg.user }
+            .map { Cron.normalizzaSlug(it.slug) }
+            .toSet()
+        if (base !in occupati) return base
+        return generateSequence(2) { it + 1 }
+            .map { Cron.normalizzaSlug(base.take(21) + "-" + it) }
+            .first { it !in occupati }
     }
 
     /**

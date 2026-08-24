@@ -105,6 +105,38 @@ object Help {
         """.trimIndent()
     )
 
+    val POSTA = Page(
+        "La posta",
+        """
+        Un messaggio lasciato a un giocatore che in quel momento non c'è. Gli arriva in chat quando rientra, con scritto che gliel'ha lasciato l'amministratore e di che giorno era.
+
+        Serve per le cose che non vale la pena rincorrere: "ho spostato il tuo baule", "domani il server è fermo un'ora", "ho sistemato la casa che ti avevano bruciato". Prima bisognava aspettare di beccarlo online.
+
+        DOVE STA
+
+        I messaggi stanno sul computer del server, non sul telefono. È l'unica scelta che funziona davvero: nel momento in cui il giocatore entra il tuo telefono è in tasca o spento, e un messaggio che parte solo se hai l'app aperta non è una posta, è una coincidenza.
+
+        LA CONSEGNA
+
+        Va accesa una volta sola, con l'interruttore in questa schermata. L'app mette sul computer un piccolo script e una riga di cron che lo lancia ogni minuto. Quando non c'è niente in attesa lo script esce subito senza toccare il server: è il caso normale, e costa quanto guardare se un file è vuoto.
+
+        Quando invece c'è posta, guarda nel registro del server chi è entrato e chi è uscito, e consegna a chi c'è. Non chiede niente alla console: la risposta a una domanda finirebbe nello stesso registro dove finisce la chat, e un giocatore potrebbe scriverci quello che vuole.
+
+        "Consegnato" vuol dire che il server l'ha confermato, non che il comando sia stato accettato. Se il server risponde che quel giocatore non c'è, il messaggio torna in coda. Se non dice né l'una né l'altra cosa — server lento o non standard — il messaggio si considera partito ma nel registro resta scritto "non confermato", con il testo per intero.
+
+        Con il server fermo, o se la consegna non parte, il messaggio resta in coda e ci si riprova. Nel dubbio arriva due volte, mai zero.
+
+        Del crontab l'app tiene una copia di com'era prima, e quello che c'è dentro di altri non lo tocca. Spegnendo la consegna i messaggi in attesa restano dove sono.
+
+        BUONO A SAPERSI
+
+        • Se scrivi a qualcuno che è collegato in quel momento, l'app te lo dice e ti offre di scrivergli subito
+        • Un messaggio si può togliere finché non è partito: toccalo nell'elenco
+        • Oltre 50 messaggi in attesa l'app si ferma: vuol dire che non li sta consegnando nessuno, e allungare la fila non serve
+        • Il testo viene tagliato a 200 caratteri, che è quanto la chat del gioco mostra comunque
+        """.trimIndent()
+    )
+
     val RESTORE = Page(
         "Rimettere a posto",
         """
@@ -150,7 +182,16 @@ object Help {
         Dentro l'archivio ci finisce tutto il server, quindi anche i file di configurazione con le password e i token degli avvisi. Se lo copi da qualche parte, tienine conto.
 
         Quante copie tenere e per quanti giorni si decidono da "Impostazioni tecniche": sono maxbackups e maxbackupdays. La pulizia gira dopo aver creato la copia nuova, quindi per un momento ce n'è una in più.
-        """.trimIndent()
+        
+        RIMETTERE UNA COPIA
+
+        Tocca una copia nell'elenco. È l'unica cosa che l'app fa che butta via il lavoro di qualcuno, quindi prima ti fa vedere cosa c'è dentro l'archivio e poi chiede conferma una seconda volta.
+
+        • Il server deve essere fermo: se è acceso non fa niente
+        • Il mondo di adesso non viene cancellato, viene spostato di fianco con la data nel nome. Lo togli tu quando sei sicuro
+        • Torna indietro il mondo, non il server: impostazioni, mod e riparazioni fatte dopo restano quelle di adesso
+        • Se l'estrazione fallisce a metà, tutto torna com'era prima
+""".trimIndent()
     )
 
     val COMANDI = Page(

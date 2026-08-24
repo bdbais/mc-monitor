@@ -65,9 +65,45 @@ object SecurityCheck {
     fun valuta(
         properties: Map<String, String>,
         cfg: ServerConfig,
-        lockConfigurato: Boolean
+        lockConfigurato: Boolean,
+        /** Gli altri profili configurati: servono a vedere se due si pestano i piedi. */
+        altriServer: List<ServerConfig> = emptyList()
     ): Rapporto {
         val c = mutableListOf<Controllo>()
+
+        // --- due server che parlano nella stessa console
+        //
+        // LinuxGSM chiama la sessione tmux come lo script. Due istanze in
+        // cartelle diverse ma con lo stesso nome di script finiscono sulla
+        // stessa sessione: un comando mandato a una puo' arrivare all'altra, e
+        // non c'e' niente a schermo che lo faccia sospettare.
+        val gemelli = altriServer.filter {
+            it.id != cfg.id &&
+                    it.host.equals(cfg.host, ignoreCase = true) &&
+                    it.user == cfg.user &&
+                    it.session == cfg.session
+        }
+        if (gemelli.isNotEmpty()) {
+            c += Controllo(
+                titolo = "Due server nella stessa console",
+                esito = Esito.MALE,
+                spiegazione = "Questo server e ${gemelli.joinToString(", ") { it.displayName }} " +
+                        "usano la stessa sessione tmux (\"${cfg.session}\"), perche' hanno lo " +
+                        "stesso nome di script LinuxGSM. Un comando mandato a uno puo' finire " +
+                        "all'altro, e a schermo non si vede.",
+                rimedio = "Nelle impostazioni di uno dei due scrivi un nome diverso nel campo " +
+                        "\"Sessione tmux\", oppure rinomina lo script LinuxGSM di quell'istanza.",
+                peso = Peso.ALTO
+            )
+        } else if (altriServer.any { it.id != cfg.id && it.host.equals(cfg.host, ignoreCase = true) }) {
+            c += Controllo(
+                titolo = "Due server nella stessa console",
+                esito = Esito.BENE,
+                spiegazione = "Sullo stesso computer ci sono altri server, e ognuno ha la sua " +
+                        "sessione tmux: i comandi non si mescolano.",
+                peso = Peso.ALTO
+            )
+        }
 
         fun prop(chiave: String) = properties[chiave]?.trim()
         fun bool(chiave: String, diFabbrica: Boolean): Boolean? =

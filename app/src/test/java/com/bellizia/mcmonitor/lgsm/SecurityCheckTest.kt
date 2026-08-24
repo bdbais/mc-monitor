@@ -103,4 +103,42 @@ class SecurityCheckTest {
                 .riassunto().contains("problemi")
         )
     }
+
+    // ------------------------------------ due server nella stessa console
+
+    @Test
+    fun `due server con la stessa sessione tmux sono un problema serio`() {
+        // LinuxGSM chiama la sessione come lo script: due istanze in cartelle
+        // diverse ma con lo stesso nome di script finiscono sulla stessa
+        // sessione, e un comando mandato a una arriva all'altra.
+        val primo = buono.copy(id = "1", host = "casa", lgsmDir = "~/uno", script = "mcserver")
+        val secondo = buono.copy(id = "2", host = "casa", lgsmDir = "~/due", script = "mcserver")
+        val r = SecurityCheck.valuta(propsBuone, primo, true, listOf(primo, secondo))
+        assertEquals(Livello.BASSO, r.livello)
+        assertTrue(r.problemi.any { it.titolo.contains("stessa console") })
+    }
+
+    @Test
+    fun `sessioni diverse sullo stesso computer vanno bene`() {
+        val primo = buono.copy(id = "1", host = "casa", script = "mcserver")
+        val secondo = buono.copy(id = "2", host = "casa", script = "mcserver2")
+        val r = SecurityCheck.valuta(propsBuone, primo, true, listOf(primo, secondo))
+        assertEquals(Livello.ALTO, r.livello)
+    }
+
+    @Test
+    fun `stesso nome di script su computer diversi non e' un problema`() {
+        val primo = buono.copy(id = "1", host = "casa", script = "mcserver")
+        val secondo = buono.copy(id = "2", host = "altrove", script = "mcserver")
+        assertEquals(
+            Livello.ALTO,
+            SecurityCheck.valuta(propsBuone, primo, true, listOf(primo, secondo)).livello
+        )
+    }
+
+    @Test
+    fun `con un server solo il controllo non compare`() {
+        val r = SecurityCheck.valuta(propsBuone, buono, true, listOf(buono))
+        assertTrue(r.controlli.none { it.titolo.contains("stessa console") })
+    }
 }

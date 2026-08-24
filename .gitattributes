@@ -1,0 +1,2 @@
+# Gli script che finiscono sul server: un ritorno a capo dopo #!/bin/sh e non parte.
+*.sh text eol=lf

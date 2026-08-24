@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.26.
+Versione 1.27.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -352,6 +352,30 @@ fa. Per questo:
 Il giorno del mese si ferma al 28: dal 29 in poi ci sono mesi che quel giorno non ce
 l'hanno, e il backup salterebbe senza dire niente.
 
+**Rimettere una copia** — tocca una copia nell'elenco in fondo alla schermata. È l'unica
+operazione dell'app che butta via il lavoro di qualcuno, quindi è fatta con le cinture.
+
+Prima l'app guarda dentro l'archivio e ti dice quanti file del mondo contiene, con le prime
+voci. Serve: un archivio rimasto a metà per il disco pieno dall'elenco sembra un backup
+buono, e ci si accorge che non lo era solo dopo aver buttato il mondo di adesso. Se dentro
+non c'è il mondo, l'app si ferma lì.
+
+Poi chiede conferma una seconda volta, dicendo per esteso cosa succede. Poi:
+
+- **il server deve essere fermo.** Se è acceso non fa niente: estrarre sopra un mondo in
+  esecuzione lo rovina, e Minecraft riscriverebbe sopra quello appena tornato
+- **il mondo di adesso non viene cancellato.** Viene spostato di fianco, con la data nel
+  nome (`serverfiles.prima-del-ripristino.…`). È una rinomina, quindi è istantanea e non
+  occupa un byte in più. Resta lì finché non la togli tu: guarda che sia tutto a posto
+  prima, e ricordati che occupa spazio
+- **torna indietro il mondo, non il server.** Le impostazioni di LinuxGSM, i mod e le
+  riparazioni fatte dopo restano quelle di adesso. Chi chiede di rimettere un backup vuole
+  il mondo di quel giorno, non il server di quel giorno
+- **se l'estrazione fallisce a metà, tutto torna esattamente com'era prima**
+
+Prima di cominciare l'app controlla anche che ci sia spazio: serve posto per il mondo che
+torna mentre quello di adesso è ancora lì. Su un mondo grande ci vogliono alcuni minuti.
+
 > Dentro l'archivio c'è tutto il server, quindi anche i file di configurazione con le
 > password e i token degli avvisi. Se lo copi da qualche parte, tienine conto.
 
@@ -413,6 +437,10 @@ Poi ci sono i quattro pezzi per intero:
 - **Log di gioco** — l'ultimo avvio riuscito; se il server non parte, è vecchio
 - **Segnali di stato** — se era partito, se è stato fermato apposta, o se è caduto da solo
 
+Lo stato in cima lo dice LinuxGSM, non il file di lock: quel file resta al suo posto anche
+quando il server è morto da solo, e fidarsene faceva dire "sta girando" proprio a chi aveva
+aperto la schermata perché non partiva.
+
 I primi due vengono riscritti a ogni avvio, quindi sono sempre l'ultimo tentativo.
 "Copia tutto" mette il quadro completo negli appunti, da incollare a chi ti sta aiutando:
 ci sono i percorsi del tuo server, non le password.
@@ -445,6 +473,12 @@ perché il resto è a posto, è aperto.
 Le due che pesano più di tutte sono il controllo degli account Minecraft e la whitelist.
 Poi guarda la password di RCON, come l'app ci parla, i blocchi comando, la zona protetta
 allo spawn, con quale utente ti colleghi al computer, e se l'app ha una password.
+
+E guarda una cosa che non è sicurezza ma fa lo stesso danno: **due server nella stessa
+console**. LinuxGSM chiama la sessione tmux come lo script, quindi due istanze in cartelle
+diverse ma con lo stesso nome di script finiscono sulla stessa sessione. Un comando mandato a
+uno può arrivare all'altro, e a schermo non si vede niente. Si sistema scrivendo un nome
+diverso nel campo *Sessione tmux* di uno dei due.
 
 ## 10. Il progetto: rifare questo server altrove
 
@@ -614,6 +648,55 @@ Accanto al nome di chi non è collegato compare **l'ultima volta che si è visto
 - **Modalità di gioco**, **punto di rinascita**
 - **Whitelist**, **op/deop**
 - **Espelli** e **banna** con motivo, **rimuovi ban**
+- **Lascia un messaggio**, per quando non c'è (qui sotto)
+
+### La posta per chi non c'è
+
+Un messaggio lasciato a un giocatore scollegato. Gli arriva in chat quando rientra:
+
+    [MC Monitor] L'admin ti ha scritto mentre non c'eri: ho spostato il tuo baule
+
+Serve per le cose che non vale la pena rincorrere — "domani il server è fermo un'ora",
+"ho sistemato la casa che ti avevano bruciato". Prima bisognava aspettare di beccarlo
+online.
+
+Si arriva dal pulsante **Posta per chi non c'è** in cima alla scheda Giocatori, oppure dal
+pannello di un giocatore. Se scrivi a qualcuno che è collegato in quel momento l'app te lo
+dice e ti offre di scrivergli subito.
+
+**I messaggi stanno sul server, non sul telefono.** È l'unica scelta che funziona: nel
+momento in cui il giocatore entra il tuo telefono è in tasca o spento, e un messaggio che
+parte solo se hai l'app aperta non è una posta, è una coincidenza.
+
+**La consegna va accesa una volta sola**, con l'interruttore nella schermata Posta. L'app
+mette sul computer un piccolo script e una riga di cron che lo lancia ogni minuto. Quando
+non c'è niente in attesa lo script esce subito senza toccare il server: è il caso normale,
+e costa quanto guardare se un file è vuoto.
+
+Quando invece c'è posta, guarda nel registro del server **chi è entrato e chi è uscito**, e
+consegna a chi c'è. Non chiede niente alla console, e non è un dettaglio: la risposta a una
+domanda finirebbe nello stesso registro dove finisce la chat, e un giocatore che ci scrivesse
+dentro la frase giusta potrebbe far dare per consegnati -- cioè far cancellare -- i messaggi
+degli altri. Per lo stesso motivo valgono solo le righe scritte dal server, riconosciute
+dall'orologio a inizio riga: quello che scrive un giocatore non conta mai.
+
+**Consegnato vuol dire che il server l'ha confermato.** Che il comando sia stato accettato non
+basta: la prova è che il server rieccheggi il messaggio dicendo a chi. Se invece risponde che
+quel giocatore non c'è -- capita se esce nell'istante sbagliato -- il messaggio torna in coda.
+
+Se il server non dice né l'una né l'altra cosa, perché è lento o non è un server standard, il
+messaggio si considera partito ma nel registro resta scritto **non confermato**, con il testo
+per intero: così non viene consegnato all'infinito, e se non è arrivato lo si riscrive da lì.
+
+Con il server fermo, o se la consegna non parte, il messaggio resta in coda e ci si riprova.
+Nel dubbio arriva due volte, mai zero.
+
+Del crontab l'app tiene una copia di com'era prima, e quello che c'è dentro di altri non lo
+tocca. Spegnendo la consegna i messaggi in attesa restano dove sono.
+
+Un messaggio si può togliere finché non è partito, toccandolo nell'elenco. Oltre 50 in
+attesa l'app si ferma: vuol dire che non li sta consegnando nessuno, e allungare la fila
+non serve. Il testo viene tagliato a 200 caratteri, che è quanto la chat mostra comunque.
 
 Le voci che richiedono il giocatore in gioco sono disattivate quando è offline.
 

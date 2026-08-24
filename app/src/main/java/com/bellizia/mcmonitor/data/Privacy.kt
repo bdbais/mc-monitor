@@ -15,14 +15,14 @@ object Privacy {
 
     val enabled: Boolean get() = Prefs.privacyMode
 
-    /** "Federico" -> "Fe•••". Sotto le tre lettere si nasconde tutto. */
+    /** "Steve" -> "St•••". Sotto le tre lettere si nasconde tutto. */
     fun name(value: String): String {
         if (!enabled || value.isBlank()) return value
         return if (value.length <= 3) DOTS else value.take(2) + DOTS
     }
 
     /**
-     * "vale.chrk.tk" -> "vale•••", "78.26.127.83" -> "78.•••".
+     * "casa.example.com" -> "casa•••", "203.0.113.10" -> "203.•••".
      * Resta riconoscibile per chi lo possiede, inutile per chi lo vede.
      */
     fun host(value: String): String {
@@ -37,7 +37,7 @@ object Privacy {
         return if (port.isBlank()) masked else "$masked:$port"
     }
 
-    /** "mcserver@vale.chrk.tk:22" -> "mc•••@vale•••:22" */
+    /** "mcserver@casa.example.com:22" -> "mc•••@casa•••:22" */
     fun account(user: String, hostPort: String): String =
         if (!enabled) "$user@$hostPort" else "${name(user)}@${host(hostPort)}"
 

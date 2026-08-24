@@ -17,7 +17,7 @@ class DiscoveryTest {
     private val output = """
         --- istanza
         script=mcserver
-        dir=/home/mcserver/mondo-di-vale
+        dir=/home/mcserver/mondo-nuovo
         lgsm=v23.5.3
         versione=1.20.4
         ramo=
@@ -45,10 +45,10 @@ class DiscoveryTest {
         val found = Discovery.parse(output)
         assertEquals(2, found.size)
 
-        // Ordinate per nome: "mondo-di-vale" viene prima di "prove".
+        // Ordinate per nome: "mondo-nuovo" viene prima di "prove".
         val primo = found[0]
-        assertEquals("mondo-di-vale", primo.displayName)
-        assertEquals("/home/mcserver/mondo-di-vale", primo.directory)
+        assertEquals("mondo-nuovo", primo.displayName)
+        assertEquals("/home/mcserver/mondo-nuovo", primo.directory)
         assertEquals("1.20.4", primo.minecraftVersion)
         assertEquals("25565", primo.gamePort)
         assertEquals("v23.5.3", primo.lgsmVersion)
@@ -237,11 +237,11 @@ class DiscoveryTest {
         assertEquals("segreta", profilo.password)
         assertEquals("rcon-segreta", profilo.rconPassword)
         assertTrue(profilo.rconEnabled)
-        assertEquals("/home/mcserver/mondo-di-vale", profilo.lgsmDir)
+        assertEquals("/home/mcserver/mondo-nuovo", profilo.lgsmDir)
         assertEquals("mcserver", profilo.script)
-        assertEquals("mondo-di-vale", profilo.slug)
+        assertEquals("mondo-nuovo", profilo.slug)
         // Senza indicazioni i file di gioco stanno sotto la cartella dell'istanza.
-        assertEquals("/home/mcserver/mondo-di-vale/serverfiles", profilo.serverFiles)
+        assertEquals("/home/mcserver/mondo-nuovo/serverfiles", profilo.serverFiles)
     }
 
     @Test
@@ -275,7 +275,7 @@ class DiscoveryTest {
     fun laCancellazioneControllaPrimaDiCancellare() {
         val comando = Discovery.remove(Discovery.parse(output)[0])
         // Il percorso viene apostrofato, non concatenato a mano.
-        assertTrue(comando.contains("dir='/home/mcserver/mondo-di-vale'"))
+        assertTrue(comando.contains("dir='/home/mcserver/mondo-nuovo'"))
         // Tre reti di sicurezza prima del rm.
         assertTrue(comando.contains("RIFIUTATO: percorso non consentito"))
         assertTrue(comando.contains("""[ -f "${'$'}dir/${'$'}script" ]"""))
@@ -308,7 +308,7 @@ class DiscoveryTest {
         val found = Discovery.parse(output)
         val vecchi = LgsmUpdate.outdatedServers(found, "v24.1.0")
         assertEquals(1, vecchi.size)
-        assertEquals("mondo-di-vale", vecchi[0].displayName)
+        assertEquals("mondo-nuovo", vecchi[0].displayName)
         assertTrue(LgsmUpdate.banner(vecchi, "v24.1.0").contains("v23.5.3 → v24.1.0"))
         assertEquals("", LgsmUpdate.banner(emptyList(), "v24.1.0"))
     }
@@ -323,7 +323,7 @@ class DiscoveryTest {
     @Test
     fun ilComandoDiAggiornamentoEntraNellaCartellaGiusta() {
         val comando = LgsmUpdate.updateCommand(Discovery.parse(output)[0])
-        assertTrue(comando.startsWith("cd '/home/mcserver/mondo-di-vale'"))
+        assertTrue(comando.startsWith("cd '/home/mcserver/mondo-nuovo'"))
         assertTrue(comando.contains("./'mcserver' update-lgsm"))
         // Le installazioni vecchie non conoscono update-lgsm.
         assertTrue(comando.contains("update-functions"))

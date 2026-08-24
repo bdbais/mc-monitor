@@ -5,11 +5,13 @@ import com.bellizia.mcmonitor.lgsm.BackupState
 import com.bellizia.mcmonitor.lgsm.Backups
 import com.bellizia.mcmonitor.lgsm.ChatMessage
 import com.bellizia.mcmonitor.lgsm.ComandoLgsm
+import com.bellizia.mcmonitor.lgsm.Consegna
 import com.bellizia.mcmonitor.lgsm.Copia
 import com.bellizia.mcmonitor.lgsm.Cron
 import com.bellizia.mcmonitor.lgsm.Diagnosi
 import com.bellizia.mcmonitor.lgsm.Crontab
 import com.bellizia.mcmonitor.lgsm.LgsmCommands
+import com.bellizia.mcmonitor.lgsm.Messaggio
 import com.bellizia.mcmonitor.lgsm.PianoBackup
 import com.bellizia.mcmonitor.lgsm.GameSettings
 import com.bellizia.mcmonitor.lgsm.GameVersion
@@ -20,6 +22,7 @@ import com.bellizia.mcmonitor.lgsm.ServerParams
 import com.bellizia.mcmonitor.lgsm.VersionConfig
 import com.bellizia.mcmonitor.lgsm.PlayerEntry
 import com.bellizia.mcmonitor.lgsm.PlayerPos
+import com.bellizia.mcmonitor.lgsm.Posta
 import com.bellizia.mcmonitor.lgsm.Provision
 import com.bellizia.mcmonitor.lgsm.RequirementResult
 import com.bellizia.mcmonitor.lgsm.Rapporto
@@ -260,6 +263,12 @@ object McRepository {
 
         // La copia di com'era resta sul telefono: è l'unico modo di rimettere le
         // cose a posto se qualcosa va storto.
+        if (!Cron.marcatoriInOrdine(attuale, c)) {
+            throw SshException(
+                "Nel crontab c'è un blocco di MC Monitor aperto e mai chiuso: " +
+                        "non lo tocco. Va sistemato a mano sul computer."
+            )
+        }
         Prefs.saveCronBackup(c.id, attuale)
 
         val nuovo = Cron.componi(attuale, c, piano?.let { Cron.blocco(c, it) })
@@ -305,8 +314,24 @@ object McRepository {
         val r = SshManager.exec(c, Cron.install(), 45_000)
         val rc = Cron.installato(Lgsm.clean(r.text))
         if (rc != 0) throw SshException("Ripristino non riuscito: il crontab è rimasto com'è adesso.")
-        return "Crontab rimesso com'era."
+        val chi = Prefs.cronBackupEtichetta(c.id)
+        return buildString {
+            append("Crontab rimesso com'era")
+            if (chi != null) {
+                append(", cioè come stava prima dell'ultima modifica fatta dall'app")
+                append(" (").append(if (chi.first == "posta") "la posta" else "il backup")
+                append(", ").append(quandoBreve(chi.second)).append(")")
+            }
+            append(".")
+            if (chi?.first == "posta") {
+                append("\n\nAttenzione: quella modifica era della posta, quindi anche la ")
+                append("consegna torna com'era in quel momento.")
+            }
+        }
     }
+
+    private fun quandoBreve(millis: Long): String =
+        SimpleDateFormat("d MMM 'alle' HH:mm", Locale.ITALY).format(Date(millis))
 
     /** La coda del registro dei backup automatici, per capire perché non è partito. */
     suspend fun cronLog(): String {
@@ -333,7 +358,7 @@ object McRepository {
     suspend fun controlloSicurezza(): Rapporto {
         val c = cfg()
         val props = runCatching { properties() }.getOrDefault(emptyMap())
-        return SecurityCheck.valuta(props, c, Prefs.lockConfigured)
+        return SecurityCheck.valuta(props, c, Prefs.lockConfigured, Prefs.servers())
     }
 
     // -------------------------------------------------------- ripristino
@@ -713,6 +738,232 @@ object McRepository {
             onFailure = { "     ERRORE: ${it.message}" }
         ))
         return report.toString()
+    }
+
+    // ------------------------------------------- rimettere un backup
+
+    /** Cosa c'e' dentro un archivio, prima di toccare qualcosa. */
+    suspend fun backupContenuto(nome: String): Pair<Int, List<String>> {
+        val c = cfg()
+        // Un tar -tz su un archivio da un giga richiede tempo: e' il prezzo per
+        // far vedere all'utente cosa sta per tornare indietro.
+        val r = SshManager.exec(c, Backups.contenuto(c, nome), 300_000)
+        if (r.exitCode == Backups.EXIT_NO_ARCHIVIO) {
+            throw SshException("L'archivio non c'è più, o non si riesce a leggerlo.")
+        }
+        return (Backups.vociMondo(r.text) ?: 0) to Backups.anteprima(r.text)
+    }
+
+    /**
+     * Rimette il mondo com'era in quella copia.
+     *
+     * Torna dove e' finito il mondo di adesso: non viene cancellato, e finche'
+     * l'utente non e' sicuro deve poterci tornare.
+     */
+    suspend fun backupRipristina(nome: String): String {
+        val c = cfg()
+        val r = SshManager.exec(c, Backups.ripristina(c, nome), 1_800_000)
+        val testo = Lgsm.clean(r.text).trim()
+        if (!Backups.rimesso(testo)) {
+            throw SshException(
+                when (r.exitCode) {
+                    Backups.EXIT_ACCESO ->
+                        "Il server è acceso. Fermalo prima: estrarre sopra un mondo in " +
+                                "esecuzione lo rovina, e Minecraft riscriverebbe sopra quello " +
+                                "appena tornato."
+                    Backups.EXIT_SPAZIO ->
+                        "Non c'è abbastanza spazio sul disco per estrarre il mondo mentre " +
+                                "quello di adesso è ancora lì. Non ho toccato niente."
+                    Backups.EXIT_NIENTE_MONDO ->
+                        "Dentro quell'archivio non c'è la cartella del mondo. Non ho toccato niente."
+                    Backups.EXIT_NO_ARCHIVIO ->
+                        "L'archivio non c'è più."
+                    else ->
+                        "Non ci sono riuscito, e ho rimesso tutto com'era.\n\n" +
+                                testo.lines().takeLast(6).joinToString("\n")
+                }
+            )
+        }
+        val daParte = Backups.messoDaParte(testo)
+        return buildString {
+            append("Rimesso. Il mondo è quello di quella copia.")
+            if (daParte != null) {
+                append("\n\nQuello di adesso non l'ho cancellato: sta in\n")
+                append(daParte)
+                append(
+                    "\n\nGuarda che sia tutto a posto prima di toglierlo, e ricordati che " +
+                            "occupa spazio."
+                )
+            }
+            append("\n\nLa configurazione di LinuxGSM non è stata toccata: è rimasta quella " +
+                    "di adesso, non quella del giorno del backup.")
+        }
+    }
+
+    // ------------------------------------------------------------- posta
+
+    /** I messaggi in attesa, dal piu' vecchio. */
+    suspend fun postaLeggi(): List<Messaggio> {
+        val c = cfg()
+        return Posta.parseLeggi(SshManager.exec(c, Posta.leggi(c), 30_000).text)
+    }
+
+    /** Lascia un messaggio a chi non c'e'. Torna il messaggio come e' stato scritto. */
+    suspend fun postaAccoda(giocatore: String, testo: String): Messaggio {
+        val c = cfg()
+        if (!Posta.nomeValido(giocatore)) {
+            throw SshException("«$giocatore» non è un nome di giocatore valido.")
+        }
+        val pulito = Posta.ripulisci(testo)
+        if (pulito.isBlank()) throw SshException("Il messaggio è vuoto.")
+
+        val m = Messaggio(System.currentTimeMillis() / 1000, giocatore, pulito)
+        val r = SshManager.exec(c, Posta.accoda(c, m), 30_000)
+        if (!Posta.riuscito(r.text)) {
+            val t = Lgsm.clean(r.text)
+            throw SshException(
+                if (t.contains("CASSETTA OCCUPATA")) {
+                    "La cassetta è occupata da una consegna in corso: riprova fra poco."
+                } else if (t.contains("CASSETTA PIENA")) {
+                    "Ci sono già ${Posta.MAX_IN_ATTESA} messaggi in attesa: vuol dire che " +
+                            "non li sta consegnando nessuno. Controlla la consegna prima di aggiungerne."
+                } else {
+                    "Non sono riuscito a lasciare il messaggio."
+                }
+            )
+        }
+        return m
+    }
+
+    /**
+     * Toglie un messaggio dalla coda.
+     *
+     * Se non c'era piu' non e' un errore da nascondere: vuol dire che nel
+     * frattempo e' partito, e l'admin deve saperlo invece di restare convinto
+     * di averlo fermato in tempo.
+     */
+    suspend fun postaCancella(m: Messaggio): String {
+        val c = cfg()
+        val r = SshManager.exec(c, Posta.cancella(c, m), 60_000)
+        if (Posta.occupata(r.text)) {
+            throw SshException("La cassetta e' occupata da una consegna in corso: riprova fra poco.")
+        }
+        return when (Posta.tolte(r.text)) {
+            null -> throw SshException("Non sono riuscito a toglierlo.")
+            0 -> "Non c'era più: nel frattempo è partito."
+            else -> "Tolto."
+        }
+    }
+
+    suspend fun postaSvuota() {
+        val c = cfg()
+        val r = SshManager.exec(c, Posta.svuota(c), 60_000)
+        if (!Posta.riuscito(r.text)) throw SshException("Non sono riuscito a svuotare la cassetta.")
+    }
+
+    /** Quello che e' gia' partito, cosi' com'e' scritto nel registro sul server. */
+    suspend fun postaConsegnati(): List<Consegna> {
+        val c = cfg()
+        return Posta.parseConsegnati(SshManager.exec(c, Posta.leggiConsegnati(c), 30_000).text)
+    }
+
+    /** Se la consegna automatica e' installata: serve la riga di cron, non lo script. */
+    suspend fun postaConsegnaAttiva(): Boolean {
+        val c = cfg()
+        val letto = Cron.parseRead(SshManager.exec(c, Cron.read(), 30_000).text)
+        // Illeggibile non vuol dire spenta: mostrarlo come spento invitava ad
+        // accenderla, cioe' a scrivere in un crontab che non si sa leggere.
+        if (letto is Crontab.Illeggibile) {
+            throw SshException("Non riesco a leggere il crontab: ${letto.motivo}")
+        }
+        return Cron.programmato((letto as Crontab.Letto).testo, c, Posta.LAVORO)
+    }
+
+    /**
+     * Accende o spegne la consegna automatica.
+     *
+     * Spegnendola i messaggi in attesa restano dove sono: si smette di
+     * consegnarli, non si buttano.
+     */
+    suspend fun postaConsegna(attiva: Boolean): String {
+        val c = cfg()
+
+        // Se lo script non e' nel pacchetto e' un guasto nostro, e si deve
+        // vedere adesso: dopo avremmo gia' messo le mani nel crontab.
+        val contenuto = if (attiva) Posta.script(c) else null
+
+        val letto = Cron.parseRead(SshManager.exec(c, Cron.read(), 30_000).text)
+        if (letto is Crontab.Illeggibile) {
+            throw SshException("Non riesco a leggere il crontab, quindi non lo tocco: ${letto.motivo}")
+        }
+        val attuale = (letto as Crontab.Letto).testo
+
+        // I marcatori spaiati vanno visti prima di riscrivere: con un blocco
+        // aperto e mai chiuso, tutto quello che sta sotto verrebbe portato via.
+        if (!Cron.marcatoriInOrdine(attuale, c, Posta.LAVORO)) {
+            throw SshException(
+                "Nel crontab c'è un blocco di MC Monitor aperto e mai chiuso: " +
+                        "non lo tocco. Va sistemato a mano sul computer."
+            )
+        }
+        Prefs.saveCronBackup(c.id, attuale, Posta.LAVORO)
+
+        SshManager.exec(c, Posta.preparaCartella(), 20_000)
+
+        if (attiva) {
+            // Prima lo script, poi la riga che lo lancia: al contrario, per un
+            // minuto cron chiamerebbe un file che non c'e'.
+            SshManager.upload(
+                c,
+                contenuto!!.toByteArray(Charsets.UTF_8).inputStream(),
+                Posta.percorsoScript(c)
+            )
+            SshManager.exec(c, "chmod 700 ${Posta.fileScript(c)}", 20_000)
+        }
+
+        val blocco = if (attiva) {
+            Cron.bloccoOgniMinuto(
+                c,
+                Posta.comandoCron(c),
+                Posta.LAVORO,
+                "consegna la posta ai giocatori che rientrano"
+            )
+        } else {
+            null
+        }
+        val nuovo = Cron.componi(attuale, c, blocco, Posta.LAVORO)
+        val problemi = Cron.problemi(nuovo)
+        if (problemi.isNotEmpty()) throw SshException(problemi.joinToString("\n"))
+
+        SshManager.exec(c, "mkdir -p \"\$HOME\"/.mcmonitor && chmod 700 \"\$HOME\"/.mcmonitor", 20_000)
+        SshManager.upload(c, nuovo.toByteArray(Charsets.ISO_8859_1).inputStream(), Cron.FILE_NUOVO)
+
+        val r = SshManager.exec(c, Cron.install(), 45_000)
+        val testo = Lgsm.clean(r.text)
+        if (testo.contains("@@CR")) {
+            throw SshException("Il file conteneva un ritorno a capo di Windows: non l'ho installato.")
+        }
+        val rc = Cron.installato(testo)
+        if (rc == null || rc != 0) {
+            throw SshException(
+                "crontab ha rifiutato il file" + (rc?.let { " (uscita $it)" } ?: "") +
+                        ". Il crontab di prima è rimasto com'era."
+            )
+        }
+
+        // crontab puo' uscire con zero senza aver scritto niente: si ricontrolla.
+        val riletto = Cron.parseRead(r.text)
+        if (riletto is Crontab.Letto) {
+            val esiste = Cron.programmato(riletto.testo, c, Posta.LAVORO)
+            if (attiva && !esiste) throw SshException("Scritto, ma rileggendo non c'è.")
+            if (!attiva && esiste) throw SshException("Tolto, ma rileggendo c'è ancora.")
+        }
+
+        return if (attiva) {
+            "Consegna attiva: i messaggi arrivano entro un minuto da quando il giocatore entra."
+        } else {
+            "Consegna spenta. I messaggi in attesa restano dove sono."
+        }
     }
 
     private suspend fun run(command: String, timeout: Long): String {

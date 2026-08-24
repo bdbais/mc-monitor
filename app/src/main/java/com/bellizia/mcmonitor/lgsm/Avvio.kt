@@ -107,6 +107,17 @@ object Avvio {
      * Un solo giro sul server prende tutto quello che serve. Ogni pezzo è tagliato:
      * su una connessione mobile un log intero sono megabyte inutili.
      */
+    /**
+     * Le righe che LinuxGSM scrive a ogni respiro.
+     *
+     * L'app chiama `details` di continuo, e ogni chiamata lascia cinque righe nel
+     * log dello script. Su un server guardato spesso, sessanta righe di coda sono
+     * sessanta righe di quelle: l'avvio andato male, che magari è di ieri, è già
+     * uscito dalla finestra. Si guarda molto più indietro e si butta il rumore.
+     */
+    private const val RUMORE =
+        "PASS: (Using cached IP|core_exit\\.sh exiting|Started LinuxGSM)|INFO: LinuxGSM version"
+
     fun raccogli(cfg: ServerConfig): String {
         val dir = Lgsm.path(cfg.lgsmDir.trimEnd('/'))
         val script = cfg.script
@@ -117,13 +128,17 @@ object Avvio {
             echo '### lock'
             ls -1 "${'$'}d"/lgsm/lock/ 2>/dev/null || echo '(nessun lock)'
             echo '### script'
-            tail -n 60 "${'$'}d"/log/script/"${'$'}s"-script.log 2>/dev/null || echo '(nessun log dello script)'
+            tail -n 600 "${'$'}d"/log/script/"${'$'}s"-script.log 2>/dev/null |
+                grep -avE ${Lgsm.sq(RUMORE)} | tail -n 40 || echo '(nessun log dello script)'
             echo '### console'
             tail -n 80 "${'$'}d"/log/console/"${'$'}s"-console.log 2>/dev/null || echo '(nessun log di console)'
             echo '### gioco'
             tail -n 60 $gioco 2>/dev/null || echo '(nessun log di gioco)'
+            det=${'$'}(cd "${'$'}d" 2>/dev/null && ./"${'$'}s" details 2>&1)
+            echo '### stato'
+            printf '%s\n' "${'$'}det" | grep -i 'status' | head -n 5 || echo '(stato non leggibile)'
             echo '### avvio'
-            cd "${'$'}d" 2>/dev/null && ./"${'$'}s" details 2>&1 | grep -iA4 'command-line' || echo '(non riesco a leggere la riga di avvio)'
+            printf '%s\n' "${'$'}det" | grep -iA4 'command-line' || echo '(non riesco a leggere la riga di avvio)'
             echo '### fine'
         """.trimIndent()
     }
@@ -138,8 +153,29 @@ object Avvio {
         val console = sezione("console")
         val gioco = sezione("gioco")
         val avvio = sezione("avvio")
+        val statusDetails = sezione("stato")
+
+        // Il lock da solo mente, e mente proprio nel caso per cui esiste questa
+        // schermata: LinuxGSM scrive "-started.lock" quando lancia il server e non
+        // lo toglie se Java muore per conto suo. Un server crollato tiene il lock
+        // e diceva "sta girando" a chi era lì perché non partiva. Quando LinuxGSM
+        // sa dire se sta girando davvero, comanda lui.
+        // Si riusa il lettore già collaudato della scheda Stato invece di
+        // scriverne un secondo. Qui l'ancora a inizio riga funziona perché
+        // clean() ha già tolto i codici colore; sul server, dove il testo è
+        // ancora colorato, la stessa ancora non trovava niente e la schermata
+        // continuava a dire "sta girando" davanti a un server morto.
+        val dichiarato = Lgsm.parseStatus(statusDetails).orEmpty()
+        val gira = dichiarato.contains("STARTED", ignoreCase = true)
+        val fermo = dichiarato.contains("STOPPED", ignoreCase = true)
 
         val stato = when {
+            gira -> Stato.IN_ESECUZIONE
+            // Fermo con il lock dell'avvio ancora lì: è partito e poi è morto.
+            fermo && lock.contains("-started.lock") -> Stato.PARTITO_E_MORTO
+            fermo && lock.contains("-stopping.lock") -> Stato.FERMATO
+            fermo && lock.contains("-monitoring.lock") -> Stato.PARTITO_E_MORTO
+            fermo -> Stato.MAI_PARTITO
             lock.contains("-started.lock") -> Stato.IN_ESECUZIONE
             lock.contains("-stopping.lock") -> Stato.FERMATO
             // Il lock del monitoraggio resta quando il server è caduto da solo:

@@ -15,6 +15,8 @@ import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.databinding.ActivityBackupBinding
+import com.bellizia.mcmonitor.databinding.ItemCopiaBinding
+import com.bellizia.mcmonitor.lgsm.Backup
 import com.bellizia.mcmonitor.lgsm.BackupState
 import com.bellizia.mcmonitor.lgsm.Cadenza
 import com.bellizia.mcmonitor.lgsm.Cron
@@ -125,13 +127,7 @@ class BackupActivity : AppCompatActivity() {
         }
 
         binding.elenco.removeAllViews()
-        s.backups.take(10).forEach { b ->
-            binding.elenco.addView(TextView(this).apply {
-                text = "· ${quando.format(Date(b.epochSeconds * 1000))} — ${b.sizeLabel}"
-                textSize = 12f
-                setPadding(0, 4, 0, 0)
-            })
-        }
+        s.backups.take(10).forEach { b -> binding.elenco.addView(rigaCopia(b, s)) }
         if (s.backups.size > 10) {
             binding.elenco.addView(TextView(this).apply {
                 text = "e altre ${s.backups.size - 10}."
@@ -169,7 +165,22 @@ class BackupActivity : AppCompatActivity() {
 
         val avvisi = buildList {
             demone?.second?.takeIf { it.isNotBlank() }?.let { add(it) }
-            (crontab as? Crontab.Letto)?.let { addAll(Cron.avvertenze(it.testo)) }
+            (crontab as? Crontab.Letto)?.let { letto ->
+                addAll(Cron.avvertenze(letto.testo))
+                // Un blocco rimasto di un server rinominato o cancellato continua
+                // a girare ogni notte, e l'app non lo riconosce più: non si può
+                // toglierlo da qui perché potrebbe essere di un altro telefono,
+                // ma nasconderlo sarebbe peggio.
+                val orfani = Cron.orfani(letto.testo, Prefs.servers().map { it.slug })
+                if (orfani.isNotEmpty()) {
+                    add(
+                        "Nel crontab ci sono righe scritte da MC Monitor per server che qui non " +
+                                "ci sono più (" + orfani.joinToString(", ") { "${it.first} di ${it.second}" } +
+                                "). Continuano a girare. Se non servono più vanno tolte a mano " +
+                                "sul computer, con crontab -e."
+                    )
+                }
+            }
         }
         binding.avvisoCron.visible(avvisi.isNotEmpty())
         binding.avvisoCron.text = avvisi.joinToString("\n")
@@ -422,6 +433,119 @@ class BackupActivity : AppCompatActivity() {
 
     private fun toast(message: String) {
         android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_LONG).show()
+    }
+
+    // --------------------------------------------- rimettere una copia
+
+    private fun rigaCopia(b: Backup, s: BackupState): android.view.View {
+        val item = ItemCopiaBinding.inflate(layoutInflater, binding.elenco, false)
+        item.titolo.text = quando.format(Date(b.epochSeconds * 1000))
+        item.quando.text = b.sizeLabel
+        val giorni = (s.nowEpochSeconds - b.epochSeconds) / 86_400
+        item.dettagli.text = when {
+            giorni <= 0 -> "oggi"
+            giorni == 1L -> "ieri"
+            else -> "$giorni giorni fa"
+        }
+        item.nota.visible(false)
+        item.card.setOnClickListener { guardaDentro(b) }
+        return item.root
+    }
+
+    /**
+     * Prima di rimettere una copia si guarda cosa contiene.
+     *
+     * Costa qualche secondo su un archivio grosso, e vale la pena: un archivio
+     * rimasto a metà per il disco pieno sembra un backup buono dall'elenco, e si
+     * scopre che non lo era solo dopo aver buttato il mondo di adesso.
+     */
+    private fun guardaDentro(b: Backup) {
+        if (occupato) return
+        occupato = true
+        binding.swipe.isRefreshing = true
+        lifecycleScope.launch {
+            val esito = runCatching { McRepository.backupContenuto(b.fileName) }
+            binding.swipe.isRefreshing = false
+            occupato = false
+            if (isFinishing || isDestroyed) return@launch
+            esito.fold(
+                onSuccess = { (vociMondo, anteprima) -> mostraDentro(b, vociMondo, anteprima) },
+                onFailure = { avviso("Non riesco a leggerlo", it.userMessage()) }
+            )
+        }
+    }
+
+    private fun mostraDentro(b: Backup, vociMondo: Int, anteprima: List<String>) {
+        val quandoTesto = quando.format(Date(b.epochSeconds * 1000))
+        if (vociMondo == 0) {
+            avviso(
+                "Non c'è il mondo",
+                "Dentro questa copia non c'è la cartella serverfiles, cioè il mondo. " +
+                        "Può essere un archivio rimasto a metà per il disco pieno. " +
+                        "Non c'è niente da rimettere."
+            )
+            return
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Copia del $quandoTesto")
+            .setMessage(
+                "Pesa ${b.sizeLabel} e contiene $vociMondo file del mondo.\n\n" +
+                        anteprima.take(8).joinToString("\n") { "· $it" } +
+                        (if (anteprima.size > 8) "\n· …" else "") +
+                        "\n\nRimettendola, il mondo torna com'era quel giorno. Tutto quello " +
+                        "che è stato costruito dopo sparisce dal mondo attivo."
+            )
+            .setPositiveButton("Rimettila…") { _, _ -> confermaRipristino(b, quandoTesto) }
+            .setNegativeButton("Lascia stare", null)
+            .show()
+    }
+
+    /**
+     * La seconda conferma non è pignoleria.
+     *
+     * È l'unica operazione dell'app che butta via il lavoro di qualcuno, e chi la
+     * lancia deve aver letto cosa succede, non solo aver toccato due volte.
+     */
+    private fun confermaRipristino(b: Backup, quandoTesto: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Sicuro?")
+            .setMessage(
+                "Il mondo tornerà quello del $quandoTesto.\n\n" +
+                        "· Il server deve essere fermo: se è acceso non faccio niente\n" +
+                        "· Il mondo di adesso non lo cancello: lo sposto di fianco, con la " +
+                        "data nel nome, e resta lì finché non lo togli tu\n" +
+                        "· Le impostazioni di LinuxGSM restano quelle di adesso: torna " +
+                        "indietro il mondo, non il server\n\n" +
+                        "Su un mondo grande ci vuole qualche minuto."
+            )
+            .setPositiveButton("Rimetti il mondo") { _, _ -> ripristina(b) }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    private fun ripristina(b: Backup) {
+        if (occupato) return
+        occupato = true
+        binding.swipe.isRefreshing = true
+        lifecycleScope.launch {
+            val esito = runCatching { McRepository.backupRipristina(b.fileName) }
+            binding.swipe.isRefreshing = false
+            occupato = false
+            if (isFinishing || isDestroyed) return@launch
+            esito.fold(
+                onSuccess = { avviso("Fatto", it) },
+                onFailure = { avviso("Non l'ho rimesso", it.userMessage()) }
+            )
+            load()
+        }
+    }
+
+    private fun avviso(titolo: String, testo: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(titolo)
+            .setMessage(testo)
+            .setPositiveButton("Ho capito", null)
+            .show()
     }
 
     private fun applyInsets() {
