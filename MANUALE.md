@@ -688,8 +688,9 @@ parte solo se hai l'app aperta non è una posta, è una coincidenza.
 
 **La consegna va accesa una volta sola**, con l'interruttore nella schermata Posta. L'app
 mette sul computer un piccolo script e una riga di cron che lo lancia ogni minuto. Quando
-non c'è niente in attesa lo script esce subito senza toccare il server: è il caso normale,
-e costa quanto guardare se un file è vuoto.
+non c'è niente in attesa lo script non dice niente al server: legge le righe di registro
+nuove per tenere il conto di chi c'è, e si ferma lì. È il caso normale, e costa quanto
+leggere le righe scritte nell'ultimo minuto.
 
 Quando invece c'è posta, guarda nel registro del server **chi è entrato e chi è uscito**, e
 consegna a chi c'è. Non chiede niente alla console, e non è un dettaglio: la risposta a una

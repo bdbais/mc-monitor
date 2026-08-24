@@ -118,7 +118,7 @@ object Help {
 
         LA CONSEGNA
 
-        Va accesa una volta sola, con l'interruttore in questa schermata. L'app mette sul computer un piccolo script e una riga di cron che lo lancia ogni minuto. Quando non c'è niente in attesa lo script esce subito senza toccare il server: è il caso normale, e costa quanto guardare se un file è vuoto.
+        Va accesa una volta sola, con l'interruttore in questa schermata. L'app mette sul computer un piccolo script e una riga di cron che lo lancia ogni minuto. Quando non c'è niente in attesa lo script non dice niente al server: legge le righe di registro nuove per tenere il conto di chi c'è, e si ferma lì.
 
         Quando invece c'è posta, guarda nel registro del server chi è entrato e chi è uscito, e consegna a chi c'è. Non chiede niente alla console: la risposta a una domanda finirebbe nello stesso registro dove finisce la chat, e un giocatore potrebbe scriverci quello che vuole.
 
