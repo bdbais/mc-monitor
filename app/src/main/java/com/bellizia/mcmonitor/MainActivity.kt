@@ -42,18 +42,40 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private val tabs = listOf(
-        "Stato" to { StatusFragment() as Fragment },
-        "Console" to { ConsoleFragment() as Fragment },
-        "Giocatori" to { PlayersFragment() as Fragment },
-        "Mappa" to { MapFragment() as Fragment },
-        "Mod" to { ModsFragment() as Fragment },
-        "Impostazioni" to { SettingsFragment() as Fragment }
+    /** Una scheda, con il suo aiuto e se serve solo a chi vuole vedere tutto. */
+    private data class Scheda(
+        val titolo: String,
+        val aiuto: Help.Page,
+        val soloEsperto: Boolean,
+        val crea: () -> Fragment
     )
+
+    private val tutteLeSchede = listOf(
+        Scheda("Stato", Help.STATUS, false) { StatusFragment() },
+        // La console grezza \u00e8 la scheda che spaventa di piu' chi comincia, ed \u00e8
+        // anche quella da cui si fanno i danni piu' in fretta.
+        Scheda("Console", Help.CONSOLE, true) { ConsoleFragment() },
+        Scheda("Giocatori", Help.PLAYERS, false) { PlayersFragment() },
+        Scheda("Mappa", Help.MAP, false) { MapFragment() },
+        Scheda("Mod", Help.MODS, false) { ModsFragment() },
+        Scheda("Impostazioni", Help.SETTINGS, false) { SettingsFragment() }
+    )
+
+    /**
+     * Le schede di questo giro.
+     *
+     * Si decide una volta sola all'apertura e non si ricalcola: l'adattatore del
+     * pager tiene i frammenti per posizione, e cambiare l'elenco sotto di lui
+     * mentre \u00e8 vivo mostrerebbe la scheda sbagliata. Chi cambia modalit\u00e0 fa
+     * ripartire l'activity.
+     */
+    private val tabs by lazy {
+        tutteLeSchede.filter { Prefs.esperto || !it.soloEsperto }
+    }
 
     /** Porta su una scheda per nome: serve ai collegamenti fra una scheda e l'altra. */
     fun openTab(title: String) {
-        val index = tabs.indexOfFirst { it.first.equals(title, ignoreCase = true) }
+        val index = tabs.indexOfFirst { it.titolo.equals(title, ignoreCase = true) }
         if (index >= 0) binding.pager.setCurrentItem(index, true)
     }
 
@@ -80,12 +102,12 @@ class MainActivity : AppCompatActivity() {
 
         binding.pager.adapter = object : FragmentStateAdapter(this as FragmentActivity) {
             override fun getItemCount() = tabs.size
-            override fun createFragment(position: Int) = tabs[position].second()
+            override fun createFragment(position: Int) = tabs[position].crea()
         }
         binding.pager.offscreenPageLimit = 2
 
         TabLayoutMediator(binding.tabs, binding.pager) { tab, position ->
-            tab.text = tabs[position].first
+            tab.text = tabs[position].titolo
         }.attach()
 
         binding.toolbar.setNavigationOnClickListener { finish() }
@@ -93,7 +115,9 @@ class MainActivity : AppCompatActivity() {
         UpdateBanner.attach(this, binding.updateBanner)
         // L'aiuto segue la scheda aperta: chi lo tocca vuole sapere di questa pagina.
         binding.btnHelp.setOnClickListener {
-            HelpDialog.show(this, Help.forTab(binding.pager.currentItem))
+            // L'aiuto lo porta la scheda: con l'elenco filtrato, contare le
+            // posizioni darebbe la pagina di un'altra.
+            HelpDialog.show(this, tabs[binding.pager.currentItem].aiuto)
         }
 
         binding.btnAdmin.setOnClickListener {
@@ -155,7 +179,7 @@ class MainActivity : AppCompatActivity() {
     /** Porta la mappa in primo piano centrata su un giocatore, e la tiene agganciata. */
     fun showPlayerOnMap(player: String) {
         PlayerTracker.focus = player
-        binding.pager.setCurrentItem(tabs.indexOfFirst { it.first == "Mappa" }, true)
+        openTab("Mappa")
     }
 
     /**

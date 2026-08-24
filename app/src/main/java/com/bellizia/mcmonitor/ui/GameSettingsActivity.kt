@@ -58,6 +58,9 @@ class GameSettingsActivity : AppCompatActivity() {
         binding.btnHelp.setOnClickListener { HelpDialog.show(this, Help.GAME_SETTINGS) }
         binding.swipe.setOnRefreshListener { load() }
         binding.btnSalva.setOnClickListener { conferma() }
+        // I parametri di LinuxGSM sono l'unica schermata dove si puo' impedire al
+        // server di ripartire scrivendo la riga sbagliata.
+        binding.btnTecniche.visible(Prefs.esperto)
         binding.btnTecniche.setOnClickListener {
             startActivity(Intent(this, ParamsActivity::class.java))
         }

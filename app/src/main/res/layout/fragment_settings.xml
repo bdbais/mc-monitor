@@ -10,6 +10,44 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="0dp"
+            app:strokeColor="@color/stone_edge"
+            app:strokeWidth="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <TextView
+                    style="@style/CardTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Quanta app vuoi vedere" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/modoEsperto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Modalità esperto" />
+
+                <TextView
+                    android:id="@+id/notaModo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/text_dim"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <TextView
             style="@style/CardTitle"
             android:layout_width="wrap_content"
@@ -390,100 +428,108 @@
                 android:maxLines="1" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
-            style="@style/CardTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Passo 6 · comandi diretti (RCON)" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
-            android:text="Con RCON i comandi tornano la risposta del server e non lasciano righe di servizio nel log. Il tunnel SSH lo rende raggiungibile senza aprire porte sul firewall."
-            android:textColor="@color/text_dim"
-            android:textSize="12sp" />
-
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/rconEnabled"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Usa RCON per comandi e posizioni" />
-
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/rconTunnel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:checked="true"
-            android:text="Passa dal tunnel SSH (consigliato)" />
-
         <LinearLayout
+            android:id="@+id/sezioneRcon"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
+            <TextView
+                style="@style/CardTitle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="0.4"
-                android:hint="Porta RCON">
+                android:layout_marginTop="12dp"
+                android:text="Passo 6 · comandi diretti (RCON)" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/rconPort"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="number"
-                    android:maxLines="1" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.6"
-                android:hint="Password RCON"
-                app:endIconMode="password_toggle">
+                android:layout_marginBottom="6dp"
+                android:text="Con RCON i comandi tornano la risposta del server e non lasciano righe di servizio nel log. Il tunnel SSH lo rende raggiungibile senza aprire porte sul firewall."
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/rconPassword"
-                    android:layout_width="match_parent"
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/rconEnabled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Usa RCON per comandi e posizioni" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/rconTunnel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:checked="true"
+                android:text="Passa dal tunnel SSH (consigliato)" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword"
-                    android:maxLines="1" />
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="0.4"
+                    android:hint="Porta RCON">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/rconPort"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.6"
+                    android:hint="Password RCON"
+                    app:endIconMode="password_toggle">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/rconPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:maxLines="1" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRconPassword"
+                    style="@style/McButton.Text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Genera password" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRconTest"
+                    style="@style/McButton.Text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Prova RCON" />
+            </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnRconPassword"
-                style="@style/McButton.Text"
-                android:layout_width="0dp"
+                android:id="@+id/btnRconSetup"
+                style="@style/McButton"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Genera password" />
+                android:text="Attiva RCON sul server e riavvia" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnRconTest"
-                style="@style/McButton.Text"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Prova RCON" />
         </LinearLayout>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRconSetup"
-            style="@style/McButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Attiva RCON sul server e riavvia" />
 
         <TextView
             style="@style/CardTitle"

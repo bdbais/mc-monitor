@@ -2,7 +2,7 @@
 
 App Android per gestire un server Minecraft installato con **LinuxGSM**, via **SSH**.
 
-APK pronto all'uso: **`MC-Monitor-1.27.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
+APK pronto all'uso: **`MC-Monitor-1.28.apk`** (firmato, `minSdk 26` / Android 8+, `targetSdk 35`).
 
 **[Manuale d'uso completo](MANUALE.md)** · [Release e APK](https://github.com/bdbais/mc-monitor/releases)
 
@@ -122,6 +122,7 @@ lo riazzera dopo una reinstallazione legittima del server.
 - **Impostazioni del server** — difficoltà, messaggio di benvenuto, quanti giocatori, distanza di visuale, whitelist, pausa a server vuoto: le righe di `server.properties` che si cambiano davvero, ognuna con il suo tipo (interruttore, scelta chiusa, numero con intervallo) perché il server non protesta per un valore sbagliato, lo ignora e basta. Si salvano tutte insieme, in una connessione e con una copia di sicurezza. Vedi [Le impostazioni del server](MANUALE.md#6-le-impostazioni-del-server).
 - **Impostazioni tecniche** — **tutti** i parametri di LinuxGSM con il valore in vigore, letti dai cinque file che lui carica in fila e messi insieme allo stesso modo, con scritto accanto da quale file viene ognuno e quando avrà effetto. Vedi [Le impostazioni tecniche](MANUALE.md#6bis-le-impostazioni-tecniche-di-linuxgsm).
 - **Backup** — quando è stato fatto l'ultimo, quanto spazio resta, farne uno adesso, e farlo fare da solo scegliendo ogni quanto (giorno / settimana / mese) e a che ora. La programmazione passa dal `cron` dell'utente, letto e riscritto senza toccare le righe di nessun altro e con una copia di com'era tenuta sul telefono. Vedi [Il backup](MANUALE.md#7-il-backup).
+- **Semplice o esperto** — un interruttore in cima alle impostazioni decide quanta app vedere. In semplice restano accendere e spegnere, i giocatori, backup, mod, mappa, sicurezza e posta; spariscono la console grezza, i comandi di LinuxGSM, i parametri tecnici e RCON. Chi usava l'app da prima la ritrova com'era.
 - **Quando qualcosa va storto** — tre schermate per il momento in cui il server non riparte: *Perché non è partito* (la riga di avvio vera, il motivo tradotto in italiano e i log di LinuxGSM che l'app non guardava mai), *Ripristino* (le copie datate che l'app lascia a ogni modifica, con il confronto riga per riga prima di rimetterle) e un *controllo di sicurezza* che dà un giudizio — alta, media, bassa — su quanto è chiuso il server. Vedi [Quando qualcosa va storto](MANUALE.md#9-quando-qualcosa-va-storto).
 - **Posta per chi non c'è** — un messaggio lasciato a un giocatore scollegato, che gli arriva in chat quando rientra. Sta sul server e non sul telefono, perché nel momento in cui il giocatore entra il telefono è spento: la consegna la fa un piccolo script lanciato da cron, che segue nel registro chi entra e chi esce senza chiedere niente alla console, e considera consegnato solo quello che il server conferma. Vedi [La posta per chi non c'è](MANUALE.md#la-posta-per-chi-non-ce).
 - **Comandi** — i comandi dello script di LinuxGSM (`details`, `backup`, `update`, `update-lgsm`, `monitor`, `test-alert`…) lanciabili dall'app con i valori configurati, ognuno con scritto cosa fa e cosa succede al server. Restano fuori quelli che aspettano una risposta dalla tastiera, che senza terminale non finirebbero mai. Vedi [I comandi](MANUALE.md#8-i-comandi-di-linuxgsm).

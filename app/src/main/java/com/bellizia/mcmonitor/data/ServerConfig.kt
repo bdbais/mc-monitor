@@ -178,6 +178,46 @@ data class ServerConfig(
 }
 
 /**
+ * Un nome tecnico che sullo stesso computer non sia già di un altro.
+ *
+ * Lo slug finisce nei marcatori del crontab e nei percorsi della posta, e ci
+ * finisce ripulito: due nomi diversi che dopo la ripulitura diventano uguali
+ * — "mio server!" e "mio-server" no, ma "abc/def" e "abcdef" sì — produrrebbero
+ * marcatori identici, e il blocco di un server cancellerebbe quello dell'altro.
+ * [add] lo garantiva già per i profili nuovi; qui si copre anche chi lo cambia
+ * a mano nelle impostazioni o chi lo prende dalla ricerca dei mondi.
+ *
+ * Il confronto è per computer: due server su macchine diverse non si toccano.
+ */
+internal fun slugLibero(cfg: ServerConfig, altri: List<ServerConfig>): String {
+    // Un profilo che c'era gia' e non ha cambiato ne' nome tecnico ne'
+    // computer si lascia stare. markUsed() chiama save() a ogni apertura:
+    // rinominare li' vorrebbe dire orfanare, in silenzio, il blocco di cron
+    // gia' installato con il nome vecchio.
+    //
+    // Il computer conta quanto il nome: due profili con nomi che si
+    // somigliano ("abc/def" e "abcdef") stanno tranquilli su macchine
+    // diverse, ma spostarne uno sull'altra macchina li fa diventare lo
+    // stesso marcatore. Senza questo controllo, programmare il backup su uno
+    // cancellava quello dell'altro senza dire niente.
+    val precedente = altri.firstOrNull { it.id == cfg.id }
+    val stessoPosto = precedente != null &&
+            precedente.host.equals(cfg.host, ignoreCase = true) &&
+            precedente.user == cfg.user
+    if (stessoPosto && precedente!!.slug == cfg.slug) return cfg.slug
+
+    val base = Cron.normalizzaSlug(cfg.slug)
+    val occupati = altri
+        .filter { it.id != cfg.id && it.host.equals(cfg.host, ignoreCase = true) && it.user == cfg.user }
+        .map { Cron.normalizzaSlug(it.slug) }
+        .toSet()
+    if (base !in occupati) return base
+    return generateSequence(2) { it + 1 }
+        .map { Cron.normalizzaSlug(base.take(21) + "-" + it) }
+        .first { it !in occupati }
+}
+
+/**
  * Archivio dei server configurati. Il resto dell'app continua a chiamare [load] e
  * [save], che lavorano sul server attivo: la scelta di quale sia si fa dall'elenco.
  */
@@ -456,6 +496,26 @@ object Prefs {
             sp.edit().putBoolean("welcomeDone", value).apply()
         }
 
+    /**
+     * Modalità esperto: l'app mostra tutto invece del solo necessario.
+     *
+     * Chi ha appena installato l'app non sa cosa sia una sessione tmux, e
+     * mettergliela davanti non lo aiuta: gli fa credere di dover capire tutto
+     * prima di poter accendere il server. In modalità semplice restano le cose
+     * che servono a chi il server ce l'ha per giocarci — accendere, spegnere,
+     * chi c'è, whitelist, backup, mod, sicurezza — e spariscono la console
+     * grezza, i comandi di LinuxGSM, i parametri tecnici e RCON.
+     *
+     * Chi l'app ce l'aveva già la ritrova com'era: se ci sono server configurati
+     * si parte da esperto, perché togliere di colpo delle funzioni a chi le usa
+     * sarebbe peggio che mostrarne troppe a chi comincia.
+     */
+    var esperto: Boolean
+        get() = sp.getBoolean("modoEsperto", servers().isNotEmpty())
+        set(value) {
+            sp.edit().putBoolean("modoEsperto", value).apply()
+        }
+
     var privacyMode: Boolean
         get() = sp.getBoolean("privacyMode", true)
         set(value) {
@@ -481,37 +541,6 @@ object Prefs {
         if (index >= 0) all[index] = config else all.add(config)
         writeAll(all)
         if (activeId().isBlank() || activeId() == config.id) setActive(config.id)
-    }
-
-    /**
-     * Un nome tecnico che sullo stesso computer non sia già di un altro.
-     *
-     * Lo slug finisce nei marcatori del crontab e nei percorsi della posta, e ci
-     * finisce ripulito: due nomi diversi che dopo la ripulitura diventano uguali
-     * — "mio server!" e "mio-server" no, ma "abc/def" e "abcdef" sì — produrrebbero
-     * marcatori identici, e il blocco di un server cancellerebbe quello dell'altro.
-     * [add] lo garantiva già per i profili nuovi; qui si copre anche chi lo cambia
-     * a mano nelle impostazioni o chi lo prende dalla ricerca dei mondi.
-     *
-     * Il confronto è per computer: due server su macchine diverse non si toccano.
-     */
-    private fun slugLibero(cfg: ServerConfig, altri: List<ServerConfig>): String {
-        // Un profilo che c'era gia' e non ha cambiato nome tecnico si lascia
-        // stare. markUsed() chiama save() a ogni apertura: rinominare li' vorrebbe
-        // dire orfanare, in silenzio, il blocco di cron gia' installato con il
-        // nome vecchio.
-        val precedente = altri.firstOrNull { it.id == cfg.id }
-        if (precedente != null && precedente.slug == cfg.slug) return cfg.slug
-
-        val base = Cron.normalizzaSlug(cfg.slug)
-        val occupati = altri
-            .filter { it.id != cfg.id && it.host.equals(cfg.host, ignoreCase = true) && it.user == cfg.user }
-            .map { Cron.normalizzaSlug(it.slug) }
-            .toSet()
-        if (base !in occupati) return base
-        return generateSequence(2) { it + 1 }
-            .map { Cron.normalizzaSlug(base.take(21) + "-" + it) }
-            .first { it !in occupati }
     }
 
     /**

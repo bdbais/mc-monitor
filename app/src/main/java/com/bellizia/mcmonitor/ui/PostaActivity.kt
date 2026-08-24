@@ -7,6 +7,8 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -62,6 +64,7 @@ class PostaActivity : AppCompatActivity() {
         binding.sottotitolo.text = Prefs.load().displayName
         binding.btnHelp.setOnClickListener { HelpDialog.show(this, Help.POSTA) }
         binding.btnScrivi.setOnClickListener { chiediDestinatario() }
+        binding.btnRegistro.setOnClickListener { registro() }
         binding.swipe.setOnRefreshListener { load() }
         // Ruotando lo schermo il sistema rimette da solo l'interruttore com'era,
         // e il listener partiva come se l'avesse toccato l'utente: compariva dal
@@ -260,6 +263,52 @@ class PostaActivity : AppCompatActivity() {
             }
             .setNegativeButton("Annulla", null)
             .show()
+    }
+
+    // ------------------------------------------------- quello che e' partito
+
+    /**
+     * Il registro delle consegne.
+     *
+     * Non e' un di piu': quando il server non conferma ne' che il messaggio e'
+     * arrivato ne' che il giocatore non c'era, la posta risulta partita ma
+     * segnata "non confermato". Quella riga ha senso solo se qualcuno la puo'
+     * leggere -- e dentro c'e' il testo per intero, cosi' si riscrive da li'.
+     */
+    private fun registro() {
+        val testo = TextView(this).apply {
+            textSize = 12f
+            setTextIsSelectable(true)
+            setPadding(48, 24, 48, 8)
+            text = "Leggo il registro sul server…"
+        }
+        val dialogo = MaterialAlertDialogBuilder(this)
+            .setTitle("Cosa è già partito")
+            .setView(ScrollView(this).apply { addView(testo) })
+            .setPositiveButton("Chiudi", null)
+            .show()
+
+        lifecycleScope.launch {
+            val esito = runCatching { McRepository.postaConsegnati() }
+            (esito.exceptionOrNull() as? CancellationException)?.let { throw it }
+            if (isFinishing || isDestroyed || !dialogo.isShowing) return@launch
+            testo.text = esito.fold(
+                onSuccess = { righe ->
+                    if (righe.isEmpty()) {
+                        "Non è ancora partito niente."
+                    } else {
+                        righe.joinToString("\n\n") { c ->
+                            buildString {
+                                append(c.quando).append("  →  ").append(c.giocatore).append('\n')
+                                append(c.testo)
+                                if (c.illeggibile) append("\n(era illeggibile: messo da parte)")
+                            }
+                        }
+                    }
+                },
+                onFailure = { it.userMessage() }
+            )
+        }
     }
 
     // ------------------------------------------------------------ consegna

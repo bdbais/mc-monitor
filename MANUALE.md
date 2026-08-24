@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.27.
+Versione 1.28.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -231,6 +231,23 @@ Sotto i tre pulsanti principali ce ne sono altri quattro: **Backup** (sezione 7)
 non riparte compare **Perché non è partito**, che è il posto da cui cominciare.
 
 Trascina verso il basso per aggiornare.
+
+## 5bis. Semplice o esperto
+
+In cima alle impostazioni del server c'è un interruttore che decide **quanta app vedi**. Si
+cambia quando vuoi e non tocca niente sul server.
+
+**Semplice** — resta quello che serve per far girare un server: accendere e spegnere, vedere
+chi c'è, ammettere e bannare, backup, mod, mappa, il controllo di sicurezza e la posta.
+Spariscono la scheda **Console**, i **comandi di LinuxGSM**, i **parametri tecnici** e
+**RCON**. Non spariscono dal server: l'app non te li mette davanti.
+
+**Esperto** — vedi tutto, comprese le schermate da cui si può impedire al server di ripartire
+scrivendo la riga sbagliata.
+
+Un'installazione nuova parte da semplice. Chi l'app ce l'aveva già la ritrova com'era: con dei
+server già configurati si parte da esperto, perché togliere di colpo delle funzioni a chi le
+usa sarebbe peggio che mostrarne troppe a chi comincia.
 
 ## 6. Le impostazioni del server
 
@@ -693,6 +710,10 @@ Nel dubbio arriva due volte, mai zero.
 
 Del crontab l'app tiene una copia di com'era prima, e quello che c'è dentro di altri non lo
 tocca. Spegnendo la consegna i messaggi in attesa restano dove sono.
+
+Il pulsante **Cosa è già partito** apre il registro delle consegne, che sta sul computer:
+c'è quando, a chi, e il testo per intero. Serve per le righe segnate "non confermato" — se
+quel messaggio non è arrivato, lo si riscrive da lì.
 
 Un messaggio si può togliere finché non è partito, toccandolo nell'elenco. Oltre 50 in
 attesa l'app si ferma: vuol dire che non li sta consegnando nessuno, e allungare la fila

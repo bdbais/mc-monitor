@@ -66,7 +66,18 @@ class SettingsFragment : Fragment() {
         }
 
         b.btnSave.setOnClickListener {
-            Prefs.save(collect())
+            val chiesto = collect()
+            Prefs.save(chiesto)
+            // Il nome tecnico può essere stato cambiato salvando: sullo stesso
+            // computer due server non possono averlo uguale, perché finisce nei
+            // marcatori del crontab e nei percorsi della posta. Se è successo si
+            // rimette a schermo quello vero e lo si dice, invece di lasciare nel
+            // campo un nome che sul server non esiste.
+            val salvato = Prefs.load()
+            if (salvato.id == chiesto.id && salvato.slug != chiesto.slug) {
+                b.slug.setText(salvato.slug)
+                toast("Il nome tecnico «${chiesto.slug}» era già di un altro server su questo computer: l'ho salvato come «${salvato.slug}»")
+            }
             SshManager.disconnect()
             RconManager.disconnect()
             // Il servizio parte o si ferma da solo in base ai server da monitorare.
@@ -129,6 +140,17 @@ class SettingsFragment : Fragment() {
         }
 
         b.btnRconSetup.setOnClickListener { setupRcon() }
+
+        mostraModo()
+        b.notaModo.setOnClickListener { HelpDialog.show(requireContext(), Help.MODO) }
+        b.modoEsperto.setOnCheckedChangeListener { _, esperto ->
+            if (esperto == Prefs.esperto) return@setOnCheckedChangeListener
+            Prefs.esperto = esperto
+            mostraModo()
+            // Le schede si decidono all'apertura: per farle sparire (o tornare)
+            // serve far ripartire la pagina.
+            activity?.recreate()
+        }
 
         b.privacyMode.isChecked = Prefs.privacyMode
         b.privacyMode.setOnCheckedChangeListener { _, checked ->
@@ -625,6 +647,22 @@ class SettingsFragment : Fragment() {
             return text.substringBeforeLast(':') to port
         }
         return text to fallbackPort
+    }
+
+    /** L'interruttore e la riga che spiega cosa cambia. */
+    private fun mostraModo() {
+        val esperto = Prefs.esperto
+        b.modoEsperto.isChecked = esperto
+        b.notaModo.text = if (esperto) {
+            "Vedi tutto: la console del server, i comandi di LinuxGSM, i parametri " +
+                    "tecnici, RCON e il ripristino dei file di configurazione."
+        } else {
+            "Vedi le cose che servono per far girare il server: accendere e spegnere, " +
+                    "chi c'è, whitelist e ban, backup, mod, mappa, sicurezza e posta. " +
+                    "Restano nascosti la console, i comandi di LinuxGSM, i parametri " +
+                    "tecnici e RCON: si riaccendono da qui quando servono."
+        }
+        b.sezioneRcon.visible(esperto)
     }
 
     private fun fill(cfg: ServerConfig) {

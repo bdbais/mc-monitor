@@ -131,6 +131,7 @@ object Help {
         BUONO A SAPERSI
 
         • Se scrivi a qualcuno che è collegato in quel momento, l'app te lo dice e ti offre di scrivergli subito
+        • "Cosa è già partito" apre il registro delle consegne, con il testo per intero: serve per le righe segnate "non confermato"
         • Un messaggio si può togliere finché non è partito: toccalo nell'elenco
         • Oltre 50 messaggi in attesa l'app si ferma: vuol dire che non li sta consegnando nessuno, e allungare la fila non serve
         • Il testo viene tagliato a 200 caratteri, che è quanto la chat del gioco mostra comunque
@@ -441,6 +442,25 @@ object Help {
         """.trimIndent()
     )
 
+    val MODO = Page(
+        "Semplice o esperto",
+        """
+        Decide quanta app vedi. Si cambia quando vuoi, dall'alto delle impostazioni del server: non è una scelta definitiva e non tocca niente sul server.
+
+        SEMPLICE
+
+        Resta quello che serve per far girare un server: accendere e spegnere, vedere chi c'è, ammettere e bannare, backup, mod, mappa, il controllo di sicurezza e la posta. È il modo giusto se il server ce l'hai per giocarci.
+
+        Spariscono la console grezza del server, i comandi di LinuxGSM, i parametri tecnici e RCON. Non spariscono dal server: semplicemente l'app non te li mette davanti.
+
+        ESPERTO
+
+        Vedi tutto, comprese le schermate da cui si può impedire al server di ripartire scrivendo la riga sbagliata.
+
+        Chi usava l'app da prima la ritrova com'era: se avevi già dei server configurati parte da esperto, perché togliere di colpo delle funzioni a chi le usa sarebbe peggio che mostrarne troppe a chi comincia.
+        """.trimIndent()
+    )
+
     val SETTINGS = Page(
         "Impostazioni",
         """
@@ -464,13 +484,4 @@ object Help {
         """.trimIndent()
     )
 
-    /** Le schede dentro un server, nell'ordine in cui compaiono in alto. */
-    fun forTab(index: Int): Page = when (index) {
-        0 -> STATUS
-        1 -> CONSOLE
-        2 -> PLAYERS
-        3 -> MAP
-        4 -> MODS
-        else -> SETTINGS
-    }
 }

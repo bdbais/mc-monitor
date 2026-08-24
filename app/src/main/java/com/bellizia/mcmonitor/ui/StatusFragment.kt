@@ -64,6 +64,10 @@ class StatusFragment : Fragment() {
         b.btnBackup.setOnClickListener {
             if (configured()) startActivity(Intent(requireContext(), BackupActivity::class.java))
         }
+        // Comandi di LinuxGSM e ripristino dei file di configurazione: due
+            // strade da cui si esce solo sapendo cosa si sta facendo.
+        b.btnComandi.visible(Prefs.esperto)
+        b.btnRipristino.visible(Prefs.esperto)
         b.btnComandi.setOnClickListener {
             if (configured()) startActivity(Intent(requireContext(), CommandsActivity::class.java))
         }
