@@ -83,6 +83,12 @@
 
         <!-- Rimettere a posto un file che l'app ha cambiato. -->
         <activity
+            android:name=".ui.InventarioActivity"
+            android:exported="false"
+            android:label="Inventario"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
             android:name=".ui.PostaActivity"
             android:exported="false"
             android:label="Posta"

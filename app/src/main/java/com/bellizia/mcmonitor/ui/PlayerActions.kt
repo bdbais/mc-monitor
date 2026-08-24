@@ -30,7 +30,8 @@ class PlayerActions(
     private val run: (command: String, feedback: String) -> Unit,
     private val showOnMap: (String) -> Unit,
     private val showChat: (String) -> Unit,
-    private val scriviPosta: (String) -> Unit
+    private val scriviPosta: (String) -> Unit,
+    private val apriInventario: (String) -> Unit
 ) {
 
     private val context: Context get() = fragment.requireContext()
@@ -89,6 +90,7 @@ class PlayerActions(
         b.btnMap.setOnClickListener { sheet.dismiss(); showOnMap(name) }
         b.btnChat.setOnClickListener { sheet.dismiss(); showChat(name) }
         b.btnPosta.setOnClickListener { sheet.dismiss(); scriviPosta(name) }
+        b.btnInventario.setOnClickListener { sheet.dismiss(); apriInventario(name) }
         b.btnTeleport.setOnClickListener { sheet.dismiss(); teleportMenu() }
         b.btnGamemode.setOnClickListener { sheet.dismiss(); gamemodeMenu() }
         b.btnSpawnpoint.setOnClickListener {

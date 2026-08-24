@@ -145,6 +145,27 @@ object Help {
         """.trimIndent()
     )
 
+    val INVENTARIO = Page(
+        "L'inventario di un giocatore",
+        """
+        Cosa ha addosso e nello zaino, disposto come nel gioco: armatura, mano secondaria, cintura, zaino, baule dell'End. Più vita, fame, livello, dimensione e posizione.
+
+        DA DOVE ARRIVA
+
+        Da `world/playerdata/<identificativo>.dat`, il file che Minecraft scrive per ogni giocatore. Lo riscrive quando quel giocatore esce e a ogni salvataggio del mondo.
+
+        Quindi per chi è collegato in quel momento il file è vecchio: l'app chiede prima al server di salvare, aspetta, e poi legge. Se il server non risponde te lo dice, invece di mostrarti l'inventario di ieri come se fosse di adesso.
+
+        Il nome viene tradotto in identificativo leggendo `usercache.json` sul server, dove finisce chi è entrato almeno una volta. Non viene chiesto niente a Mojang: il nome di una persona non esce dal tuo server.
+
+        PERCHÉ NON CI SONO LE ICONE
+
+        Le texture di Minecraft sono di Mojang e non si possono mettere dentro un'app. C'è il nome dell'oggetto, la quantità, un simbolo se è incantato, e la resistenza che resta quando l'oggetto si consuma.
+
+        Si guarda e basta: da qui non si tocca niente.
+        """.trimIndent()
+    )
+
     val POSTA = Page(
         "La posta",
         """

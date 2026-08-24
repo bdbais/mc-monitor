@@ -306,8 +306,22 @@ class PlayersFragment : Fragment() {
             run = { cmd, feedback -> esegui(cmd, feedback) },
             showOnMap = { player -> (requireActivity() as MainActivity).showPlayerOnMap(player) },
             showChat = { player -> showChat(player) },
-            scriviPosta = { player -> apriPosta(player) }
+            scriviPosta = { player -> apriPosta(player) },
+            apriInventario = { player -> apriInventario(player) }
         ).show()
+    }
+
+    /** L'inventario di un giocatore: si guarda, non si tocca. */
+    private fun apriInventario(player: String) {
+        if (!isAdded) return
+        startActivity(
+            Intent(requireContext(), InventarioActivity::class.java)
+                .putExtra(InventarioActivity.EXTRA_GIOCATORE, player)
+                .putExtra(
+                    InventarioActivity.EXTRA_ONLINE,
+                    lastNames.any { it.equals(player, ignoreCase = true) }
+                )
+        )
     }
 
     /** La posta, gia' puntata su un nome se si arriva dal pannello di un giocatore. */

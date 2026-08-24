@@ -11,6 +11,9 @@ import com.bellizia.mcmonitor.lgsm.Cron
 import com.bellizia.mcmonitor.lgsm.Diagnosi
 import com.bellizia.mcmonitor.lgsm.EsitoSuServer
 import com.bellizia.mcmonitor.lgsm.Crontab
+import com.bellizia.mcmonitor.lgsm.Giocatore
+import com.bellizia.mcmonitor.lgsm.Inventario
+import com.bellizia.mcmonitor.lgsm.Nbt
 import com.bellizia.mcmonitor.lgsm.LgsmCommands
 import com.bellizia.mcmonitor.lgsm.Liste
 import com.bellizia.mcmonitor.lgsm.Messaggio
@@ -760,6 +763,51 @@ object McRepository {
             onFailure = { "     ERRORE: ${it.message}" }
         ))
         return report.toString()
+    }
+
+    // ------------------------------------------- inventario di un giocatore
+
+    /**
+     * Cosa ha addosso e nello zaino un giocatore.
+     *
+     * Il file lo riscrive Minecraft quando il giocatore esce e a ogni
+     * salvataggio del mondo: per chi e' collegato adesso e' vecchio. Se il
+     * server risponde gli si chiede prima di salvare, e in ogni caso si dice
+     * quanto e' vecchio quello che si sta guardando.
+     */
+    suspend fun inventario(nome: String, salvaPrima: Boolean): Pair<Giocatore, Boolean> {
+        val c = cfg()
+
+        var salvato = false
+        if (salvaPrima) {
+            // Se non riesce non e' un errore: vuol dire che il server e' spento,
+            // e allora il file e' l'ultimo buono per definizione.
+            salvato = runCatching { send(c, "save-all") }.isSuccess
+            if (salvato) delay(2_500)
+        }
+
+        val utenti = SshManager.exec(c, Inventario.comandoUtenti(c), 30_000).text
+        val uuid = Inventario.uuidDi(utenti, nome)
+            ?: throw SshException(
+                "Non trovo l'identificativo di $nome: nel file usercache.json del server " +
+                        "non c'è. Ci finisce chi è entrato almeno una volta."
+            )
+
+        val mondo = runCatching { properties()["level-name"] }.getOrNull().orEmpty().ifBlank { "world" }
+        val r = SshManager.exec(c, Inventario.comandoDati(c, mondo, uuid), 120_000)
+        if (r.exitCode == Inventario.EXIT_NIENTE_FILE) {
+            throw SshException(
+                "$nome non ha ancora un file nel mondo \"$mondo\": ci finisce dopo la prima " +
+                        "volta che entra ed esce."
+            )
+        }
+        val byte = Inventario.byteDi(r.text)
+            ?: throw SshException("Il file di $nome è arrivato illeggibile.")
+
+        val radice = runCatching { Nbt.leggi(byte) }.getOrElse {
+            throw SshException("Non riesco a leggere il file di $nome: ${it.message}")
+        }
+        return Inventario.leggi(radice) to salvato
     }
 
     // ------------------------------------ provvedimenti su piu' server

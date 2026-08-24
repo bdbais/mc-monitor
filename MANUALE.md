@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.33.
+Versione 1.34.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -703,6 +703,32 @@ Il server di destinazione dev'essere **acceso**. Il comando passa dalla console,
 mettere qualcuno in whitelist il server deve chiedere a Mojang chi è: una riga scritta a mano
 nel file, senza quell'identificativo, un server in online-mode la ignora. Se è spento l'app
 lo dice invece di far finta.
+
+### L'inventario di un giocatore
+
+Dal pannello di un giocatore, **Guarda l'inventario**: cosa ha addosso e nello zaino,
+disposto come nel gioco — armatura, mano secondaria, cintura con la casella che ha in mano
+evidenziata, zaino, baule dell'End. Più vita, fame, livello, dimensione e posizione.
+
+**Da dove arriva.** Da `world/playerdata/<identificativo>.dat`, il file che Minecraft scrive
+per ogni giocatore e riscrive quando quello esce e a ogni salvataggio del mondo.
+
+Quindi per chi è collegato in quel momento il file è **vecchio**: l'app chiede prima al server
+di salvare, aspetta, e poi legge. Se il server non risponde te lo dice, invece di mostrarti
+l'inventario di ieri come se fosse di adesso. In fondo alla schermata c'è sempre scritto a
+quando si riferisce quello che stai guardando.
+
+Il nome viene tradotto in identificativo leggendo `usercache.json` sul server, dove finisce
+chi è entrato almeno una volta. **Non viene chiesto niente a Mojang**: il nome di una persona
+non esce dal tuo server.
+
+**Perché non ci sono le icone.** Le texture di Minecraft sono di Mojang e non si possono
+mettere dentro un'app. C'è il nome dell'oggetto, la quantità, un simbolo se è incantato, e
+la resistenza che resta quando l'oggetto si consuma — in arancione quando sta per rompersi.
+La faccia è due lettere su un colore ricavato dal nome, sempre lo stesso per lo stesso
+giocatore: serve a distinguere due persone a colpo d'occhio, non a somigliare alla skin.
+
+Si guarda e basta: da qui non si tocca niente.
 
 ### Portare le liste su un altro server
 
