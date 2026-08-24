@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bellizia.mcmonitor.MainActivity
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.lgsm.Allineamento
 import com.bellizia.mcmonitor.lgsm.Provvedimenti
 import com.bellizia.mcmonitor.lgsm.EsitoSuServer
 import com.bellizia.mcmonitor.data.ServerConfig
@@ -48,6 +49,7 @@ class PlayersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         b.swipe.setOnRefreshListener { refresh() }
         b.btnPosta.setOnClickListener { apriPosta() }
+        b.btnAllinea.setOnClickListener { scegliDoveAllineare() }
         b.btnWhitelistAdd.setOnClickListener {
             withName(b.whitelistInput.text?.toString()) { name ->
                 esegui("whitelist add $name", "Aggiunto $name alla whitelist")
@@ -420,6 +422,111 @@ class PlayersFragment : Fragment() {
         } else {
             soloQui(comando, feedback)
         }
+    }
+
+    // ------------------------------- portare le liste su un altro server
+
+    /**
+     * Porta su un altro server chi e' gia' in elenco qui.
+     *
+     * E' diverso dal ripetere un provvedimento appena preso: qui il ban c'era
+     * gia', magari da mesi, e il server nuovo e' arrivato dopo. Rifarli a mano
+     * uno per uno guardando due schermate e' il modo migliore per saltarne uno,
+     * e quello saltato e' esattamente quello che poi rientra.
+     */
+    private fun scegliDoveAllineare() {
+        if (!configured()) return
+        val altri = Provvedimenti.altriServer(Prefs.servers(), Prefs.load())
+        if (altri.isEmpty()) {
+            avviso(
+                "C'\u00e8 un server solo",
+                "Serve almeno un altro server configurato per portarci le liste."
+            )
+            return
+        }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Portare le liste dove?")
+            .setNeutralButton("Cos'è?") { _, _ -> HelpDialog.show(requireContext(), Help.ALLINEAMENTO) }
+            .setItems(altri.map { it.displayName }.toTypedArray()) { _, quale ->
+                guardaDifferenza(altri[quale])
+            }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    /**
+     * Prima si guarda, poi si decide.
+     *
+     * Le due liste si leggono dai file e non dalla console, quindi si vede cosa
+     * c'e' di la' anche a server spento: e' proprio il momento in cui uno vuole
+     * sapere cosa manca, prima di accenderlo.
+     */
+    private fun guardaDifferenza(verso: ServerConfig) {
+        b.swipe.isRefreshing = true
+        lifecycleScope.launch {
+            val qui = runCatching { McRepository.liste(Prefs.load()) }
+            val la = runCatching { McRepository.liste(verso) }
+            if (!isAdded || isRemoving) return@launch
+            _b?.swipe?.isRefreshing = false
+
+            val a = qui.getOrNull()
+            val b2 = la.getOrNull()
+            if (a == null || b2 == null) {
+                avviso(
+                    "Non riesco a leggere le liste",
+                    (qui.exceptionOrNull() ?: la.exceptionOrNull())?.userMessage().orEmpty()
+                )
+                return@launch
+            }
+
+            val d = Allineamento.differenza(a, b2)
+            val strane = Allineamento.incoerenti(a, b2)
+            val testo = Allineamento.descrizione(
+                Prefs.load().displayName, verso.displayName, d, strane
+            )
+            val dialogo = MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Verso ${verso.displayName}")
+                .setMessage(testo)
+                .setNegativeButton(if (d.vuota) "Chiudi" else "Annulla", null)
+            if (!d.vuota) {
+                dialogo.setPositiveButton("Portali (${d.quanti})") { _, _ ->
+                    portaLe(verso, Allineamento.comandi(d))
+                }
+            }
+            dialogo.show()
+        }
+    }
+
+    private fun portaLe(verso: ServerConfig, comandi: List<String>) {
+        b.swipe.isRefreshing = true
+        lifecycleScope.launch {
+            val esiti = McRepository.allinea(verso, comandi)
+            if (!isAdded || isRemoving) return@launch
+            _b?.swipe?.isRefreshing = false
+            val fatti = esiti.count { it.riuscito }
+            val no = esiti.filterNot { it.riuscito }
+            avviso(
+                "Verso ${verso.displayName}",
+                buildString {
+                    append("Portati $fatti su ${esiti.size}.")
+                    if (no.isNotEmpty()) {
+                        append("\n\nNon fatti:")
+                        no.take(12).forEach { append("\n\u00b7 ").append(it.dettaglio) }
+                        if (no.size > 12) append("\n\u00b7 e altri ${no.size - 12}")
+                        append("\n\nQuesti restano come prima. Il server dev'essere acceso.")
+                    }
+                }
+            )
+        }
+    }
+
+    private fun avviso(titolo: String, testo: String) {
+        if (!isAdded) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(titolo)
+            .setMessage(testo)
+            .setPositiveButton("Ho capito", null)
+            .show()
     }
 
     // ------------------------------------ lo stesso provvedimento altrove

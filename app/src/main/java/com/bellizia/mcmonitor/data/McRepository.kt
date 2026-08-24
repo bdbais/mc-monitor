@@ -12,6 +12,7 @@ import com.bellizia.mcmonitor.lgsm.Diagnosi
 import com.bellizia.mcmonitor.lgsm.EsitoSuServer
 import com.bellizia.mcmonitor.lgsm.Crontab
 import com.bellizia.mcmonitor.lgsm.LgsmCommands
+import com.bellizia.mcmonitor.lgsm.Liste
 import com.bellizia.mcmonitor.lgsm.Messaggio
 import com.bellizia.mcmonitor.lgsm.PianoBackup
 import com.bellizia.mcmonitor.lgsm.GameSettings
@@ -447,11 +448,24 @@ object McRepository {
         }
     }
 
-    suspend fun whitelist(): List<PlayerEntry> =
-        Lgsm.parsePlayerJson(SshManager.exec(cfg(), Lgsm.readWhitelist(cfg())).stdout)
+    suspend fun whitelist(): List<PlayerEntry> = whitelist(cfg())
 
-    suspend fun banlist(): List<PlayerEntry> =
-        Lgsm.parsePlayerJson(SshManager.exec(cfg(), Lgsm.readBanlist(cfg())).stdout)
+    suspend fun banlist(): List<PlayerEntry> = banlist(cfg())
+
+    suspend fun whitelist(c: ServerConfig): List<PlayerEntry> =
+        Lgsm.parsePlayerJson(SshManager.exec(c, Lgsm.readWhitelist(c)).stdout)
+
+    suspend fun banlist(c: ServerConfig): List<PlayerEntry> =
+        Lgsm.parsePlayerJson(SshManager.exec(c, Lgsm.readBanlist(c)).stdout)
+
+    /**
+     * Le due liste di un server, lette in un giro solo.
+     *
+     * Si leggono dai file e non dalla console: funziona anche a server spento,
+     * ed e' proprio il caso in cui si vuole guardare cosa c'e' di la' prima di
+     * accenderlo.
+     */
+    suspend fun liste(c: ServerConfig): Liste = Liste(whitelist(c), banlist(c))
 
     /**
      * Chiede alla console chi è online e dove si trova.
@@ -779,6 +793,31 @@ object McRepository {
             onFailure = { EsitoSuServer(s, false, it.message.orEmpty().lines().first().take(120)) }
         )
     }
+
+    /**
+     * Porta su un altro server chi e' gia' in elenco qui.
+     *
+     * Si aggiunge soltanto: da quel server non viene tolto nessuno, e chi di la'
+     * sta nell'altra lista non viene toccato.
+     */
+    suspend fun allinea(verso: ServerConfig, comandi: List<String>): List<EsitoSuServer> =
+        comandi.map { comando ->
+            runCatching { send(verso, comando) }.fold(
+                onSuccess = { risposta ->
+                    if (Provvedimenti.rifiutato(risposta)) {
+                        EsitoSuServer(verso, false, "${nomeIn(comando)}: ${risposta.lines().first().take(80)}")
+                    } else {
+                        EsitoSuServer(verso, true, nomeIn(comando))
+                    }
+                },
+                onFailure = {
+                    EsitoSuServer(verso, false, "${nomeIn(comando)}: ${it.message.orEmpty().lines().first().take(80)}")
+                }
+            )
+        }
+
+    private fun nomeIn(comando: String) =
+        Provvedimenti.giocatoreDi(comando) ?: comando.substringAfterLast(' ')
 
     // ------------------------------------------- rimettere un backup
 

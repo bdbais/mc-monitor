@@ -127,6 +127,24 @@ object Help {
         """.trimIndent()
     )
 
+    val ALLINEAMENTO = Page(
+        "Portare le liste altrove",
+        """
+        Ammettere e bannare su più server vale per i provvedimenti nuovi. Ma se il secondo mondo è arrivato dopo, la sua whitelist è vuota e la sua lista ban pure, e tutto quello che hai deciso negli anni sta solo di qua.
+
+        Il pulsante "Porta le liste su un altro server" confronta le due liste e ti dice chi manca di là, con i nomi, prima di toccare qualcosa.
+
+        Le liste si leggono dai file e non dalla console, quindi puoi guardare cosa c'è di là anche a server spento. Per scriverle il server dev'essere acceso.
+
+        DUE REGOLE
+
+        • Si aggiunge soltanto: da quel server non viene tolto nessuno. Chi è ammesso di qua e non di là può esserlo per una ragione
+        • Chi è ammesso su un server e bannato sull'altro non viene toccato: l'app te lo fa vedere e si ferma lì
+
+        Tutte e due per lo stesso motivo: non disfare decisioni che ha preso qualcuno.
+        """.trimIndent()
+    )
+
     val POSTA = Page(
         "La posta",
         """

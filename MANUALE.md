@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.32.
+Versione 1.33.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -703,6 +703,27 @@ Il server di destinazione dev'essere **acceso**. Il comando passa dalla console,
 mettere qualcuno in whitelist il server deve chiedere a Mojang chi è: una riga scritta a mano
 nel file, senza quell'identificativo, un server in online-mode la ignora. Se è spento l'app
 lo dice invece di far finta.
+
+### Portare le liste su un altro server
+
+Ammettere e bannare su più server vale per i provvedimenti **nuovi**. Ma se il secondo mondo
+è arrivato dopo, la sua whitelist è vuota e la sua lista ban pure, e tutto quello che avevi
+deciso negli anni sta solo di qua.
+
+Il pulsante **Porta le liste su un altro server**, in cima alla scheda Giocatori, fa quello:
+sceglie il server, confronta le due liste e ti dice **chi manca di là**, con i nomi, prima di
+toccare qualcosa. Solo dopo decidi.
+
+Le liste si leggono dai file, non dalla console, quindi puoi guardare cosa c'è di là **anche a
+server spento** — che è poi il momento in cui uno se lo chiede. Per scriverle, invece, il
+server dev'essere acceso.
+
+Due regole, tutte e due per lo stesso motivo — non disfare decisioni che ha preso qualcuno:
+
+- **si aggiunge soltanto.** Da quel server non viene tolto nessuno. Chi è ammesso di qua e non
+  di là può esserlo per una ragione: un mondo per gli amici stretti, uno per tutti
+- **chi è ammesso su un server e bannato sull'altro non viene toccato.** L'app te lo fa vedere
+  e si ferma lì: qualcuno ha deciso così, e non tocca a un programma disfarlo
 
 ### La posta per chi non c'è
 
