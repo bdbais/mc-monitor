@@ -49,6 +49,41 @@ class ProvvedimentiTest {
         }
     }
 
+    // ------------------------------------------------------ chi e' il bersaglio
+
+    @Test
+    fun `il nome non e' l'ultima parola del comando`() {
+        // Un ban si porta dietro il motivo: prendendo l'ultima parola, il
+        // riassunto avrebbe detto il nome sbagliato e "Annulla tutto" avrebbe
+        // sbannato qualcun altro.
+        assertEquals("Pippo", Provvedimenti.giocatoreDi("ban Pippo ha bruciato la casa di Anna"))
+        assertEquals("Pippo", Provvedimenti.giocatoreDi("ban Pippo"))
+        assertEquals("Pippo", Provvedimenti.giocatoreDi("/ban Pippo motivo"))
+        assertEquals("Pippo", Provvedimenti.giocatoreDi("pardon Pippo"))
+        assertEquals("Pippo", Provvedimenti.giocatoreDi("whitelist add Pippo"))
+        assertEquals("Pippo", Provvedimenti.giocatoreDi("whitelist remove Pippo"))
+    }
+
+    @Test
+    fun `spazi in piu' non spostano il bersaglio`() {
+        assertEquals("Pippo", Provvedimenti.giocatoreDi("  ban   Pippo   perche' si  "))
+    }
+
+    @Test
+    fun `da un comando che non riguarda nessuno non si inventa un nome`() {
+        assertNull(Provvedimenti.giocatoreDi("stop"))
+        assertNull(Provvedimenti.giocatoreDi("ban"))
+        assertNull(Provvedimenti.giocatoreDi("whitelist add"))
+        assertNull(Provvedimenti.giocatoreDi("say ciao a tutti"))
+    }
+
+    @Test
+    fun `disfare un ban con motivo non si porta dietro il motivo`() {
+        val comando = "ban Pippo ha bruciato la casa di Anna"
+        val chi = Provvedimenti.giocatoreDi(comando)!!
+        assertEquals("pardon Pippo", Provvedimenti.perDisfare(Provvedimenti.Tipo.BAN, chi))
+    }
+
     // ------------------------------------------------------- dove proporlo
 
     @Test
@@ -105,6 +140,36 @@ class ProvvedimentiTest {
             val tornaIndietro = Provvedimenti.tipoDi(disfa)
             assertEquals(t.name, "Pippo", Provvedimenti.perDisfare(tornaIndietro!!, "Pippo").substringAfterLast(' '))
         }
+    }
+
+    // --------------------------------------------- quanto se ne sa davvero
+
+    @Test
+    fun `una risposta di rifiuto non e' un successo`() {
+        // Con RCON la risposta del server torna indietro: se ha rifiutato, e'
+        // un esito negativo, non un successo silenzioso.
+        assertTrue(Provvedimenti.rifiutato("That player does not exist"))
+        assertTrue(Provvedimenti.rifiutato("Unknown command"))
+        assertTrue(Provvedimenti.rifiutato("Incorrect argument for command"))
+    }
+
+    @Test
+    fun `gia' in whitelist non e' un rifiuto`() {
+        // Lo stato finale e' quello che si voleva, ed e' il caso normale
+        // ripetendo un provvedimento dove era gia' stato dato.
+        assertFalse(Provvedimenti.rifiutato("Player is already whitelisted"))
+        assertFalse(Provvedimenti.rifiutato("Nothing changed. That player is already banned"))
+        assertFalse(Provvedimenti.rifiutato("Added Pippo to the whitelist"))
+        assertFalse(Provvedimenti.rifiutato("inviato alla console via tmux"))
+    }
+
+    @Test
+    fun `senza RCON l'app dice quanto ne sa`() {
+        // "Riuscito" senza RCON vuol dire che il comando e' arrivato in
+        // console, non che il server l'abbia accettato: dirlo e' meno
+        // soddisfacente, ma e' quello che si sa.
+        assertTrue(Provvedimenti.certezza(false).contains("senza sentire la risposta"))
+        assertEquals("", Provvedimenti.certezza(true))
     }
 
     // ---------------------------------------------------------- il riassunto

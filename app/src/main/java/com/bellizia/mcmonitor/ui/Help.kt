@@ -116,6 +116,8 @@ object Help {
 
         Se hai sbagliato bersaglio, "Annulla tutto" disfa il provvedimento esattamente dove era riuscito.
 
+        "Fatto" vuol dire quanto l'app sa. Senza RCON parla alla console e non sente la risposta: sa che il comando è arrivato, non che il server l'abbia accettato. Con RCON acceso la risposta si legge, e un rifiuto finisce fra i non fatti.
+
         NON SI PROPAGANO
 
         • Il ban di un indirizzo (ban-ip): colpisce un indirizzo, che su una rete di casa è di tutta la famiglia

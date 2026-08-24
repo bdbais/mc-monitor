@@ -1,7 +1,7 @@
 # MC Monitor — manuale d'uso
 
 App Android per amministrare un server Minecraft installato con **LinuxGSM**, via SSH.
-Versione 1.30.
+Versione 1.31.
 
 - [1. Installazione](#1-installazione)
 - [2. Il nome e la password](#2-il-nome-e-la-password)
@@ -692,6 +692,11 @@ Due cose che non si propagano:
 - il **ban di un indirizzo** (`ban-ip`): colpisce un indirizzo, che su una rete di casa è di
   tutta la famiglia, e ripeterlo altrove moltiplicherebbe il danno di uno sbaglio
 - **espelli**, **op** e **deop**: riguardano quel momento e quel mondo
+
+**"Fatto" vuol dire quanto l'app sa.** Senza RCON parla alla console e non sente la
+risposta: sa che il comando è arrivato, non che il server l'abbia accettato. Con RCON acceso
+la risposta si legge, e un rifiuto — per esempio un nome che non esiste — finisce fra i non
+fatti invece che fra i fatti. L'app te lo dice sotto il riassunto.
 
 Il server di destinazione dev'essere **acceso**. Il comando passa dalla console, e per
 mettere qualcuno in whitelist il server deve chiedere a Mojang chi è: una riga scritta a mano

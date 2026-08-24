@@ -25,6 +25,7 @@ import com.bellizia.mcmonitor.lgsm.PlayerEntry
 import com.bellizia.mcmonitor.lgsm.PlayerPos
 import com.bellizia.mcmonitor.lgsm.Posta
 import com.bellizia.mcmonitor.lgsm.Provision
+import com.bellizia.mcmonitor.lgsm.Provvedimenti
 import com.bellizia.mcmonitor.lgsm.RequirementResult
 import com.bellizia.mcmonitor.lgsm.Rapporto
 import com.bellizia.mcmonitor.lgsm.Restore
@@ -766,7 +767,15 @@ object McRepository {
         servers: List<ServerConfig>
     ): List<EsitoSuServer> = servers.map { s ->
         runCatching { send(s, comando) }.fold(
-            onSuccess = { EsitoSuServer(s, true, it) },
+            onSuccess = { risposta ->
+                // Con RCON la risposta del server torna indietro: se ha
+                // rifiutato, e' un esito negativo, non un successo silenzioso.
+                if (Provvedimenti.rifiutato(risposta)) {
+                    EsitoSuServer(s, false, risposta.lines().first().take(120))
+                } else {
+                    EsitoSuServer(s, true, risposta)
+                }
+            },
             onFailure = { EsitoSuServer(s, false, it.message.orEmpty().lines().first().take(120)) }
         )
     }

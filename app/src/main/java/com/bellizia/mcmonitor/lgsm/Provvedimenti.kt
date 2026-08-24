@@ -53,6 +53,24 @@ object Provvedimenti {
     }
 
     /**
+     * Chi e' il giocatore, dentro un comando di console.
+     *
+     * Non l'ultima parola: un ban puo' portarsi dietro il motivo
+     * ("ban Pippo ha bruciato la casa di Anna"), e l'ultima parola sarebbe
+     * "Anna". Da li' il riassunto avrebbe detto il nome sbagliato e "Annulla
+     * tutto" avrebbe sbannato qualcun altro.
+     */
+    fun giocatoreDi(comando: String): String? {
+        val p = comando.trim().trimStart('/').split(Regex("""\s+""")).filter { it.isNotBlank() }
+        return when {
+            p.size >= 3 && p[0].equals("whitelist", true) &&
+                    (p[1].equals("add", true) || p[1].equals("remove", true)) -> p[2]
+            p.size >= 2 && (p[0].equals("ban", true) || p[0].equals("pardon", true)) -> p[1]
+            else -> null
+        }
+    }
+
+    /**
      * Il comando che disfa quello appena dato, per lo stesso giocatore.
      *
      * Serve quando si sbaglia bersaglio su cinque server insieme: senza, si
@@ -88,6 +106,41 @@ object Provvedimenti {
             altri[it].host.equals(corrente.host, ignoreCase = true) &&
                     altri[it].user == corrente.user
         }
+
+    /**
+     * Il server ha rifiutato il comando?
+     *
+     * Con RCON la risposta del server torna indietro davvero, e allora si puo'
+     * sapere. Con tmux no: si sa solo che i tasti sono arrivati alla console, e
+     * "riuscito" non puo' voler dire di piu'.
+     *
+     * "gia' in whitelist" NON e' un rifiuto: lo stato finale e' quello che si
+     * voleva, ed e' il caso normale quando si ripete un provvedimento su un
+     * server dove era gia' stato dato.
+     */
+    fun rifiutato(risposta: String): Boolean {
+        val r = risposta.lowercase()
+        return listOf(
+            "that player does not exist",
+            "unknown command",
+            "incorrect argument",
+            "expected whitespace",
+            "no player was found"
+        ).any { r.contains(it) }
+    }
+
+    /**
+     * Cosa si puo' onestamente dire di un esito.
+     *
+     * Senza RCON non si sa se il server ha accettato: si sa che il comando e'
+     * arrivato in console. Dirlo e' meno soddisfacente che dire "bannato", ma
+     * e' quello che si sa.
+     */
+    fun certezza(conRcon: Boolean): String =
+        if (conRcon) ""
+        else "\n\nSu questi server l'app parla alla console senza sentire la risposta: " +
+                "sa che il comando è arrivato, non che il server l'abbia accettato. " +
+                "Con RCON acceso la risposta si legge."
 
     /** Il riassunto da mostrare quando il giro è finito. */
     fun riassunto(tipo: Tipo, giocatore: String, esiti: List<EsitoSuServer>): String {

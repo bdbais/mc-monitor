@@ -381,8 +381,17 @@ class PlayersFragment : Fragment() {
      * Dopo il comando si puo' lasciare due righe agli altri amministratori, che
      * restano legate al giocatore e compaiono nel suo pannello.
      */
-    /** Il nome del giocatore dentro un comando di console. */
-    private fun name(comando: String) = comando.trim().substringAfterLast(' ')
+    /**
+     * Il nome del giocatore dentro un comando di console.
+     *
+     * Non l'ultima parola: un ban si porta dietro il motivo, e l'ultima parola
+     * sarebbe una parola del motivo. Se non si capisce, si ripiega sulla
+     * seconda, che e' il posto giusto per ban e pardon.
+     */
+    private fun name(comando: String) =
+        Provvedimenti.giocatoreDi(comando)
+            ?: comando.trim().split(Regex("""\s+""")).getOrNull(1)
+            ?: comando.trim().substringAfterLast(' ')
 
     /**
      * L'unica porta da cui passano i comandi su un giocatore.
@@ -514,7 +523,10 @@ class PlayersFragment : Fragment() {
         val riusciti = esiti.filter { it.riuscito }.map { it.server }
         val dialogo = MaterialAlertDialogBuilder(requireContext())
             .setTitle(tipo.etichetta)
-            .setMessage(Provvedimenti.riassunto(tipo, giocatore, esiti))
+            .setMessage(
+                Provvedimenti.riassunto(tipo, giocatore, esiti) +
+                        Provvedimenti.certezza(esiti.all { it.server.rconUsable })
+            )
             .setPositiveButton("Ho capito", null)
         if (riusciti.isNotEmpty()) {
             dialogo.setNegativeButton("Annulla tutto") { _, _ ->
