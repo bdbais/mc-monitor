@@ -128,6 +128,15 @@ export default {
         const risposta = await env.ASSETS.fetch(request);
         const con = new Response(risposta.body, risposta);
         for (const [k, v] of Object.entries(INTESTAZIONI)) con.headers.set(k, v);
+
+        // Lo strato statico manda "text/html" senza charset. I browser ripiegano
+        // sul <meta charset> e vedono bene, ma tutto il resto — un lettore di
+        // feed, uno strumento a riga di comando, un'anteprima — segue l'HTTP, e
+        // l'HTTP senza charset dice latin-1: le accentate diventano scarabocchi.
+        const tipo = con.headers.get("Content-Type") || "";
+        if (/^text\/|\+xml$|\/(javascript|json)/.test(tipo) && !/charset=/i.test(tipo)) {
+            con.headers.set("Content-Type", tipo + "; charset=utf-8");
+        }
         return con;
     },
 };
