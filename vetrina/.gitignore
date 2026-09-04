@@ -1,0 +1,3 @@
+# Roba della pubblicazione: manifest, blob in base64 e i due JWT della sessione
+# di caricamento. Non serve a nessuno e i token non vanno versionati.
+.deploy/

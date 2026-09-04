@@ -1,0 +1,425 @@
+/* -----------------------------------------------------------------------------
+   MC Monitor — foglio di stile della vetrina.
+
+   I colori, le due texture e il rilievo dei pulsanti sono quelli veri dell'app,
+   presi dalle sue risorse: chi arriva qui dopo aver visto l'app deve riconoscerla,
+   e chi arriva prima non deve trovarsi davanti un'altra cosa una volta installata.
+
+   Angoli vivi ovunque: e' quello che rende "a blocchi" l'interfaccia, ed e' una
+   scelta del tema dell'app, non un vezzo del sito.
+----------------------------------------------------------------------------- */
+
+:root {
+    /* app/src/main/res/values/colors.xml, senza ritocchi */
+    --erba:        #5FBF6B;
+    --erba-scura:  #2E7D32;
+    --terra:       #8D6E63;
+    --fondo:       #0E1512;
+    --pannello:    #16211C;
+    --pannello-su: #1D2C25;
+    --testo:       #E6F0EA;
+    --testo-tenue: #9DB3A7;
+    --pericolo:    #EF5350;
+    --avviso:      #FFB300;
+    --pietra:      #8A8A8A;
+    --pietra-luce: #C4C4C4;
+    --pietra-mezzo:#9A9A9A;
+    --pietra-orlo: #5C5C5C;
+    --pietra-testo:#12160F;
+
+    --larghezza: 1120px;
+    --passo: clamp(1rem, 2.2vw, 1.6rem);
+}
+
+@font-face {
+    font-family: "Press Start 2P";
+    src: url("/press-start-2p.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+    color-scheme: dark;                 /* la vetrina di un'app scura resta scura */
+    scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+body {
+    margin: 0;
+    background-color: var(--fondo);
+    color: var(--testo);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+a { color: var(--erba); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: #7ED689; }
+
+:focus-visible {
+    outline: 3px solid var(--erba);
+    outline-offset: 2px;
+}
+
+code {
+    font-family: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+    font-size: .9em;
+    background: #1B2621;
+    border: 1px solid #3E574C;
+    padding: .05em .35em;
+}
+
+.pixel {
+    font-family: "Press Start 2P", ui-monospace, monospace;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: .02em;
+}
+
+.salta {
+    position: absolute;
+    left: -9999px;
+    background: var(--erba);
+    color: var(--pietra-testo);
+    padding: .6rem 1rem;
+    z-index: 10;
+}
+.salta:focus { left: .5rem; top: .5rem; }
+
+.dentro {
+    max-width: var(--larghezza);
+    margin-inline: auto;
+    padding-inline: var(--passo);
+}
+
+/* --- il muro dell'app, ripetuto come nell'app ----------------------------- */
+.eroe, .chiusura {
+    background-image: linear-gradient(rgba(8, 12, 10, .85), rgba(8, 12, 10, .85)),
+                      url("/img/muro.png");
+    background-repeat: repeat;
+    background-size: auto, 64px 64px;
+}
+
+/* --- testata -------------------------------------------------------------- */
+.testata {
+    /* Velo piu' scuro di quello dell'app (40%): tile_stone e' chiara, media 117
+       su 255, e sotto al 70% il verde del nome resta a 2,64:1. A 70% arriva a
+       5,65:1 e le voci di navigazione a 5,83:1. */
+    background-image: linear-gradient(rgba(0, 0, 0, .7), rgba(0, 0, 0, .7)),
+                      url("/img/muro.png");
+    background-size: auto, 64px 64px;
+    border-bottom: 3px solid #22262A;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+.testata-riga {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-height: 58px;
+    flex-wrap: wrap;
+}
+.testata-icona { flex: none; }
+.testata-nome { font-size: .72rem; color: var(--erba); }
+.testata-nav { margin-left: auto; display: flex; gap: 1.1rem; flex-wrap: wrap; }
+.testata-nav a {
+    color: var(--testo-tenue);
+    text-decoration: none;
+    font-size: .9rem;
+    display: inline-block;
+    padding-block: .7rem;
+}
+.testata-nav a:hover { color: var(--erba); text-decoration: underline; }
+
+/* --- apertura ------------------------------------------------------------- */
+.eroe { padding-block: clamp(2.5rem, 7vw, 5rem); }
+.eroe-griglia {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+}
+.titolo {
+    font-size: clamp(1.2rem, 4.4vw, 2.1rem);
+    color: var(--erba);
+    margin: 0 0 1rem;
+    text-shadow: 3px 3px 0 #071009;
+}
+.occhiello {
+    font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+    color: var(--testo);
+    margin: 0 0 1rem;
+    font-weight: 600;
+}
+.paragrafo { color: var(--testo-tenue); margin: 0 0 1rem; max-width: 62ch; }
+.paragrafo strong, .paragrafo b { color: var(--testo); }
+.stretto { max-width: 62ch; }
+
+.azioni {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin: 1.6rem 0 1.1rem;
+}
+.azioni.centrate { justify-content: center; }
+.collegamento-secondario {
+    color: var(--testo-tenue);
+    font-size: .95rem;
+    display: inline-block;
+    padding-block: .7rem;            /* il dito chiede 44 px, non 17 */
+}
+
+.meta {
+    color: var(--testo-tenue);
+    font-size: .85rem;
+    margin: .35rem 0;
+}
+.meta b { color: var(--testo); }
+.impronta { word-break: break-all; }
+.impronta code { background: none; border: 0; padding: 0; color: #7C9187; font-size: .78rem; }
+
+/* --- il pulsante di pietra ------------------------------------------------
+   Rilievo copiato da bg_stone_button.xml: cornice media tutt'intorno e la luce
+   che cade in basso a destra. Premuto, il rilievo si inverte, come nel gioco. */
+.pietra {
+    display: inline-block;
+    background: var(--pietra);
+    color: var(--pietra-testo);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    border: 2px solid var(--pietra-mezzo);
+    box-shadow: 3px 3px 0 var(--pietra-luce);
+    padding: .7rem 1.4rem;
+    transition: transform .06s steps(1), box-shadow .06s steps(1), background-color .12s;
+}
+.pietra:hover { background: #969696; color: var(--pietra-testo); }
+.pietra:active {
+    background: var(--pietra-orlo);
+    color: #E8E8E8;
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--pietra-luce);
+}
+.pietra-grande {
+    font-size: 1.05rem;
+    padding: .95rem 1.9rem;
+    letter-spacing: .01em;
+}
+
+/* --- pannello incassato ---------------------------------------------------
+   Da bg_panel_inset.xml: orlo scuro in alto a sinistra, chiaro in basso a
+   destra, fondo con la seconda texture dell'app. */
+.pannello {
+    background-color: #121714;      /* la media vera di pannello.png: se la texture
+                                      non arriva, il fondo resta quello giusto */
+    background-image: url("/img/pannello.png");
+    background-repeat: repeat;
+    background-size: 64px 64px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: var(--pietra-orlo) var(--pietra-luce) var(--pietra-luce) var(--pietra-orlo);
+    /* La cornice non puo' stare su outline: e' la stessa proprieta' dell'anello
+       di fuoco, e la seconda cancellerebbe la prima. */
+    box-shadow: 0 0 0 2px var(--pietra-mezzo);
+    padding: 1.15rem 1.3rem;
+}
+
+.qr-scheda {
+    text-align: center;
+    max-width: 260px;
+    justify-self: end;
+}
+.qr {
+    width: 200px;
+    height: 200px;
+    margin-inline: auto;
+    image-rendering: pixelated;      /* i moduli restano quadrati, non sfumati */
+}
+.qr-didascalia {
+    color: var(--testo-tenue);
+    font-size: .82rem;
+    margin: .8rem 0 0;
+    line-height: 1.5;
+}
+
+/* --- fasce ---------------------------------------------------------------- */
+.fascia { padding-block: clamp(2.5rem, 6vw, 4.2rem); }
+.fascia.scura { background: #0B1210; }
+.intestazione {
+    font-size: clamp(.85rem, 2.2vw, 1.1rem);
+    color: var(--erba);
+    margin: 0 0 1.2rem;
+}
+.piccolo { font-size: .72rem; }
+.centro { text-align: center; }
+.chiusura { border-top: 3px solid #22262A; }
+.chiusura .intestazione { margin-bottom: 1.6rem; }
+
+/* --- elenchi -------------------------------------------------------------- */
+.requisiti, .limiti {
+    list-style: none;
+    padding: 0;
+    margin: 1.4rem 0 0;
+    display: grid;
+    gap: .9rem;
+}
+.requisiti li, .limiti li {
+    color: var(--testo-tenue);
+    padding-left: 1.6rem;
+    position: relative;
+    max-width: 78ch;
+}
+.requisiti li b, .limiti li b { color: var(--testo); }
+.requisiti li::before, .limiti li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .6em;
+    width: 9px;
+    height: 9px;
+    background: var(--erba);
+}
+.limiti li::before { background: var(--avviso); }
+
+.elenco-secco {
+    list-style: none;
+    padding: 0;
+    margin: .6rem 0 0;
+    color: var(--testo-tenue);
+    font-size: .93rem;
+}
+.elenco-secco li { padding-left: 1.1rem; position: relative; margin-bottom: .4rem; }
+.elenco-secco li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .62em;
+    width: 6px;
+    height: 6px;
+    background: var(--terra);
+}
+
+.passi {
+    margin: 0;
+    padding-left: 1.4rem;
+    color: var(--testo-tenue);
+    display: grid;
+    gap: .85rem;
+    max-width: 62ch;
+}
+.passi b { color: var(--testo); }
+.passi::marker { color: var(--erba); }
+
+/* --- galleria ------------------------------------------------------------- */
+.galleria {
+    display: grid;
+    /* Tre, due, una: numeri che dividono le sei schermate senza lasciare orfani. */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.4rem 1.8rem;
+    margin-top: 1.6rem;
+}
+.galleria figure { margin: 0; }
+.galleria img {
+    width: 100%;
+    max-width: 270px;              /* uno screenshot di telefono non deve gonfiarsi */
+    border: 2px solid var(--pietra-mezzo);
+    background: var(--fondo);
+}
+.galleria figcaption {
+    color: var(--testo-tenue);
+    font-size: .84rem;
+    margin-top: .6rem;
+    line-height: 1.5;
+}
+
+/* --- schede delle funzioni ------------------------------------------------ */
+.schede {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 1.1rem;
+}
+.scheda h3 {
+    margin: 0 0 .55rem;
+    font-size: 1.02rem;
+    color: var(--erba);
+}
+.scheda p { margin: 0; color: var(--testo-tenue); font-size: .94rem; }
+
+.due-colonne {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: clamp(1.4rem, 3.5vw, 2.6rem);
+    align-items: start;
+}
+.nota h3 { margin: 0 0 .7rem; color: var(--erba); }
+.nota p { color: var(--testo-tenue); font-size: .93rem; margin: 0 0 .8rem; }
+.nota p:last-child { margin-bottom: 0; }
+.riga-fine { margin: 1rem 0 0; font-size: .9rem; }
+
+/* --- piede ---------------------------------------------------------------- */
+.pie {
+    border-top: 1px solid #1C2A24;
+    padding-block: 2rem;
+    color: var(--testo-tenue);
+    font-size: .88rem;
+}
+.pie p { margin: 0 0 .6rem; }
+.pie a, .riga-fine a, .meta a { display: inline-block; padding-block: .45rem; }
+.pie .minuto { font-size: .8rem; color: #75897E; max-width: 80ch; }
+.pie a { color: var(--testo-tenue); }
+.pie a:hover { color: var(--erba); }
+
+/* --- schermi stretti ------------------------------------------------------ */
+@media (max-width: 860px) {
+    .eroe-griglia { grid-template-columns: minmax(0, 1fr); }
+    .qr-scheda { justify-self: start; }
+    .due-colonne { grid-template-columns: minmax(0, 1fr); }
+    .galleria { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+    /* Le voci vanno a capo invece di sparire: senza, su telefono la pagina
+       perde del tutto la navigazione. */
+    .testata-nav { margin-left: 0; width: 100%; gap: .6rem 1.1rem; }
+    .galleria { grid-template-columns: minmax(0, 1fr); gap: 1.6rem; }
+    .galleria img { margin-inline: auto; }
+    .azioni { gap: .9rem; }
+    .pietra-grande { width: 100%; text-align: center; }
+}
+
+/* --- una figura piccola dentro una colonna di testo ----------------------- */
+.figura-stretta { margin: 1.8rem 0 0; max-width: 230px; }
+.figura-stretta img {
+    width: 100%;
+    border: 2px solid var(--pietra-mezzo);
+    background: var(--fondo);
+}
+.figura-stretta figcaption {
+    color: var(--testo-tenue);
+    font-size: .82rem;
+    margin-top: .6rem;
+    line-height: 1.5;
+    max-width: 34ch;
+}
+
+/* La testata resta appiccicata in alto: le ancore devono fermarsi sotto di lei,
+   non sparirci dietro. */
+:target { scroll-margin-top: 78px; }
+
+@media (max-width: 560px) {
+    /* Il QR serve a passare dallo schermo grande al telefono. Su un telefono
+       il telefono c'e' gia': lo spazio lo prende il pulsante. */
+    .qr-scheda { display: none; }
+}
+
+/* Lo skip link porta il fuoco dentro <main>, ma l'anello verde attorno a mezza
+   pagina non aiuta nessuno: si vede solo quando serve. */
+main:focus:not(:focus-visible) { outline: none; }

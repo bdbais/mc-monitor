@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MC Monitor — amministra un server Minecraft dal telefono</title>
+<meta name="description" content="App Android che amministra via SSH un server Minecraft installato con LinuxGSM: console, giocatori, backup, mappa. Nessun account, nessun tracciamento. APK firmato, open source.">
+<meta name="theme-color" content="#0E1512">
+<link rel="icon" href="/img/icona-180.png" sizes="180x180">
+<link rel="apple-touch-icon" href="/img/icona-180.png">
+<link rel="preload" href="/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/stile.css">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MC Monitor — amministra un server Minecraft dal telefono">
+<meta property="og:description" content="Console, giocatori, backup e mappa del tuo server LinuxGSM, via SSH. Nessun account, nessun tracciamento.">
+<meta property="og:image" content="https://mcmonitor.bais.info/img/anteprima.jpg">
+<meta property="og:url" content="https://mcmonitor.bais.info/">
+<meta property="og:image:alt" content="MC Monitor: amministra un server Minecraft dal telefono, via SSH.">
+<meta property="og:locale" content="it_IT">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+<body>
+<a class="salta" href="#contenuto">Vai al contenuto</a>
+
+<header class="testata">
+  <div class="dentro testata-riga">
+    <img class="testata-icona" src="/img/icona-180.png" width="40" height="40" alt="">
+    <span class="pixel testata-nome">MC Monitor</span>
+    <nav class="testata-nav" aria-label="Sezioni">
+      <a href="#cosa-fa">Cosa fa</a>
+      <a href="#installazione">Installazione</a>
+      <a href="#limiti">Limiti</a>
+      <a href="#privacy">Privacy</a>
+    </nav>
+  </div>
+</header>
+
+<main id="contenuto" tabindex="-1">
+
+  <!-- ------------------------------------------------------------ apertura -->
+  <section class="eroe">
+    <div class="dentro eroe-griglia">
+
+      <div class="eroe-testo">
+        <h1 class="pixel titolo">MC Monitor</h1>
+        <p class="occhiello">Amministra dal telefono un server Minecraft, via SSH.</p>
+        <p class="paragrafo">
+          Si collega al computer Linux dove gira il tuo server <strong>LinuxGSM</strong> e ti
+          mette in mano console, giocatori, backup e mappa. Nessun account da creare, nessuna
+          pubblicità, nessun tracciamento: le credenziali restano sul telefono e vanno solo
+          verso la macchina che le indichi.
+        </p>
+
+        <div class="azioni">
+          <a class="pietra pietra-grande" href="/apk" data-scarica>
+            Scarica l'APK
+          </a>
+          <a class="collegamento-secondario" href="https://github.com/bdbais/mc-monitor"
+             rel="noopener">Codice e release su GitHub</a>
+        </div>
+
+        <p class="meta">
+          versione <b data-versione>1.34</b> ·
+          <span data-peso>5,6 MB</span> ·
+          Android 8 o successivo ·
+          firmato · gratuito · Apache 2.0
+        </p>
+        <p class="meta impronta">
+          SHA-256 <code data-sha>afee2c71d1458e8615a8b2b2940d16ae9ae3137687c74c8bfed5612e5de61900</code>
+        </p>
+      </div>
+
+      <aside class="pannello qr-scheda" aria-label="Codice QR per scaricare l'app">
+        <img class="qr" src="/img/qr.svg" width="200" height="200"
+             alt="Codice QR che porta al download di MC Monitor">
+        <p class="qr-didascalia">Inquadralo col telefono:<br>porta direttamente all'APK.</p>
+      </aside>
+
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ il filtro -->
+  <section class="fascia">
+    <div class="dentro">
+      <h2 class="pixel intestazione">Serve questo</h2>
+      <p class="paragrafo stretto">
+        Meglio dirlo prima di farti scaricare qualcosa: MC Monitor non è un client di gioco.
+        È lo strumento con cui si amministra un server, e per usarlo devi avere un computer
+        Linux tuo.
+      </p>
+      <ul class="requisiti">
+        <li>
+          <b>Un computer Linux con accesso SSH.</b> Indirizzo, porta, utente e password —
+          oppure una chiave privata OpenSSH. I comandi alla console passano dalla sessione
+          <code>tmux</code> dell'utente che possiede il server, quindi dev'essere proprio
+          quello.
+        </li>
+        <li>
+          <b>Il server Minecraft può esserci già oppure no.</b> Se è installato con
+          <b>LinuxGSM</b>, l'app lo trova da sola. Se invece la home è vuota, «Crea un nuovo
+          server da zero» scarica LinuxGSM, esegue l'installazione e applica le impostazioni
+          di sicurezza in <code>server.properties</code>. Vanilla, Paper, Spigot, Fabric,
+          Forge e NeoForge.
+        </li>
+        <li>
+          <b>Un telefono Android 8 o successivo.</b> Rete e stato della rete per collegarsi,
+          più il servizio in primo piano e il riavvio del telefono, che tengono in piedi la
+          sorveglianza: questi si concedono installando. Due te li chiede a voce — le
+          notifiche, solo se accendi il monitoraggio, e il permesso di installare da questa
+          origine, solo per proporti l'aggiornamento di sé stessa: è la finestra di Android
+          che vedi più sotto. Niente posizione, fotocamera, microfono, contatti o file.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- immagini -->
+  <section class="fascia scura">
+    <div class="dentro">
+      <h2 class="pixel intestazione">Com'è fatta</h2>
+      <p class="paragrafo stretto">
+        L'interfaccia è a blocchi e a pietra, con gli angoli vivi: non per vezzo, ma perché
+        chi la usa arriva dal gioco e ritrova la stessa grammatica.
+      </p>
+      <div class="galleria" role="group" aria-label="Schermate dell'app">
+        <figure>
+          <img src="/img/menu.webp" width="270" height="555" loading="lazy" decoding="async"
+               alt="Menu laterale dell'app con le voci Collegamento al server Linux, Server installati, Crea un nuovo server, Profili salvati, Manuale d'uso e Informazioni.">
+          <figcaption>Il menu ha due sole voci che contano, nell'ordine in cui servono.</figcaption>
+        </figure>
+        <figure>
+          <img src="/img/collegamento.webp" width="270" height="555" loading="lazy" decoding="async"
+               alt="Schermata Passo 1: i campi indirizzo, porta, nome utente e password del computer Linux, con i pulsanti Collegati e Non funziona.">
+          <figcaption>Passo 1: il computer. Indirizzo, utente, password o chiave — e nient'altro.
+            Dove stiano i mondi non lo chiede.</figcaption>
+        </figure>
+        <figure>
+          <img src="/img/server-installati.webp" width="270" height="555" loading="lazy" decoding="async"
+               alt="Schermata Passo 2: elenco dei server LinuxGSM trovati, ciascuno con stato, versione di Minecraft, porte e cartella.">
+          <figcaption>Passo 2: i mondi. I server li trova da sola, con stato, porte e — dove
+            riesce a leggerle — versione e mod. Le porte usate da due server vanno in rosso.</figcaption>
+        </figure>
+        <figure>
+          <img src="/img/05-mod-ricerca.webp" width="270" height="555" loading="lazy" decoding="async"
+               alt="Ricerca di mod su Modrinth dentro l'app, con i risultati e il pulsante Installa accanto a ciascuno.">
+          <figcaption>Le mod si cercano su Modrinth e si installano da qui, nella cartella giusta.</figcaption>
+        </figure>
+        <figure>
+          <img src="/img/05-mod.webp" width="270" height="555" loading="lazy" decoding="async"
+               alt="Scheda Mod: ambiente del server, installazione di Fabric per una versione di Minecraft e importazione di un modpack.">
+          <figcaption>Installare un mod loader e importare un modpack: prima di toccare
+            qualcosa dice cosa sta per fare.</figcaption>
+        </figure>
+        <figure>
+          <img src="/img/11-aiuto-contestuale.webp" width="270" height="600" loading="lazy" decoding="async"
+               alt="Riquadro di aiuto contestuale aperto sopra l'elenco dei server, che spiega a cosa serve la schermata.">
+          <figcaption>Ogni schermata ha il suo aiuto, scritto per chi non amministra server di mestiere.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- funzioni -->
+  <section class="fascia" id="cosa-fa">
+    <div class="dentro">
+      <h2 class="pixel intestazione">Cosa fa</h2>
+
+      <div class="schede">
+
+        <article class="pannello scheda">
+          <h3>Trova i server da sola</h3>
+          <p>
+            Dopo il collegamento cerca le istanze LinuxGSM nella home dell'utente: non devi
+            sapere in che cartella stiano né come si chiami lo script. Di ognuna mostra se è
+            accesa, la versione di Minecraft, le porte di gioco e RCON e le mod installate.
+            Le porte usate da due server sono segnate in rosso, perché due istanze sullo
+            stesso numero non possono stare accese insieme.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Da una macchina vuota</h3>
+          <p>
+            Se la home è vuota, «Crea un nuovo server da zero» fa i cinque passi al posto tuo,
+            scrivendoli mentre li fa: controlla i pacchetti che servono, guarda la cartella,
+            scarica <code>linuxgsm.sh</code> dal sito ufficiale, lancia l'installazione del
+            server e chiude scrivendo otto impostazioni di sicurezza in
+            <code>server.properties</code> — whitelist accesa, account verificati, blocchi
+            comandi spenti — ognuna col motivo scritto accanto. Gira tutto come utente
+            normale: LinuxGSM sta dentro una home e non chiede di essere amministratore.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Stato, avvio, arresto</h3>
+          <p>
+            <code>STARTED</code> o <code>STOPPED</code> a colpo d'occhio, con indirizzo,
+            porte, versione, uptime e l'output completo di <code>details</code>. Avvia, Ferma
+            e Riavvia chiedono conferma quando l'azione butta fuori i giocatori, e avvisano
+            se in quel momento c'è un altro amministratore collegato.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Console, e RCON dentro il tunnel</h3>
+          <p>
+            La coda di <code>latest.log</code> aggiornata da sola, con ricerca e schermo
+            intero. Una riga di scorciatoie compila i comandi più usati senza inviarli — per
+            evitare un <code>ban</code> partito per sbaglio. Se attivi RCON, l'app lo
+            configura da sé. Il tunnel SSH è acceso di default, e finché resta acceso non
+            c'è nessuna porta da aprire sul firewall e la password RCON non esce dal tunnel;
+            spegnerlo è possibile, e l'app dice cosa comporta.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Giocatori, whitelist, ban</h3>
+          <p>
+            Chi è collegato adesso, con coordinate e dimensione. Chi ha provato a entrare
+            senza essere né in whitelist né bannato finisce in una lista d'attesa con due soli
+            pulsanti: ammetti o banna. Toccando un nome si apre il pannello completo —
+            teletrasporto, modalità di gioco, punto di rinascita, op, espulsione, ban con
+            motivo, e la cronologia di chat e comandi — anche dei giorni passati, se sul
+            server c'è <code>zgrep</code> per leggere i log compressi.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Perché non è partito</h3>
+          <p>
+            Quando il server non riparte, una schermata sola: in cima la riga di avvio esatta
+            con cui LinuxGSM lo lancia, dove il guasto si vede quasi sempre; sotto, il motivo
+            probabile in italiano e il pulsante che porta dove si ripara. Riconosce Java
+            troppo vecchio, memoria finita, mod incompatibili, porta occupata e altro — e se
+            non riconosce niente lo dice, invece di inventare.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Backup, e il ritorno indietro</h3>
+          <p>
+            Quando è stato fatto l'ultimo, quanti ce ne sono, quanto occupano e quanto spazio
+            resta. Si può programmarlo ogni giorno, settimana o mese a un'ora scelta: l'app
+            scrive una riga di <code>cron</code> sul computer, così il backup parte anche a
+            telefono spento. Per rimettere una copia il server dev'essere fermo; il mondo di
+            adesso non viene cancellato ma spostato di fianco con la data nel nome, e se
+            l'estrazione fallisce a metà torna tutto com'era.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Più mondi, una comunità sola</h3>
+          <p>
+            Chi ha due server sulla stessa macchina ha una comunità sola: ammetti, banna e
+            sbanna chiedono su quali altri server ripetere l'operazione, e alla fine dicono
+            dove è andata e dove no, con il motivo. C'è anche il confronto fra le liste di
+            due mondi, che mostra chi manca di là prima di toccare qualcosa — e aggiunge
+            soltanto, non toglie mai.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>La mappa, con le scie</h3>
+          <p>
+            Il mondo sul piano X/Z, che si trascina e si zooma, con la griglia dei chunk, lo
+            spawn e i giocatori aggiornati mentre si muovono. Ognuno lascia la sua scia, e la
+            vista si può agganciare a uno per seguirlo anche quando passa nel Nether. Le
+            posizioni arrivano da <code>data get entity</code>, quindi serve un server dalla
+            1.13 in poi. Se hai già Dynmap, BlueMap o squaremap, incollandone l'indirizzo
+            nelle impostazioni l'app apre anche quella, a tutto schermo.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>L'inventario di un giocatore</h3>
+          <p>
+            Cosa ha addosso e nello zaino, disposto come nel gioco: armatura, mano secondaria,
+            cintura con la casella che tiene in mano evidenziata, baule dell'End. Viene dai
+            file del mondo, letti sul tuo server; il nome non viene chiesto a Mojang. Se il
+            giocatore è collegato, l'app chiede prima al server di salvare — e ti dice sempre
+            a quando si riferisce quello che stai guardando.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Mod, modpack e versioni</h3>
+          <p>
+            Cerca le mod su Modrinth e le installa nella cartella giusta, controllando che
+            versione di Minecraft e mod loader combacino. Cambia la versione del server,
+            installa Fabric, importa un modpack. Prima di toccare qualcosa dice cosa sta per
+            fare.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Macro</h3>
+          <p>
+            Una fila di comandi con un nome, che parte con un tocco. Ne arrivano una ventina
+            già pronte — «Manutenzione fra 5 minuti», «Backup a caldo», «Chiudi il server ai
+            nuovi». Scriverne una vuol dire un comando per riga, con due aggiunte: un buco fra
+            parentesi angolari diventa una domanda al lancio, e <code>!attendi 30</code> è una
+            pausa.
+          </p>
+        </article>
+
+        <article class="pannello scheda">
+          <h3>Posta per chi non c'è</h3>
+          <p>
+            Un messaggio lasciato a chi in quel momento non è collegato, consegnato da solo
+            la prossima volta che entra. I messaggi stanno sul server e non sul telefono,
+            altrimenti partirebbero solo con l'app aperta. La consegna si accende una volta:
+            l'app mette sul computer un piccolo script e una riga di <code>cron</code> che lo
+            guarda ogni minuto. «Consegnato» lo dice solo quando il server lo conferma.
+          </p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------- installazione -->
+  <section class="fascia scura" id="installazione">
+    <div class="dentro">
+      <h2 class="pixel intestazione">Come si installa</h2>
+
+      <div class="due-colonne">
+        <div>
+          <ol class="passi">
+            <li>
+              <b>Scarica l'APK</b> — dal pulsante qui sopra, oppure inquadrando il QR
+              direttamente col telefono.
+            </li>
+            <li>
+              <b>Consenti l'installazione</b> — Android chiede di abilitare «installa app
+              sconosciute» per l'applicazione con cui apri il file: il gestore file o il
+              browser che stai usando. È una spunta, e la puoi togliere subito dopo.
+            </li>
+            <li>
+              <b>Apri il file e conferma.</b> L'APK è firmato, quindi Android non segnala una
+              firma mancante.
+            </li>
+            <li>
+              <b>Al primo avvio</b> l'app chiede il nome dell'amministratore e una password
+              per aprirsi.
+            </li>
+          </ol>
+          <p class="paragrafo">
+            Da lì in avanti, a ogni avvio, l'app controlla se sul repository c'è una release
+            più recente e te lo dice con un banner.
+          </p>
+
+          <figure class="figura-stretta">
+            <img src="/img/09-installazione-aggiornamento.webp" width="230" height="473"
+                 loading="lazy" decoding="async"
+                 alt="L'app annuncia che una nuova versione è pronta all'installazione, mentre Android chiede il permesso di installare app da questa origine.">
+            <figcaption>
+              Il riquadro chiaro è di Android, non dell'app: è il permesso di installare da
+              questa origine. Qui si vede a un aggiornamento successivo, dove a chiederlo è
+              MC Monitor; la prima volta lo chiede il gestore file o il browser con cui apri
+              l'APK.
+            </figcaption>
+          </figure>
+        </div>
+
+        <aside class="pannello nota">
+          <h3 class="pixel piccolo">Sulla password</h3>
+          <p>
+            Da questa app si spegne un server, si bannano giocatori e si cancella un mondo:
+            il telefono lasciato sul tavolo non deve bastare. Dove c'è impronta o volto,
+            quelli fanno da scorciatoia e la password resta la via di riserva.
+          </p>
+          <p>
+            Della password si conserva solo l'impronta — PBKDF2-HMAC-SHA256, 210 000
+            iterazioni, sale diverso per ogni installazione. <b>Non esiste recupero</b>, e
+            l'app te lo dice prima di accettarla. Si può anche rimandare, con «Per ora senza
+            password», e accenderla dopo.
+          </p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- --------------------------------------------------------------- limiti -->
+  <section class="fascia" id="limiti">
+    <div class="dentro">
+      <h2 class="pixel intestazione">Quello che non fa</h2>
+      <p class="paragrafo stretto">
+        Le cose che è meglio sapere prima, non dopo.
+      </p>
+      <ul class="limiti">
+        <li>
+          <b>Non è un client di gioco</b>, e non ti dà un computer: serve una macchina Linux
+          tua, con SSH. Il server Minecraft, quello sì, sa anche installarlo da zero.
+        </li>
+        <li>
+          <b>Le posizioni dei giocatori e le scie sulla mappa vogliono un server dalla 1.13</b>
+          in poi: prima, il comando da cui l'app le legge non esisteva. Un server messo in
+          pausa perché vuoto non risponde nemmeno lui.
+        </li>
+        <li>
+          <b>La password dell'app non si recupera.</b> Se la dimentichi, l'unica strada è
+          cancellare i dati dell'app da Android e reimportare una configurazione esportata.
+        </li>
+        <li>
+          <b>Le credenziali SSH non sono cifrate con una seconda password.</b> Stanno nella
+          memoria privata dell'app, che su un telefono non modificato è accessibile solo
+          all'app. Se il tuo server merita di più, usa un utente SSH dedicato, autenticazione
+          a chiave e permessi limitati alla sola cartella di LinuxGSM.
+        </li>
+        <li>
+          <b>Attivare RCON riavvia il server</b>, e chi sta giocando cade. L'app lo fa solo
+          dopo una conferma esplicita.
+        </li>
+        <li>
+          <b>Il ripristino di un backup riporta indietro l'intera cartella di gioco</b> — mod
+          e <code>server.properties</code> compresi, non solo il mondo. E non si fa a server
+          acceso.
+        </li>
+        <li>
+          <b>L'inventario si guarda e basta</b>: da lì non si toglie e non si aggiunge niente.
+          E non ci sono le icone degli oggetti — le texture sono di Mojang e non si mettono
+          dentro un'app.
+        </li>
+        <li>
+          <b>Non tutto si propaga sugli altri server.</b> Whitelist e ban per nome sì; il ban
+          di un indirizzo no, perché su una rete di casa colpirebbe tutta la famiglia. Neanche
+          l'espulsione e i permessi di operatore.
+        </li>
+        <li>
+          <b>Tre comandi di LinuxGSM mancano</b> — <code>console</code>, <code>debug</code> e
+          <code>install</code> — perché aspettano una risposta dalla tastiera che, senza un
+          terminale vero, non arriva mai.
+        </li>
+        <li>
+          <b>I pacchetti di sistema non li installa lei.</b> Creando un server da zero l'app
+          controlla che ci siano e, se ne mancano, ti scrive la riga di <code>sudo apt
+          install</code> da dare a mano: aggiungere pacchetti richiede i privilegi di
+          amministratore, e l'app lavora come utente normale.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- -------------------------------------------------------------- privacy -->
+  <section class="fascia scura" id="privacy">
+    <div class="dentro">
+      <h2 class="pixel intestazione">Dove finiscono i tuoi dati</h2>
+
+      <div class="due-colonne">
+        <div>
+          <p class="paragrafo">
+            <b>Da nessuna parte.</b> L'app non ha analisi, pubblicità, tracciamento né SDK di
+            terze parti. Chi l'ha scritta non riceve niente e non ha modo di guardare dentro
+            la tua installazione.
+          </p>
+          <p class="paragrafo">
+            Indirizzi, utenti, password SSH, chiavi e passphrase restano nella memoria privata
+            dell'app sul telefono. Escono solo verso il server che hai configurato tu, e solo
+            per autenticarsi ed eseguire i comandi che chiedi.
+          </p>
+          <p class="paragrafo">
+            L'impronta della chiave host del server viene memorizzata al primo collegamento e
+            confrontata a ogni accesso: se cambia, l'app blocca la connessione e te lo dice.
+          </p>
+        </div>
+
+        <aside class="pannello nota">
+          <h3 class="pixel piccolo">Le uniche connessioni</h3>
+          <ul class="elenco-secco">
+            <li>Il tuo server, in SSH.</li>
+            <li>La porta RCON di quel server, se la attivi — di norma dentro il tunnel.</li>
+            <li>La mappa web, se ne configuri una.</li>
+            <li>GitHub, per sapere se c'è una versione nuova dell'app e di LinuxGSM.</li>
+            <li>Modrinth, Mojang e Fabric — solo quando cerchi mod o cambi versione.</li>
+            <li>Gemini o Groq, solo se chiedi a loro di scriverti una macro, con una tua chiave.</li>
+          </ul>
+          <p class="riga-fine">
+            <a href="https://github.com/bdbais/mc-monitor/blob/main/PRIVACY.md" rel="noopener">
+              Informativa completa
+            </a>
+          </p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- chiusura -->
+  <section class="fascia chiusura">
+    <div class="dentro centro">
+      <h2 class="pixel intestazione">Provala</h2>
+      <div class="azioni centrate">
+        <a class="pietra pietra-grande" href="/apk" data-scarica>Scarica l'APK</a>
+      </div>
+      <p class="meta">
+        versione <b data-versione>1.34</b> ·
+        <span data-peso>5,6 MB</span> ·
+        Android 8 o successivo
+      </p>
+      <p class="meta">
+        <a href="https://github.com/bdbais/mc-monitor/blob/main/MANUALE.md" rel="noopener">Manuale d'uso</a> ·
+        <a href="https://github.com/bdbais/mc-monitor/releases" rel="noopener">Tutte le release</a>
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pie">
+  <div class="dentro">
+    <p>
+      <a href="https://github.com/bdbais/mc-monitor" rel="noopener">Codice sorgente</a> ·
+      <a href="https://github.com/bdbais/mc-monitor/blob/main/MANUALE.md" rel="noopener">Manuale</a> ·
+      <a href="https://github.com/bdbais/mc-monitor/blob/main/PRIVACY.md" rel="noopener">Privacy</a> ·
+      <a href="https://github.com/bdbais/mc-monitor/blob/main/LICENSE" rel="noopener">Licenza Apache 2.0</a>
+    </p>
+    <p class="minuto">
+      Carattere <a href="/OFL-PressStart2P.txt">Press Start 2P</a>, licenza SIL Open Font.
+      Progetto non affiliato a Mojang Studios o Microsoft; Minecraft è un marchio di Mojang Studios.
+    </p>
+  </div>
+</footer>
+
+<script src="/app.js" defer></script>
+</body>
+</html>
