@@ -168,6 +168,19 @@ object Lgsm {
     val PASSWORD_CHARSET = Regex("^[A-Za-z0-9._-]{8,64}$")
 
     /**
+     * Una password RCON nuova, presa da [java.security.SecureRandom].
+     *
+     * Non la sceglie mai una persona: nessuno la deve ricordare, la scrive l'app
+     * nel server e la tiene nelle proprie preferenze. Venti caratteri di lettere
+     * e cifre sono circa 119 bit, e RCON non ha nessun freno ai tentativi.
+     */
+    fun nuovaPasswordRcon(lunghezza: Int = 20): String {
+        val alfabeto = ('A'..'Z') + ('a'..'z') + ('0'..'9')
+        val sorte = java.security.SecureRandom()
+        return (1..lunghezza).map { alfabeto[sorte.nextInt(alfabeto.size)] }.joinToString("")
+    }
+
+    /**
      * Attiva RCON in server.properties tenendo una copia di sicurezza del file.
      * `broadcast-rcon-to-ops=false` evita che ogni comando dell'app compaia nella
      * chat degli operatori.

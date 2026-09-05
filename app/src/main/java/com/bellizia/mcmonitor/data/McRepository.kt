@@ -690,22 +690,53 @@ object McRepository {
             Lgsm.clean(it.text).trim().lines().takeLast(12).forEach { line -> log("     $line") }
         } ?: log("     ERRORE: ${auto.exceptionOrNull()?.message}")
 
-        if (!harden) {
-            log("\nFatto. Le impostazioni di sicurezza non sono state applicate.")
+        /*
+         * RCON si scrive adesso, insieme al resto, e non dopo.
+         *
+         * Attivarlo piu' tardi vuol dire riavviare il server, e su un server appena
+         * nato quel riavvio non serve a niente se non a far aspettare. Scritto qui,
+         * la console risponde gia' dal primo avvio: chi apre l'app trova i comandi
+         * che funzionano invece di una scheda che manda a configurare qualcosa.
+         *
+         * La password non la sceglie nessuno e nessuno la deve ricordare: la genera
+         * l'app, la scrive nel server e se la tiene.
+         */
+        val altrePorte = Prefs.servers().filter { it.id != c.id }.map { it.rconPort }
+        val rcon = Provision.RconDaSubito(
+            porta = Provision.portaRconLibera(altrePorte, dalla = c.rconPort),
+            password = Lgsm.nuovaPasswordRcon(),
+        )
+
+        log("\n5/5 · " + (if (harden) "Impostazioni di sicurezza e RCON…" else "RCON…"))
+        val scritte = runCatching {
+            SshManager.exec(c, Provision.harden(c, rcon, conSicurezza = harden), 60_000)
+        }.getOrNull()
+        val text = scritte?.let { Lgsm.clean(it.text).trim() }.orEmpty()
+
+        if (scritte?.ok != true) {
+            log("     non applicate: $text")
+            log("\nRiprova dopo il primo avvio del server, quando server.properties esiste.")
             return report.toString()
         }
 
-        log("\n5/5 · Impostazioni di sicurezza…")
-        val hardened = runCatching { SshManager.exec(c, Provision.harden(c), 60_000) }.getOrNull()
-        val text = hardened?.let { Lgsm.clean(it.text).trim() }.orEmpty()
-        if (hardened?.ok == true) {
-            text.lineSequence().forEach { log("     $it") }
+        text.lineSequence().forEach { log("     $it") }
+
+        // Salvato solo adesso: se il server non ha accettato la scrittura, tenersi
+        // una password che li' dentro non c'e' vorrebbe dire una console che dice
+        // di essere attiva e non risponde.
+        Prefs.save(cfg().copy(rconEnabled = true, rconPort = rcon.porta, rconPassword = rcon.password))
+        RconManager.disconnect()
+        log("     RCON attivo sulla porta ${rcon.porta}" +
+                if (c.rconTunnel) ", dentro il tunnel SSH" else ", collegamento diretto")
+        log("     password generata e salvata nell'app: la trovi in Impostazioni")
+
+        if (harden) {
             log("\nIl server è pronto. La whitelist è attiva: aggiungi i giocatori dalla")
             log("scheda Giocatori prima che possano entrare.")
         } else {
-            log("     non applicate: $text")
-            log("\nRiprova dopo il primo avvio del server, quando server.properties esiste.")
+            log("\nFatto. Le impostazioni di sicurezza non sono state applicate.")
         }
+        log("La console risponde dal primo avvio: RCON è già scritto in server.properties.")
         return report.toString()
     }
 

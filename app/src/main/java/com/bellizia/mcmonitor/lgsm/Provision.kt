@@ -70,20 +70,80 @@ object Provision {
      * attacco, tenendo una copia del file, e ne restringe i permessi: contiene la
      * password RCON.
      */
-    fun harden(cfg: ServerConfig): String {
+    /** Porta e password di RCON da scrivere insieme alle impostazioni di sicurezza. */
+    data class RconDaSubito(val porta: Int, val password: String)
+
+    /**
+     * Le porte RCON gia' impegnate dagli altri server configurati.
+     *
+     * Due istanze sulla stessa porta non possono stare accese insieme: la seconda
+     * muore appena parte, e chi la guarda vede un server che "non si avvia".
+     */
+    fun portaRconLibera(giaUsate: Collection<Int>, dalla: Int = 25575): Int {
+        val prese = giaUsate.toSet()
+        return generateSequence(dalla) { it + 1 }.first { it !in prese && it <= 65535 }
+    }
+
+    /**
+     * Scrive in `server.properties` le impostazioni di sicurezza e, quando [rcon]
+     * e' indicato, anche RCON.
+     *
+     * RCON va scritto **qui** e non dopo: attivarlo piu' tardi vuol dire riavviare
+     * il server, e su un server nuovo il primo riavvio non serve a niente se non
+     * a far aspettare. Scritto adesso, la console risponde dal primo avvio.
+     *
+     * Se `server.properties` non c'e' ancora — succede quando LinuxGSM ha scaricato
+     * il server ma non lo ha mai fatto partire — il file viene creato con le sole
+     * righe che servono: al primo avvio Minecraft lo rilegge, aggiunge i valori
+     * predefiniti che mancano e lascia stare i nostri.
+     */
+    fun harden(
+        cfg: ServerConfig,
+        rcon: RconDaSubito? = null,
+        conSicurezza: Boolean = true,
+    ): String {
+        require(conSicurezza || rcon != null) { "niente da scrivere in server.properties" }
+        rcon?.let {
+            require(Lgsm.PASSWORD_CHARSET.matches(it.password)) { "password RCON non valida" }
+            require(it.porta in 1..65535) { "porta RCON non valida: ${it.porta}" }
+        }
+
+        val dir = Lgsm.path(cfg.serverFiles.trimEnd('/'))
         val file = "${cfg.serverFiles.trimEnd('/')}/server.properties"
         val f = Lgsm.path(file)
-        val writes = SECURITY_SETTINGS.joinToString("; ") { (key, value, _) ->
+
+        val sicurezza = if (conSicurezza) SECURITY_SETTINGS else emptyList()
+        val impostazioni = sicurezza.map { (key, value, _) -> key to value } +
+                (rcon?.let {
+                    listOf(
+                        "enable-rcon" to "true",
+                        "rcon.port" to it.porta.toString(),
+                        "rcon.password" to it.password,
+                    )
+                } ?: emptyList())
+
+        val writes = impostazioni.joinToString("; ") { (key, value) ->
             val escaped = key.replace(".", "\\.")
             "if grep -q '^$escaped=' $f; then sed -i 's|^$escaped=.*|$key=$value|' $f; " +
                     "else printf '%s\\n' '$key=$value' >> $f; fi"
         }
-        return "[ -f $f ] || { echo 'server.properties non trovato: il server non è ancora stato installato'; exit ${GameVersion.EXIT_NO_CONFIG}; }; " +
+
+        // Le chiavi da rileggere alla fine, per far vedere cos'e' finito nel file.
+        // La password non c'e': non si stampa una password in un registro che poi
+        // viene copiato negli appunti e incollato in una segnalazione.
+        val daRileggere = (sicurezza.map { it.first } +
+                if (rcon != null) listOf("enable-rcon", "rcon\\.port") else emptyList())
+            .joinToString("|")
+
+        return "d=$dir; [ -d \"\$d\" ] || { echo 'la cartella del server non esiste: " +
+                "l'\\''installazione non e'\\'' arrivata in fondo'; exit ${GameVersion.EXIT_NO_CONFIG}; }; " +
+                "[ -f $f ] || { (umask 077; : > $f) && echo 'server.properties non c'\\''era: " +
+                "creato ora, cosi'\\'' le impostazioni valgono gia'\\'' dal primo avvio'; }; " +
                 Lgsm.backupFirst(f) +
                 writes + "; " +
                 "chmod 600 $f && echo 'permessi di server.properties ristretti al solo proprietario'; " +
                 "echo 'impostazioni applicate:'; " +
-                "grep -E '^(online-mode|white-list|enforce-whitelist|enforce-secure-profile|enable-command-block|broadcast-rcon-to-ops|spawn-protection|sync-chunk-writes)=' $f"
+                "grep -E '^($daRileggere)=' $f"
     }
 
     fun parseInspection(raw: String): ServerInspection {

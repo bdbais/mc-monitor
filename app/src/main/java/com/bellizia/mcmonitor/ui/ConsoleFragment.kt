@@ -22,6 +22,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.bellizia.mcmonitor.MainActivity
+import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.Privacy
@@ -120,6 +122,129 @@ class ConsoleFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         if (Prefs.load().isComplete && b.log.text.isNullOrBlank()) load()
+        controllaRcon()
+    }
+
+    // ------------------------------------------------------------ RCON
+
+    /**
+     * Com'e' messo RCON per il server aperto adesso.
+     *
+     * [SPENTO] e [NON_RISPONDE] finiscono nello stesso posto — le impostazioni — ma
+     * non sono la stessa cosa e non vanno raccontate allo stesso modo: nel primo
+     * caso non e' mai stato acceso, nel secondo qualcuno l'ha acceso e qualcosa si
+     * e' rotto dopo.
+     */
+    private enum class StatoRcon { ATTIVO, SPENTO, NON_RISPONDE }
+
+    companion object {
+        /**
+         * I server per cui il messaggio e' gia' comparso in questo giro dell'app.
+         *
+         * Il riquadro resta finche' RCON non funziona, ma la finestra si apre una
+         * volta sola: ripeterla a ogni passaggio sulla scheda la trasformerebbe in
+         * una cosa da chiudere senza leggere.
+         */
+        private val avvisati = mutableSetOf<String>()
+
+        /** Ultima volta che si e' provato davvero a parlare con RCON, per server. */
+        private val ultimaProva = mutableMapOf<String, Long>()
+
+        private const val PAUSA_FRA_PROVE_MS = 60_000L
+    }
+
+    private fun controllaRcon() {
+        val cfg = Prefs.load()
+        if (!cfg.isComplete) {
+            mostraAvviso(null)
+            return
+        }
+
+        if (!cfg.rconUsable) {
+            mostraAvviso(StatoRcon.SPENTO)
+            return
+        }
+
+        // RCON risulta configurato: se risponde non c'e' niente da dire. La prova
+        // costa un giro di rete, quindi non si rifa' a ogni ritorno sulla scheda.
+        val adesso = System.currentTimeMillis()
+        val ultima = ultimaProva[cfg.id] ?: 0L
+        if (adesso - ultima < PAUSA_FRA_PROVE_MS) return
+        ultimaProva[cfg.id] = adesso
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val esito = runCatching { RconManager.test(cfg) }
+            if (_b == null) return@launch
+            mostraAvviso(if (esito.isSuccess) StatoRcon.ATTIVO else StatoRcon.NON_RISPONDE)
+        }
+    }
+
+    private fun mostraAvviso(stato: StatoRcon?) {
+        val bind = _b ?: return
+        if (stato == null || stato == StatoRcon.ATTIVO) {
+            bind.avvisoRcon.visible(false)
+            return
+        }
+
+        val spento = stato == StatoRcon.SPENTO
+        bind.avvisoRconTitolo.text =
+            if (spento) "RCON non è attivo" else "RCON non risponde"
+        bind.avvisoRconTesto.text = if (spento) {
+            "I comandi partono lo stesso, per la stessa strada che usa la tastiera del " +
+                    "computer, ma il server non ha modo di rispondere: qui sotto non vedrai " +
+                    "l'esito, solo quello che finisce nel registro. Con RCON la risposta " +
+                    "arriva subito, e resta fuori dal registro."
+        } else {
+            "RCON è configurato, ma non ha risposto. Il server potrebbe essere spento, " +
+                    "la porta o la password potrebbero non essere più quelle scritte in " +
+                    "server.properties. Intanto i comandi continuano a partire alla cieca."
+        }
+        bind.btnAvvisoRcon.text = if (spento) "Attiva RCON" else "Controlla RCON"
+        bind.btnAvvisoRcon.setOnClickListener { vaiAImpostazioni() }
+        bind.btnAvvisoDopo.setOnClickListener { bind.avvisoRcon.visible(false) }
+        bind.avvisoRcon.visible(true)
+
+        val cfg = Prefs.load()
+        if (cfg.id !in avvisati) {
+            avvisati += cfg.id
+            spiegaRcon(spento)
+        }
+    }
+
+    /** La finestra che si apre entrando: dice cosa manca e porta dove si sistema. */
+    private fun spiegaRcon(spento: Boolean) {
+        if (!isAdded) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(if (spento) "La console funziona a metà" else "RCON non risponde")
+            .setMessage(
+                if (spento) {
+                    "Senza RCON i comandi vengono scritti nella console del server come se " +
+                            "li battessi sulla tastiera di quel computer: partono, ma la " +
+                            "risposta non torna indietro. Vedrai solo quello che il server " +
+                            "scrive da sé nel registro.\n\n" +
+                            "L'app sa attivare RCON da sola: genera la password, la scrive in " +
+                            "server.properties, riavvia e prova che funzioni. Il collegamento " +
+                            "passa dentro il tunnel SSH, quindi non c'è nessuna porta da " +
+                            "aprire sul firewall."
+                } else {
+                    "RCON è configurato in questa app, ma il server non ha risposto.\n\n" +
+                            "Di solito è una di tre cose: il server è spento, la porta è " +
+                            "cambiata, oppure la password nell'app non è più quella scritta " +
+                            "in server.properties. Nelle impostazioni c'è \"Prova RCON\", che " +
+                            "dice quale delle tre.\n\n" +
+                            "Nel frattempo i comandi partono lo stesso, ma alla cieca."
+                }
+            )
+            .setPositiveButton(if (spento) "Attiva RCON" else "Vai a controllare") { _, _ ->
+                vaiAImpostazioni()
+            }
+            .setNegativeButton("Continua così", null)
+            .show()
+    }
+
+    private fun vaiAImpostazioni() {
+        (activity as? MainActivity)?.openTab("Impostazioni")
+            ?: toast("Le impostazioni di RCON sono nella scheda Impostazioni")
     }
 
     private var backCallback: androidx.activity.OnBackPressedCallback? = null
