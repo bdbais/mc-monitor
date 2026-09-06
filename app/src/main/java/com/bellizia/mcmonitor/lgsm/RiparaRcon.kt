@@ -218,7 +218,9 @@ object RiparaRcon {
         }
 
         // ------------------------------------------- il file giusto?
-        val altri = pezzo(risposta, "ALTRIFILE").lines().filter { it.isNotBlank() }
+        val altri = pezzo(risposta, "ALTRIFILE").lines()
+            .map { it.trim() }
+            .filter { it.isNotBlank() && !modelloDiLinuxGsm(it) }
         if (altri.isNotEmpty()) {
             problemi += Problema(
                 Gravita.SOSPETTO,
@@ -242,6 +244,20 @@ object RiparaRcon {
         }
         return Diagnosi(problemi.sortedBy { it.gravita.ordinal })
     }
+
+    /**
+     * I `server.properties` che LinuxGSM si tiene per conto suo.
+     *
+     * Sotto `lgsm/config-default/` c'e' il modello da cui LinuxGSM copia quando
+     * prepara un server nuovo: e' li' su ogni installazione, non lo legge
+     * nessun Minecraft, e segnalarlo vorrebbe dire dare lo stesso falso allarme
+     * a tutti quelli che usano LinuxGSM — cioe' a tutti.
+     *
+     * Un allarme che suona sempre e' un allarme che si impara a ignorare, e il
+     * giorno che ne suona uno vero non lo guarda nessuno.
+     */
+    private fun modelloDiLinuxGsm(percorso: String): Boolean =
+        percorso.contains("/lgsm/config-default/") || percorso.contains("/lgsm/config-lgsm/")
 
     /**
      * Riscrive le quattro righe da zero.

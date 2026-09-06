@@ -24,6 +24,8 @@ import com.bellizia.mcmonitor.databinding.FragmentInstalledBinding
 import com.bellizia.mcmonitor.databinding.ItemDiscoveredBinding
 import com.bellizia.mcmonitor.lgsm.DiscoveredServer
 import com.bellizia.mcmonitor.lgsm.Discovery
+import com.bellizia.mcmonitor.rcon.RconManager
+import com.bellizia.mcmonitor.lgsm.SegnaleRcon
 import com.bellizia.mcmonitor.lgsm.LgsmUpdate
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
@@ -184,6 +186,8 @@ class InstalledFragment : Fragment() {
             item.mod.text = server.modsLabel
             item.mod.setOnClickListener { showMods(server) }
         }
+
+        segnaleRcon(item, server)
 
         item.card.setOnClickListener { open(server) }
         item.btnApri.setOnClickListener { open(server) }
@@ -368,6 +372,39 @@ class InstalledFragment : Fragment() {
      * Aprire un mondo trovato: se c'era già un profilo per quella cartella lo si
      * riusa, altrimenti se ne crea uno con i dati appena letti dal computer.
      */
+    /**
+     * Il cartellino di RCON, e la bussata che lo verifica.
+     *
+     * Si parte da quello che dice il file — acceso o spento — e da quello che
+     * ha l'app — la password, o no. Poi, solo se ha senso, si bussa davvero: e'
+     * l'unica cosa che distingue «acceso» da «funziona», e per due giorni non
+     * c'era modo di vederla senza entrare nel server.
+     *
+     * La bussata e' un comando solo (`list`), e va per conto suo: se il server
+     * e' lento la riga compare comunque e il cartellino si aggiorna dopo.
+     */
+    private fun segnaleRcon(item: ItemDiscoveredBinding, server: DiscoveredServer) {
+        val account = Prefs.account()
+        val profilo = Prefs.servers().firstOrNull { same(it, server, account) }
+        val conPassword = profilo?.rconPassword?.isNotBlank() == true
+
+        fun mostra(stato: SegnaleRcon.Stato) {
+            item.rcon.text = SegnaleRcon.etichetta(stato)
+            item.rcon.setTextColor(SegnaleRcon.colore(stato))
+        }
+
+        val iniziale = SegnaleRcon.iniziale(server.rconEnabled, conPassword)
+        mostra(iniziale)
+        if (!SegnaleRcon.daProvare(iniziale) || profilo == null) return
+
+        val daProvare = Discovery.applyTo(profilo.withCredentials(account), server)
+        viewLifecycleOwner.lifecycleScope.launch {
+            val riuscita = runCatching { RconManager.test(daProvare) }.isSuccess
+            if (!isAdded) return@launch
+            mostra(SegnaleRcon.dopoLaProva(riuscita))
+        }
+    }
+
     private fun open(server: DiscoveredServer) {
         val account = Prefs.account()
         val existing = Prefs.servers().firstOrNull { same(it, server, account) }

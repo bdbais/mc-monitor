@@ -61,6 +61,20 @@
                 android:textSize="12sp"
                 android:visibility="gone" />
 
+            <!-- «Acceso» e «funziona» sono due cose diverse: questo cartellino
+                 dice la seconda, e solo dopo aver davvero bussato. -->
+            <TextView
+                android:id="@+id/rcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:background="@drawable/bg_panel_inset"
+                android:paddingStart="6dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="2dp"
+                android:textSize="12sp" />
+
             <TextView
                 android:id="@+id/percorso"
                 android:layout_width="match_parent"

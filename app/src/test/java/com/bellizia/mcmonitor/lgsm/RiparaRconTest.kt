@@ -131,6 +131,36 @@ class RiparaRconTest {
     }
 
     @Test
+    fun `il modello di LinuxGSM non e' un secondo file di configurazione`() {
+        // Sotto lgsm/config-default/ c'e' il modello da cui LinuxGSM copia
+        // quando prepara un server nuovo: sta li' su ogni installazione e non lo
+        // legge nessun Minecraft. Segnalarlo vorrebbe dire dare lo stesso falso
+        // allarme a chiunque usi LinuxGSM, cioe' a tutti — e un allarme che
+        // suona sempre si impara a ignorarlo.
+        val d = RiparaRcon.leggi(
+            risposta(
+                altriFile = "/mnt/10g/minecraft/server2/lgsm/config-default/" +
+                        "config-game/server.properties"
+            ),
+            25575, impronta
+        )
+        assertFalse(d.rotto)
+        assertTrue("segnala il modello di LinuxGSM", d.daFareAMano.isEmpty())
+        assertEquals(RiparaRcon.Gravita.BENE, d.problemi.single().gravita)
+    }
+
+    @Test
+    fun `un secondo file vero viene segnalato lo stesso`() {
+        // Il controllo serve ancora: e' l'unica spiegazione quando tutto riesce
+        // e non cambia niente.
+        val d = RiparaRcon.leggi(
+            risposta(altriFile = "/mnt/10g/minecraft/server2/serverfiles2/server.properties"),
+            25575, impronta
+        )
+        assertTrue(d.daFareAMano.any { it.cosa.contains("altri") })
+    }
+
+    @Test
     fun `i problemi arrivano in ordine di gravita'`() {
         val d = RiparaRcon.leggi(
             risposta(
