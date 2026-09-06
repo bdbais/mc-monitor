@@ -26,6 +26,7 @@ import com.bellizia.mcmonitor.MainActivity
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.lgsm.Ascolto
 import com.bellizia.mcmonitor.lgsm.Registro
 import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.databinding.FragmentConsoleBinding
@@ -415,6 +416,15 @@ class ConsoleFragment : Fragment() {
     private fun send() {
         val command = b.input.text?.toString()?.trim().orEmpty()
         if (command.isEmpty()) return
+        // Certe righe non sono comandi per il server e non ci arrivano: se
+        // passassero di la' comparirebbero nella chat di tutti.
+        Ascolto.daConsole(command)?.let { risposta ->
+            Prefs.trovato = true
+            b.input.setText("")
+            b.log.append("\n$risposta\n")
+            toast(risposta)
+            return
+        }
         if (!configured()) return
         b.btnSend.isEnabled = false
         viewLifecycleOwner.lifecycleScope.launch {

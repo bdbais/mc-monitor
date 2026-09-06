@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Manico in diagonale, testa a due punte. -->
+    <path
+        android:fillColor="#6B4423"
+        android:pathData="M9,6h2v2h-2zM7,8h2v2h-2zM5,10h2v2h-2zM3,12h2v2h-2z" />
+    <path
+        android:fillColor="#A8AEB4"
+        android:pathData="M4,3h3v2h-3zM11,3h3v2h-3zM7,4h4v2h-4zM8,2h2v2h-2z" />
+    <path
+        android:fillColor="#E8ECEF"
+        android:pathData="M4,3h3v1h-3zM11,3h3v1h-3zM8,2h2v1h-2z" />
+</vector>

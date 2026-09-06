@@ -597,6 +597,18 @@ object Prefs {
             sp.edit().putBoolean("skinDaInternet", value).apply()
         }
 
+    /**
+     * Una cosa che si e' aperta e non si richiude piu'.
+     *
+     * Non si spegne da nessuna parte: chi l'ha trovata l'ha trovata, e togliere
+     * un premio e' una cosa che non si fa.
+     */
+    var trovato: Boolean
+        get() = sp.getBoolean("trovato", false)
+        set(value) {
+            if (value) sp.edit().putBoolean("trovato", true).apply()
+        }
+
     var privacyMode: Boolean
         get() = sp.getBoolean("privacyMode", true)
         set(value) {

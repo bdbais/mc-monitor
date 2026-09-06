@@ -31,6 +31,7 @@ import com.bellizia.mcmonitor.ui.ModsFragment
 import com.bellizia.mcmonitor.ui.PlayersFragment
 import com.bellizia.mcmonitor.ui.SettingsFragment
 import com.bellizia.mcmonitor.ui.StatusFragment
+import com.bellizia.mcmonitor.ui.svago.SvagoActivity
 import com.bellizia.mcmonitor.ui.UpdateBanner
 import com.bellizia.mcmonitor.update.UpdateChecker
 import com.google.android.material.tabs.TabLayoutMediator
@@ -142,8 +143,23 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Il tasto che c'e' solo per chi l'ha trovata.
+     *
+     * Si guarda a ogni ritorno sulla schermata e non una volta all'apertura:
+     * lo sblocco puo' arrivare mentre si guarda la console, e comparire subito
+     * dopo -- senza dover chiudere e riaprire l'app -- e' meta' dell'effetto.
+     */
+    private fun aggiornaTrovato() {
+        binding.btnTrovato.visible(Prefs.trovato)
+        binding.btnTrovato.setOnClickListener {
+            startActivity(Intent(this, SvagoActivity::class.java))
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+        aggiornaTrovato()
         // Il nome può cambiare dalle Impostazioni mentre l'activity è aperta.
         binding.serverName.text = Prefs.load().displayName
     }

@@ -83,6 +83,10 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        binding.btnTrovato.visible(Prefs.trovato)
+        binding.btnTrovato.setOnClickListener {
+            startActivity(Intent(this, com.bellizia.mcmonitor.ui.svago.SvagoActivity::class.java))
+        }
         refreshHeader()
     }
 

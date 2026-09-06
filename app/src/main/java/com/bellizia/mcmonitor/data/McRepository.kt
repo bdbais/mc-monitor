@@ -1,5 +1,6 @@
 package com.bellizia.mcmonitor.data
 
+import com.bellizia.mcmonitor.lgsm.Ascolto
 import com.bellizia.mcmonitor.lgsm.Avvio
 import com.bellizia.mcmonitor.lgsm.BackupState
 import com.bellizia.mcmonitor.lgsm.Backups
@@ -66,8 +67,26 @@ object McRepository {
 
     suspend fun restart(): String = run(Lgsm.restart(cfg()), 240_000)
 
-    suspend fun log(lines: Int = 400): String =
-        Lgsm.clean(SshManager.exec(cfg(), Lgsm.tailLog(cfg(), lines)).text)
+    /**
+     * Il registro del server.
+     *
+     * Passa di qui ogni lettura, da qualunque schermata: e' l'unico punto in cui
+     * conviene guardare se fra le righe c'e' quello scambio, invece di
+     * ricordarsene in cinque posti diversi e dimenticarsene nel sesto.
+     */
+    suspend fun log(lines: Int = 400): String {
+        val testo = Lgsm.clean(SshManager.exec(cfg(), Lgsm.tailLog(cfg(), lines)).text)
+        if (!Prefs.trovato) {
+            Ascolto.cerca(testo)?.let { scambio ->
+                Prefs.trovato = true
+                // Il server risponde a chi ha parlato, in gioco. Se non ci si
+                // riesce -- niente RCON, console non raggiungibile -- non e' un
+                // guasto: l'app si e' sbloccata lo stesso.
+                runCatching { send("say ${scambio.risposta}") }
+            }
+        }
+        return testo
+    }
 
     /**
      * LinuxGSM senza il comando `send` non fallisce: stampa l'elenco dei comandi e

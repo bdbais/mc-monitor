@@ -26,6 +26,11 @@
 
         <!-- La porta: nome dell'amministratore al primo avvio, password dopo. -->
         <activity
+            android:name=".ui.svago.SvagoActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+
+        <activity
             android:name=".ui.LockActivity"
             android:exported="true"
             android:label="@string/app_name"

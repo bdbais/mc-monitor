@@ -25,46 +25,13 @@ class MotoreTest {
      * `g` ghiaia · `_` ghiaccio · `U` uscita · `@` giocatore
      * `1`..`4` un piccone per terra (legno, pietra, ferro, diamante)
      */
-    private fun campo(vararg righe: String, inMano: Piccone? = null): Stato {
-        val larghezza = righe.first().length
-        val suolo = ArrayList<Suolo>()
-        val blocchi = HashMap<Punto, Blocco>()
-        val picconi = HashMap<Punto, Piccone>()
-        var giocatore = Punto(0, 0)
-
-        righe.forEachIndexed { y, riga ->
-            require(riga.length == larghezza) { "riga $y di lunghezza diversa" }
-            riga.forEachIndexed { x, c ->
-                val p = Punto(x, y)
-                suolo += when (c) {
-                    '_' -> Suolo.GHIACCIO
-                    'U' -> Suolo.USCITA
-                    else -> Suolo.NORMALE
-                }
-                when (c) {
-                    '#' -> blocchi[p] = Blocco.OSSIDIANA
-                    't' -> blocchi[p] = Blocco.TERRA
-                    'p' -> blocchi[p] = Blocco.PIETRA
-                    'f' -> blocchi[p] = Blocco.FERRO
-                    'g' -> blocchi[p] = Blocco.GHIAIA
-                    '@' -> giocatore = p
-                    '1' -> picconi[p] = Piccone.LEGNO
-                    '2' -> picconi[p] = Piccone.PIETRA
-                    '3' -> picconi[p] = Piccone.FERRO
-                    '4' -> picconi[p] = Piccone.DIAMANTE
-                }
-            }
-        }
-        return Stato(
-            larghezza = larghezza,
-            altezza = righe.size,
-            suolo = suolo,
-            blocchi = blocchi,
-            picconi = picconi,
-            giocatore = giocatore,
-            inMano = inMano?.let { InMano(it, it.durabilita) },
-        )
-    }
+    /**
+     * Il campo si legge dal disegno con lo stesso lettore che usano i livelli
+     * veri: due lettori diversi vorrebbero dire provare un campo e giocarne un
+     * altro.
+     */
+    private fun campo(vararg righe: String, inMano: Piccone? = null): Stato =
+        Livelli.disegna(*righe, inMano = inMano)
 
     // ------------------------------------------------------- il movimento
 

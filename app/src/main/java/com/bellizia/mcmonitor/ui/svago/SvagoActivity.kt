@@ -1,0 +1,148 @@
+package com.bellizia.mcmonitor.ui.svago
+
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.view.WindowManager
+import androidx.appcompat.app.AppCompatActivity
+import com.bellizia.mcmonitor.databinding.ActivitySvagoBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+
+/**
+ * I due campi, con le regole da sala giochi.
+ *
+ * Tre vite, un punteggio che scende con le mosse, e ricominciare costa. Senza
+ * un costo un rompicapo con l'annulla infinito si risolve a forza bruta, e la
+ * mossa che rovina tutto — quella su cui vive il gioco — smette di far paura.
+ *
+ * In fondo non c'è un livello tre: c'è l'indirizzo di dove continua.
+ */
+class SvagoActivity : AppCompatActivity() {
+
+    private lateinit var b: ActivitySvagoBinding
+
+    private var indice = 0
+    private var vite = VITE
+    private var punti = 0
+    private var mosse = 0
+    private var stato: Stato? = null
+
+    private companion object {
+        const val VITE = 3
+        const val BASE = 1000
+        const val COSTO_MOSSA = 10
+        const val MINIMO = 100
+        const val SEGUITO = "https://github.com/bdbais"
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        b = ActivitySvagoBinding.inflate(layoutInflater)
+        setContentView(b.root)
+        // Uno schermo che si spegne a metà di un ragionamento è la cosa più
+        // fastidiosa che possa fare un rompicapo.
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        b.campo.onMossa = { muovi(it) }
+        b.su.setOnClickListener { muovi(Direzione.SU) }
+        b.giu.setOnClickListener { muovi(Direzione.GIU) }
+        b.sinistra.setOnClickListener { muovi(Direzione.SINISTRA) }
+        b.destra.setOnClickListener { muovi(Direzione.DESTRA) }
+        b.ricomincia.setOnClickListener { perdiUnaVita() }
+
+        carica(0)
+    }
+
+    private fun carica(quale: Int) {
+        indice = quale
+        mosse = 0
+        val campo = Livelli.TUTTI[quale]
+        stato = campo.crea()
+        b.titolo.text = campo.titolo
+        b.suggerimento.text = campo.suggerimento
+        b.campo.stato = stato
+        aggiornaTesta()
+    }
+
+    private fun aggiornaTesta() {
+        b.vite.text = "♥".repeat(vite.coerceAtLeast(0))
+        b.punteggio.text = "PUNTI $punti   MOSSE $mosse   ${indice + 1}/${Livelli.TUTTI.size}"
+    }
+
+    private fun muovi(d: Direzione) {
+        val ora = stato ?: return
+        if (ora.vinto) return
+        val esito = Motore.muovi(ora, d)
+        // Una mossa che non fa niente non conta: sbattere contro un muro non
+        // deve costare punti, o si finisce a giocare guardando il contatore
+        // invece che il campo.
+        if (esito.esito == Esito.NULLA) return
+        mosse++
+        stato = esito.stato
+        b.campo.stato = esito.stato
+        aggiornaTesta()
+        if (esito.stato.vinto) vinto()
+    }
+
+    private fun vinto() {
+        val guadagno = (BASE - mosse * COSTO_MOSSA).coerceAtLeast(MINIMO)
+        punti += guadagno
+        aggiornaTesta()
+        if (indice + 1 < Livelli.TUTTI.size) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Fatto! +$guadagno")
+                .setMessage("${mosse} mosse.")
+                .setCancelable(false)
+                .setPositiveButton("Avanti") { _, _ -> carica(indice + 1) }
+                .show()
+        } else {
+            fine()
+        }
+    }
+
+    private fun perdiUnaVita() {
+        vite--
+        if (vite <= 0) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle("GAME OVER")
+                .setMessage("Punteggio: $punti")
+                .setCancelable(false)
+                .setPositiveButton("Da capo") { _, _ ->
+                    vite = VITE
+                    punti = 0
+                    carica(0)
+                }
+                .setNegativeButton("Basta") { _, _ -> finish() }
+                .show()
+            return
+        }
+        carica(indice)
+    }
+
+    /**
+     * La fine dei due campi.
+     *
+     * Non è una schermata di pubblicità: è il punto in cui il gioco finisce
+     * davvero e si dice dove continua. Chi non vuole chiude e ha giocato a un
+     * gioco finito lo stesso.
+     */
+    private fun fine() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("MINESTRAT")
+            .setMessage(
+                "Finiti tutti e due. Punteggio: $punti.\n\n" +
+                        "Qui dentro ce n'erano due. Quello vero ha sette mondi, i mostri, " +
+                        "la redstone e un drago in fondo — e i livelli se li inventa da solo.\n\n" +
+                        "È gratis e sta nello stesso posto da cui hai preso questa app."
+            )
+            .setCancelable(false)
+            .setPositiveButton("Vai a prenderlo") { _, _ ->
+                runCatching {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(SEGUITO)))
+                }
+                finish()
+            }
+            .setNegativeButton("Un'altra volta") { _, _ -> finish() }
+            .show()
+    }
+}

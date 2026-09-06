@@ -168,6 +168,40 @@ class AscoltoTest {
         assertEquals("Bruno", scambio!!.secondo)
     }
 
+    // ------------------------------------------------ la porta di servizio
+
+    private val insieme = Ascolto.impronta(nudaA + nudaB)
+
+    @Test
+    fun `le due frasi di seguito aprono anche da soli`() {
+        // Serve a chi gioca da solo: su un server con una persona sola lo
+        // scambio non puo' avvenire, e senza questa porta ci sarebbe una cosa
+        // nascosta che per quelle persone non esiste.
+        val r = Ascolto.daConsole("$domandaFinta $rispostaFinta", insieme, chiusa)
+        assertEquals(salutoFinto, r)
+    }
+
+    @Test
+    fun `mezza frase non apre niente`() {
+        assertNull(Ascolto.daConsole(domandaFinta, insieme, chiusa))
+        assertNull(Ascolto.daConsole(rispostaFinta, insieme, chiusa))
+    }
+
+    @Test
+    fun `un comando qualunque non apre niente`() {
+        listOf("list", "say ciao", "", "   ", "op Baisso").forEach {
+            assertNull("«$it» non doveva aprire", Ascolto.daConsole(it, insieme, chiusa))
+        }
+    }
+
+    @Test
+    fun `anche qui la punteggiatura non conta`() {
+        assertEquals(
+            salutoFinto,
+            Ascolto.daConsole("  CHI VA LA'?!  sono io, apri!!  ", insieme, chiusa)
+        )
+    }
+
     // ----------------------------------------------- quello che non deve esserci
 
     @Test

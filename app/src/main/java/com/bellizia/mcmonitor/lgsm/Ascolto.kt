@@ -31,6 +31,9 @@ object Ascolto {
     private const val SECONDA = "d23b646778332debab2307c517b7ffb64fa0f4da66c0f6d7d3de293835796e81"
     private const val CHIUSA = "74c5273242dd632ece081c8513f4852a4e64ecd97e"
 
+    /** Le due parti una dietro l'altra, per la porta di servizio. */
+    private const val INSIEME = "58b3a60971f16b2ee15c6cab0a22fa988b11c5105e77da9f48cebb6a01547a40"
+
     /**
      * Quante righe di conversazione possono passare fra la prima e la seconda.
      *
@@ -61,6 +64,29 @@ object Ascolto {
             ByteArray(byte.size) { (byte[it].toInt() xor chiave[it % chiave.size].toInt()).toByte() },
             Charsets.UTF_8
         )
+    }
+
+    /**
+     * La porta di servizio: tutto d'un fiato nella casella dei comandi.
+     *
+     * Serve a due cose diverse, e la seconda conta piu' della prima.
+     *
+     * La prima e' poterlo provare: lo scambio in chat vuole due persone, e chi
+     * sta costruendo la cosa quasi mai ne ha una sottomano.
+     *
+     * La seconda e' un buco vero: **su un server dove si gioca da soli lo
+     * scambio non puo' avvenire**, e senza questa porta ci sarebbe una cosa
+     * nascosta che per quelle persone non esiste. Chi gia' sa le due frasi le
+     * puo' scrivere di seguito e basta.
+     *
+     * Quello che si scrive qui **non arriva al server**: se passasse di la',
+     * comparirebbe nella chat di tutti e il nome smetterebbe di essere un
+     * segreto nel momento stesso in cui lo si usa.
+     */
+    fun daConsole(comando: String, insieme: String = INSIEME, chiusa: String = CHIUSA): String? {
+        val nuda = nudo(comando)
+        if (nuda.isEmpty() || impronta(nuda) != insieme) return null
+        return apri(nuda, "", chiusa)
     }
 
     /** `[12:00:00] [Server thread/INFO]: <Baisso> ciao a tutti` */

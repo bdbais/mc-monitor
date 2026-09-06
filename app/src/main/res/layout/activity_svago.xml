@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_window_stone"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="true"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/titolo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/press_start_2p"
+            android:textColor="@color/grass"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/vite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="@font/press_start_2p"
+            android:textColor="@color/danger"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/punteggio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:fontFamily="@font/press_start_2p"
+        android:textColor="@color/text_dim"
+        android:textSize="10sp" />
+
+    <com.bellizia.mcmonitor.ui.svago.CampoView
+        android:id="@+id/campo"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/suggerimento"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:textColor="@color/text_dim"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical">
+
+        <ImageButton
+            android:id="@+id/su"
+            android:layout_width="56dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/bg_stone_button"
+            android:contentDescription="Su"
+            android:rotation="-90"
+            android:src="@drawable/ic_back" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/sinistra"
+                android:layout_width="56dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_stone_button"
+                android:contentDescription="Sinistra"
+                android:src="@drawable/ic_back" />
+
+            <ImageButton
+                android:id="@+id/giu"
+                android:layout_width="56dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_stone_button"
+                android:contentDescription="Giù"
+                android:rotation="90"
+                android:src="@drawable/ic_back" />
+
+            <ImageButton
+                android:id="@+id/destra"
+                android:layout_width="56dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_stone_button"
+                android:contentDescription="Destra"
+                android:rotation="180"
+                android:src="@drawable/ic_back" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/ricomincia"
+        style="@style/McButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Ricomincia il livello (costa una vita)" />
+</LinearLayout>
