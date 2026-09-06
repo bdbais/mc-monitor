@@ -569,14 +569,45 @@ object McRepository {
         log("     RCON attivo, porta $port" + if (c.rconTunnel) ", tramite tunnel SSH" else ", collegamento diretto")
 
         log("\n5/5 · Prova di autenticazione…")
-        // Un tentativo solo, subito dopo un riavvio, è un lancio di dado: il
-        // thread RCON del server parte alla fine dell'avvio e la porta risulta
-        // aperta prima che accetti password. Si riprova per un minuto — ma non
-        // se la password è stata rifiutata: quella non migliora aspettando.
         var test = runCatching { RconManager.test(Prefs.load()) }
+        if (test.isSuccess) {
+            log("     OK · risposta del server: ${test.getOrNull()}")
+            return report.toString()
+        }
+
+        // Fallito. Le cause sono due e si curano al contrario: se la password è
+        // diversa da quella scritta nel file bisogna correggere, se è la stessa
+        // bisogna solo aspettare che il server finisca di avviarsi. Prima si
+        // guardava la risposta del server, che quando chiude di colpo non dice
+        // niente, e si finiva a indovinare. Adesso si va a vedere.
+        log("     primo tentativo fallito: ${test.exceptionOrNull()?.message}")
+        log("\n     Confronto la password salvata con quella scritta sul server…")
+        val scritta = runCatching {
+            Lgsm.clean(SshManager.exec(c, Lgsm.rconPasswordFingerprint(c), 20_000).text).trim()
+        }.getOrNull()
+        val nostra = Lgsm.impronta(password)
+
+        when {
+            scritta.isNullOrBlank() || scritta.contains("NON_CALCOLABILE") ->
+                log("     non sono riuscito a leggerla: vado avanti a tentativi.")
+            scritta != nostra -> {
+                log("     DIVERSE (server $scritta, app $nostra).")
+                log(
+                    "\nLa password che l'app userebbe non è quella che il server ha nel " +
+                            "file. Riprova ad attivare RCON: la riscrive. Se non basta, " +
+                            "qualcuno o qualcosa la sta cambiando dopo — un altro pannello, " +
+                            "o un riavvio che rimette un file di configurazione suo."
+                )
+                return report.toString()
+            }
+            else -> log("     uguali: la password è giusta, quindi è il server che non è ancora pronto.")
+        }
+
+        // Solo qui ha senso insistere: la password è quella giusta, o non si è
+        // potuta leggere.
         var tentativi = 1
         while (test.isFailure && tentativi < 6 && !passwordRifiutata(test)) {
-            log("     non ancora pronto, riprovo… ($tentativi)")
+            log("     riprovo… ($tentativi)")
             delay(10_000)
             RconManager.disconnect()
             test = runCatching { RconManager.test(Prefs.load()) }

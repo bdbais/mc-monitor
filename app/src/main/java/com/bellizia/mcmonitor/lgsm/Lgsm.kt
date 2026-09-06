@@ -209,6 +209,37 @@ object Lgsm {
                 "grep -E '^(enable-rcon|rcon\\.port|broadcast-rcon-to-ops)=' $f"
     }
 
+    /**
+     * Un'impronta della password RCON scritta nel file del server.
+     *
+     * Serve a rispondere alla sola domanda che conta quando l'autenticazione
+     * fallisce: la password che ha l'app e quella che ha il server sono la
+     * stessa? Senza, si resta a indovinare fra «password sbagliata» e «server
+     * ancora in avvio», che si curano in due modi opposti -- uno correggendo,
+     * l'altro aspettando.
+     *
+     * Si confrontano le impronte e non le password: quella del server non deve
+     * viaggiare indietro, e otto caratteri di sha256 bastano per dire se due
+     * cose sono diverse.
+     *
+     * Non si passa la password a nessun comando: la si estrae dal file e la si
+     * dà in pasto a sha256sum per condotto, così non compare nell'elenco dei
+     * processi del server.
+     */
+    fun rconPasswordFingerprint(cfg: ServerConfig): String {
+        val f = path("${cfg.serverFiles.trimEnd('/')}/server.properties")
+        return """sed -n 's/^rcon\.password=//p' $f 2>/dev/null | head -1 | tr -d '\r\n' | """ +
+                "sha256sum 2>/dev/null | cut -c1-8 || echo IMPRONTA_NON_CALCOLABILE"
+    }
+
+    /** L'impronta della password che ha l'app, fatta allo stesso modo. */
+    fun impronta(password: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        return digest.digest(password.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+            .take(8)
+    }
+
     /** Verifica che il server stia davvero ascoltando sulla porta RCON. */
     fun rconListening(port: Int): String =
         "(ss -ltn 2>/dev/null || netstat -ltn 2>/dev/null) | grep -E '[:.]$port[[:space:]]' " +
