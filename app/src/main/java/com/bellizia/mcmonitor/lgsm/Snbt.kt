@@ -31,6 +31,32 @@ object Snbt {
         return leggi(risposta.substring(inizio))
     }
 
+    /**
+     * Il valore di una risposta a percorso singolo: `data get entity <n> Health`.
+     *
+     * Qui non c'e' nessuna graffa da cui partire, e il prefisso cambia con la
+     * lingua del server: non lo si puo' cercare. Ma il valore e' sempre in
+     * fondo — il messaggio e' costruito da un modello che finisce col valore —
+     * quindi si prende l'ultimo pezzo e si prova a leggerlo.
+     *
+     * Se la risposta e' un errore («No entity was found») l'ultimo pezzo e' una
+     * parola qualsiasi: esce un [Tag.Testo], e chi chiedeva un numero non lo
+     * trova. E' voluto: meglio nessun dato che un dato inventato.
+     */
+    fun valoreDiRisposta(risposta: String): Tag? {
+        val strutturale = risposta.indexOfFirst { it == '{' || it == '[' }
+        val pezzo = if (strutturale >= 0) {
+            risposta.substring(strutturale)
+        } else {
+            risposta.trim().split(Regex("""\s+""")).lastOrNull()?.takeIf { it.isNotBlank() } ?: return null
+        }
+        return runCatching {
+            val lettore = Lettore(pezzo)
+            lettore.salta()
+            lettore.valore(0)
+        }.getOrNull()
+    }
+
     fun leggi(testo: String): Tag.Gruppo {
         val lettore = Lettore(testo)
         lettore.salta()

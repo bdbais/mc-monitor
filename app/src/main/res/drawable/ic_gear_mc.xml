@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Ingranaggio a pixel. Otto denti e non dodici: a trenta pixel di lato i
+         denti sottili si impastano fra loro e resta una macchia rotonda. -->
+
+    <!-- I denti, in ferro scuro: quattro dritti e quattro d'angolo. -->
+    <path
+        android:fillColor="#5E6266"
+        android:pathData="M6,1h4v2h-4zM6,13h4v2h-4zM1,6h2v4h-2zM13,6h2v4h-2zM3,3h3v3h-3zM10,3h3v3h-3zM3,10h3v3h-3zM10,10h3v3h-3z" />
+
+    <!-- Il corpo: un ottagono, che a questa misura legge come un cerchio. -->
+    <path
+        android:fillColor="#A8AEB4"
+        android:pathData="M6,3h4v1h-4zM5,4h6v1h-6zM4,5h8v1h-8zM3,6h10v4h-10zM4,10h8v1h-8zM5,11h6v1h-6zM6,12h4v1h-4z" />
+
+    <!-- Luce in alto a sinistra e ombra in basso a destra: e' lo stesso rilievo
+         dei pulsanti di pietra, cosi' l'icona non sembra incollata sopra. -->
+    <path
+        android:fillColor="#E8ECEF"
+        android:pathData="M6,3h4v1h-4zM5,4h4v1h-4zM4,5h3v1h-3zM3,6h2v3h-2z" />
+    <path
+        android:fillColor="#7C8288"
+        android:pathData="M12,6h1v4h-1zM9,10h3v1h-3zM8,11h3v1h-3zM8,12h2v1h-2z" />
+
+    <!-- Il buco al centro. -->
+    <path
+        android:fillColor="#3B4753"
+        android:pathData="M6,6h4v4h-4z" />
+    <path
+        android:fillColor="#22262A"
+        android:pathData="M7,7h2v2h-2z" />
+</vector>

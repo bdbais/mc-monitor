@@ -55,6 +55,9 @@ class HomeActivity : AppCompatActivity() {
         showLastCrash()
 
         binding.btnMenu.setOnClickListener { binding.root.openDrawer(GravityCompat.START) }
+        // Le stesse voci stanno anche nel menu a scomparsa, ma li' bisogna
+        // sapere che esiste: l'ingranaggio si vede.
+        binding.btnImpostazioni.setOnClickListener { Impostazioni.mostra(this) }
         // In XML "@null" non toglie la tinta (il tema rimette la sua): va fatto
         // qui, o le icone a pixel diventano tutte una macchia dello stesso colore.
         binding.nav.itemIconTintList = null

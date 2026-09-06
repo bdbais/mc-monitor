@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import com.bellizia.mcmonitor.databinding.ActivityMainBinding
 import com.bellizia.mcmonitor.ui.ConsoleFragment
 import com.bellizia.mcmonitor.ui.Help
+import com.bellizia.mcmonitor.ui.Impostazioni
 import com.bellizia.mcmonitor.ui.HelpDialog
 import com.bellizia.mcmonitor.ui.MapFragment
 import com.bellizia.mcmonitor.ui.ModsFragment
@@ -114,6 +115,14 @@ class MainActivity : AppCompatActivity() {
         binding.version.text = "v${UpdateChecker.currentVersion(this)}"
         UpdateBanner.attach(this, binding.updateBanner)
         // L'aiuto segue la scheda aperta: chi lo tocca vuole sapere di questa pagina.
+        // Dentro un server le impostazioni sono due cose diverse: quelle di
+        // questo mondo, che stanno in una scheda, e quelle dell'app. La prima
+        // voce porta alla scheda, cosi' l'ingranaggio risponde a entrambe le
+        // domande invece di rispondere a meta'.
+        binding.btnImpostazioni.setOnClickListener {
+            Impostazioni.mostra(this, "Impostazioni di questo server" to { openTab("Impostazioni") })
+        }
+
         binding.btnHelp.setOnClickListener {
             // L'aiuto lo porta la scheda: con l'elenco filtrato, contare le
             // posizioni darebbe la pagina di un'altra.

@@ -29,10 +29,24 @@ object RconManager {
                     obtain(cfg).exec(command)
                 } catch (e: Exception) {
                     close()
-                    throw if (e is RconException) e else RconException(e.message ?: "Errore RCON", e)
+                    throw if (e is RconException) e else RconException(descrivi(e), e)
                 }
             }
         }
+    }
+
+    /**
+     * Un'eccezione senza messaggio non deve arrivare all'utente come tale.
+     *
+     * `EOFException` e diverse eccezioni di rete hanno `message` a null, e prima
+     * finivano a schermo come "Errore RCON": un messaggio che non dice ne' cosa
+     * e' successo ne' cosa provare. Se il messaggio non c'e' si dice almeno di
+     * che tipo di guasto si tratta.
+     */
+    internal fun descrivi(e: Exception): String {
+        val detto = e.message?.takeIf { it.isNotBlank() }
+        if (detto != null) return detto
+        return "Collegamento RCON interrotto (${e.javaClass.simpleName})."
     }
 
     /** Verifica autenticazione e risposta: usata dal pulsante "Prova RCON". */

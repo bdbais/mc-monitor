@@ -1,6 +1,7 @@
 package com.bellizia.mcmonitor.rcon
 
 import java.io.BufferedInputStream
+import java.io.IOException
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.InetSocketAddress
@@ -32,6 +33,24 @@ class RconClient(
         const val TYPE_AUTH = 3
         const val AUTH_FAILED_ID = -1
         const val MAX_BODY = 4096
+
+        /**
+         * Cosa dire quando il server non risponde all'autenticazione.
+         *
+         * Chiudere di colpo e restare muto sono la stessa notizia per chi
+         * guarda, e arrivano da eccezioni diverse a seconda del sistema: su
+         * Windows la chiusura secca e' una `SocketException` con un messaggio
+         * in inglese sul software dell'host, che a schermo non vuol dire
+         * niente. Si prende tutta la famiglia e si dice la cosa utile.
+         *
+         * Le cause sono due, e la seconda e' quella che capita subito dopo aver
+         * acceso RCON: il thread che ascolta i comandi parte alla fine
+         * dell'avvio, e la porta risulta aperta prima.
+         */
+        const val CHIUSO_SUBITO =
+            "Il server non ha risposto al collegamento RCON. " +
+                    "Di solito e' la password sbagliata, oppure il server sta " +
+                    "ancora finendo di avviarsi: riprova fra un minuto."
     }
 
     private var socket: Socket? = null
@@ -59,9 +78,26 @@ class RconClient(
 
         val id = ++nextId
         write(id, TYPE_AUTH, password)
-        var packet = read()
+        // Il protocollo prevede che una password sbagliata torni indietro come
+        // pacchetto con id -1. Non tutti i server lo fanno: parecchi chiudono e
+        // basta, e quella chiusura arriva qui come un EOF senza nemmeno un
+        // messaggio. Detta cosi' l'utente legge "Errore RCON" e non sa se ha
+        // sbagliato la password o se il server sta ancora avviandosi.
+        var packet = try {
+            read()
+        } catch (e: IOException) {
+            close()
+            throw RconException(CHIUSO_SUBITO, e)
+        }
         // Alcuni server mandano un pacchetto vuoto prima della risposta di autenticazione.
-        if (packet.type == TYPE_RESPONSE) packet = read()
+        if (packet.type == TYPE_RESPONSE) {
+            packet = try {
+                read()
+            } catch (e: IOException) {
+                close()
+                throw RconException(CHIUSO_SUBITO, e)
+            }
+        }
         if (packet.id == AUTH_FAILED_ID) {
             close()
             throw RconException("Password RCON rifiutata dal server.")
@@ -82,6 +118,11 @@ class RconClient(
                 read()
             } catch (e: SocketTimeoutException) {
                 break // risposta già completa: alcuni server ignorano la sentinella
+            } catch (e: IOException) {
+                close()
+                throw RconException(
+                    "Il server ha chiuso la connessione RCON mentre rispondeva.", e
+                )
             }
             if (packet.id == sentinel) break
             body.append(packet.body)

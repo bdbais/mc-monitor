@@ -569,13 +569,35 @@ object McRepository {
         log("     RCON attivo, porta $port" + if (c.rconTunnel) ", tramite tunnel SSH" else ", collegamento diretto")
 
         log("\n5/5 · Prova di autenticazione…")
-        val test = runCatching { RconManager.test(Prefs.load()) }
+        // Un tentativo solo, subito dopo un riavvio, è un lancio di dado: il
+        // thread RCON del server parte alla fine dell'avvio e la porta risulta
+        // aperta prima che accetti password. Si riprova per un minuto — ma non
+        // se la password è stata rifiutata: quella non migliora aspettando.
+        var test = runCatching { RconManager.test(Prefs.load()) }
+        var tentativi = 1
+        while (test.isFailure && tentativi < 6 && !passwordRifiutata(test)) {
+            log("     non ancora pronto, riprovo… ($tentativi)")
+            delay(10_000)
+            RconManager.disconnect()
+            test = runCatching { RconManager.test(Prefs.load()) }
+            tentativi++
+        }
         log(test.fold(
             onSuccess = { "     OK · risposta del server: $it" },
-            onFailure = { "     FALLITA: ${it.message}" }
+            onFailure = { "     FALLITA dopo $tentativi tentativi: ${it.message}" }
         ))
         return report.toString()
     }
+
+    /**
+     * La password è stata rifiutata davvero?
+     *
+     * È l'unico esito che non ha senso riprovare: aspettare non cambia una
+     * password sbagliata, e continuare a bussare fa solo perdere un minuto a chi
+     * guarda lo schermo.
+     */
+    internal fun passwordRifiutata(esito: Result<String>): Boolean =
+        esito.exceptionOrNull()?.message?.contains("rifiutata", ignoreCase = true) == true
 
     /** Strumenti presenti sul server, con la versione di Java quando disponibile. */
     suspend fun requirements(): Pair<List<RequirementResult>, String?> {
