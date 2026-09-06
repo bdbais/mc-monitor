@@ -47,4 +47,29 @@
         .catch(function () {
             /* Niente da fare e niente da dire: i valori scritti nella pagina restano. */
         });
+
+    /*
+     * Quante volte e' stato scaricato.
+     *
+     * Il conto lo tiene GitHub, non questa pagina: qui non si conta nessuno.
+     * Se la richiesta non arriva, la riga resta nascosta invece di mostrare uno
+     * zero -- che si leggerebbe come «non lo scarica nessuno» e sarebbe una
+     * bugia detta da un guasto di rete.
+     */
+    fetch("/api/scaricamenti", { headers: { Accept: "application/json" } })
+        .then(function (r) {
+            if (!r.ok) throw new Error("stato " + r.status);
+            return r.json();
+        })
+        .then(function (d) {
+            var n = d && d.scaricamenti;
+            if (!Number.isFinite(n) || n <= 0) return;
+            document.querySelectorAll("[data-scaricamenti]").forEach(function (el) {
+                el.textContent = n.toLocaleString("it-IT");
+                el.parentElement.hidden = false;
+            });
+        })
+        .catch(function () {
+            /* Resta nascosto. */
+        });
 })();

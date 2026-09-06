@@ -67,6 +67,41 @@ async function ultima() {
     }
 }
 
+/**
+ * Quante volte e' stato scaricato l'APK, sommando tutte le release.
+ *
+ * Il conto lo tiene GitHub e non noi: non c'e' niente da contare qui dentro,
+ * nessun visitatore da seguire, nessun cookie. Il numero e' quello pubblico che
+ * chiunque puo' leggere dalla stessa API.
+ *
+ * Si sommano tutte le release e non solo l'ultima: chi ha scaricato la 1.20 e
+ * la usa ancora e' un utente quanto chi ha preso quella di ieri, e contare solo
+ * l'ultima farebbe ripartire il numero da zero a ogni pubblicazione.
+ */
+async function scaricamenti() {
+    try {
+        const r = await fetch(`${API.replace(/\/latest$/, "")}?per_page=100`, {
+            headers: {
+                "User-Agent": "mcmonitor-vetrina",
+                Accept: "application/vnd.github+json",
+            },
+            cf: { cacheTtl: 3600, cacheEverything: true },
+        });
+        if (!r.ok) return null;
+        const rel = await r.json();
+        if (!Array.isArray(rel)) return null;
+        let totale = 0;
+        for (const v of rel) {
+            for (const a of v.assets || []) {
+                if (a.name && a.name.endsWith(".apk")) totale += Number(a.download_count) || 0;
+            }
+        }
+        return totale;
+    } catch {
+        return null;
+    }
+}
+
 const INTESTAZIONI = {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
@@ -103,6 +138,19 @@ export default {
                     Location: r.riserva ? PAGINA_RELEASE : r.url,
                     // Anche una risposta senza corpo passa dalle stesse regole: una
                     // rotta scoperta e' una rotta scoperta.
+                    ...INTESTAZIONI,
+                },
+            });
+        }
+
+        if (url.pathname === "/api/scaricamenti") {
+            const n = await scaricamenti();
+            return new Response(JSON.stringify({ scaricamenti: n }), {
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8",
+                    // Un'ora: il numero cambia piano e le chiamate a GitHub
+                    // senza credenziali sono sessanta all'ora in tutto.
+                    "Cache-Control": "public, max-age=3600",
                     ...INTESTAZIONI,
                 },
             });
