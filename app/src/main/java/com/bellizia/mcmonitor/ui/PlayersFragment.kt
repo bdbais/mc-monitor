@@ -315,29 +315,48 @@ class PlayersFragment : Fragment() {
         }
         disegna()
 
-        row.preferito.setOnClickListener {
-            preferiti = Segni.cambiaPreferito(preferiti, nome)
-            Prefs.setPreferiti(Prefs.activeId(), preferiti)
-            disegna()
-            // L'elenco si riordina solo al giro dopo: spostare la riga sotto il
-            // dito di chi ha appena premuto e' il modo piu' rapido per far
-            // premere due volte la cosa sbagliata.
-        }
+        // L'elenco si riordina solo al giro dopo: spostare la riga sotto il
+        // dito di chi ha appena premuto e' il modo piu' rapido per far premere
+        // due volte la cosa sbagliata.
+        row.preferito.setOnClickListener { cambiaPreferito(nome); disegna() }
+        row.sorvegliato.setOnClickListener { cambiaSorvegliato(nome); disegna() }
+    }
 
-        row.sorvegliato.setOnClickListener {
-            when (val esito = Segni.cambiaSorvegliato(sorvegliati, nome)) {
-                is Segni.Esito.Fatto -> {
-                    sorvegliati = esito.insieme
-                    Prefs.setSorvegliati(Prefs.activeId(), sorvegliati)
-                    disegna()
-                }
-                is Segni.Esito.Pieno -> MaterialAlertDialogBuilder(requireContext())
+    // I due gesti stanno qui e non dentro chi disegna una riga, perche' lo
+    // stesso gesto si fa anche dal pannello di un giocatore: due copie della
+    // stessa regola sono due posti dove il limite del cruscotto puo' smettere
+    // di valere.
+
+    fun preferito(nome: String): Boolean = Segni.segnato(preferiti, nome)
+
+    fun sorvegliato(nome: String): Boolean = Segni.segnato(sorvegliati, nome)
+
+    /** Torna lo stato nuovo. */
+    fun cambiaPreferito(nome: String): Boolean {
+        preferiti = Segni.cambiaPreferito(preferiti, nome)
+        Prefs.setPreferiti(Prefs.activeId(), preferiti)
+        return preferito(nome)
+    }
+
+    /**
+     * Torna lo stato nuovo. Se il cruscotto e' pieno resta com'era e lo dice:
+     * e' l'unico dei due che puo' rifiutare.
+     */
+    fun cambiaSorvegliato(nome: String): Boolean {
+        when (val esito = Segni.cambiaSorvegliato(sorvegliati, nome)) {
+            is Segni.Esito.Fatto -> {
+                sorvegliati = esito.insieme
+                Prefs.setSorvegliati(Prefs.activeId(), sorvegliati)
+            }
+            is Segni.Esito.Pieno -> if (isAdded) {
+                MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Cruscotto pieno")
                     .setMessage(Segni.spiegazionePieno(esito.quanti))
                     .setPositiveButton("Ho capito", null)
                     .show()
             }
         }
+        return sorvegliato(nome)
     }
 
     private fun addEmpty(list: LinearLayout, text: String) {
@@ -362,7 +381,11 @@ class PlayersFragment : Fragment() {
             showOnMap = { player -> (requireActivity() as MainActivity).showPlayerOnMap(player) },
             showChat = { player -> showChat(player) },
             scriviPosta = { player -> apriPosta(player) },
-            apriInventario = { player -> apriInventario(player) }
+            apriInventario = { player -> apriInventario(player) },
+            preferito = { preferito(it) },
+            sorvegliato = { sorvegliato(it) },
+            cambiaPreferito = { cambiaPreferito(it) },
+            cambiaSorvegliato = { cambiaSorvegliato(it) }
         ).show()
     }
 

@@ -542,9 +542,26 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:layout_marginBottom="4dp"
-            android:text="Se sul server gira Dynmap, BlueMap o squaremap, l'indirizzo va qui e la mappa si apre dall'app."
+            android:text="Una mappa del mondo che si guarda dal telefono. Se non ne hai gia' una, l'app te la installa e la apre da sola: non serve aprire nessuna porta, passa dentro il collegamento che usa gia'."
             android:textColor="@color/text_dim"
             android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMappa"
+            style="@style/McButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:text="Scegli e installa una mappa" />
+
+        <TextView
+            android:id="@+id/statoMappa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:textColor="@color/text_dim"
+            android:textSize="12sp"
+            android:visibility="gone" />
 
 
         <com.google.android.material.textfield.TextInputLayout

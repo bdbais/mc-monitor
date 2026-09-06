@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/surface">
@@ -32,6 +33,31 @@
             android:layout_marginTop="12dp"
             android:layout_marginBottom="6dp"
             android:background="@color/surface_high" />
+
+        <!-- I due segni stanno anche qui, e non solo nella riga dell'elenco:
+             chi apre il pannello sta gia' guardando quella persona, ed e' li'
+             che viene da decidere di tenerla d'occhio. Il testo dice il gesto
+             («Metti fra i preferiti») e non lo stato, cosi' si sa cosa succede
+             a premere senza dover capire cosa vuol dire un'icona accesa. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPreferito"
+            style="@style/McButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:icon="@drawable/ic_star"
+            app:iconGravity="textStart"
+            android:text="Metti fra i preferiti" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSorvegliato"
+            style="@style/McButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:icon="@drawable/ic_occhio_mc"
+            app:iconGravity="textStart"
+            android:text="Tienilo d'occhio nel cruscotto" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMap"

@@ -31,7 +31,12 @@ class PlayerActions(
     private val showOnMap: (String) -> Unit,
     private val showChat: (String) -> Unit,
     private val scriviPosta: (String) -> Unit,
-    private val apriInventario: (String) -> Unit
+    private val apriInventario: (String) -> Unit,
+    private val preferito: (String) -> Boolean,
+    private val sorvegliato: (String) -> Boolean,
+    private val cambiaPreferito: (String) -> Boolean,
+    /** Torna lo stato nuovo: se il cruscotto e' pieno resta com'era. */
+    private val cambiaSorvegliato: (String) -> Boolean
 ) {
 
     private val context: Context get() = fragment.requireContext()
@@ -86,6 +91,20 @@ class PlayerActions(
             sheet.dismiss()
             run(command, feedback)
         }
+
+        // I due segni non chiudono il pannello: sono l'unica cosa qui dentro che
+        // si puo' voler fare due volte di seguito — metti fra i preferiti e
+        // tienilo d'occhio — e riaprire il pannello per il secondo gesto sarebbe
+        // una scortesia gratuita.
+        fun disegnaSegni() {
+            b.btnPreferito.text =
+                if (preferito(name)) "Togli dai preferiti" else "Metti fra i preferiti"
+            b.btnSorvegliato.text =
+                if (sorvegliato(name)) "Toglilo dal cruscotto" else "Tienilo d'occhio nel cruscotto"
+        }
+        disegnaSegni()
+        b.btnPreferito.setOnClickListener { cambiaPreferito(name); disegnaSegni() }
+        b.btnSorvegliato.setOnClickListener { cambiaSorvegliato(name); disegnaSegni() }
 
         b.btnMap.setOnClickListener { sheet.dismiss(); showOnMap(name) }
         b.btnChat.setOnClickListener { sheet.dismiss(); showChat(name) }

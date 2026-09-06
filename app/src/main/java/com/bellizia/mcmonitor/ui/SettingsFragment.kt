@@ -27,6 +27,7 @@ import com.bellizia.mcmonitor.data.ConfigTransfer
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.data.ServerConfig
+import com.bellizia.mcmonitor.lgsm.MappaWeb
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
@@ -140,6 +141,7 @@ class SettingsFragment : Fragment() {
         }
 
         b.btnRconSetup.setOnClickListener { setupRcon() }
+        b.btnMappa.setOnClickListener { scegliMappa() }
 
         mostraModo()
         b.notaModo.setOnClickListener { HelpDialog.show(requireContext(), Help.MODO) }
@@ -598,6 +600,143 @@ class SettingsFragment : Fragment() {
                 fill(Prefs.load())
             }
             dialog.setCancelable(true)
+        }
+    }
+
+
+    // ------------------------------------------------ la mappa del mondo
+
+    /**
+     * Scegliere una mappa.
+     *
+     * Prima qui c'era solo una casella dove incollare un indirizzo, e per averne
+     * uno bisognava gia' sapere cosa sono Dynmap e BlueMap, installarne uno a
+     * mano e sapere su che porta si mette: la casella serviva a chi non ne
+     * aveva bisogno.
+     */
+    private fun scegliMappa() {
+        val cfg = collect()
+        Prefs.save(cfg)
+        if (!cfg.isComplete) {
+            toast("Completa prima i dati di connessione")
+            return
+        }
+        b.btnMappa.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val gia = runCatching { McRepository.mappaInstallata() }.getOrNull()
+            val bind = _b ?: return@launch
+            bind.btnMappa.isEnabled = true
+            if (gia != null) mappaGiaCE(gia) else scegliDallElenco()
+        }
+    }
+
+    /**
+     * C'e' gia' una mappa: la si apre, non la si reinstalla.
+     *
+     * Proporre l'elenco a chi ne ha gia' una vorrebbe dire farne installare una
+     * seconda per sbaglio, e due mappe sullo stesso server litigano per la porta.
+     */
+    private fun mappaGiaCE(mappa: MappaWeb.Mappa) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("${mappa.nome} c'e' gia'")
+            .setMessage("Sul server e' gia' installata ${mappa.nome}. La apro?")
+            .setPositiveButton("Apri la mappa") { _, _ -> apriMappa(mappa) }
+            .setNeutralButton("Scegline un'altra") { _, _ -> scegliDallElenco() }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    private fun scegliDallElenco() {
+        val voci = MappaWeb.CATALOGO.map { "${it.nome}\n${it.comeE}" }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Quale mappa")
+            .setItems(voci) { _, quale -> confermaInstallazione(MappaWeb.CATALOGO[quale]) }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    private fun confermaInstallazione(mappa: MappaWeb.Mappa) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Installare ${mappa.nome}?")
+            .setMessage(
+                "Scarico ${mappa.nome} e lo metto fra le mod, poi RIAVVIO il server: " +
+                        "chi sta giocando viene disconnesso.\n\n" +
+                        "La prima volta la mappa deve disegnare tutto il mondo e ci mette " +
+                        "un po': se non compare subito non e' andata male, sta lavorando."
+            )
+            .setPositiveButton("Installa") { _, _ -> installaMappa(mappa) }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    private fun installaMappa(mappa: MappaWeb.Mappa) {
+        val view = TextView(requireContext()).apply {
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            setTextIsSelectable(true)
+            setPadding(40, 30, 40, 10)
+            text = "Avvio…"
+        }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Installazione di ${mappa.nome}")
+            .setView(ScrollView(requireContext()).apply { addView(view) })
+            .setCancelable(false)
+            .setPositiveButton("Chiudi", null)
+            .show()
+
+        b.btnMappa.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val esito = runCatching {
+                McRepository.installaMappa(mappa) { progresso -> view.text = progresso }
+            }
+            view.text = esito.fold(
+                onSuccess = { it.first },
+                onFailure = { "Installazione interrotta: ${it.userMessage()}" }
+            )
+            dialog.setCancelable(true)
+            val bind = _b ?: return@launch
+            bind.btnMappa.isEnabled = true
+            if (esito.getOrNull()?.second != null) {
+                bind.statoMappa.text = "${mappa.nome} installata, porta ${esito.getOrNull()?.second}"
+                bind.statoMappa.visible(true)
+            }
+        }
+    }
+
+    /**
+     * Apre la mappa dentro il tunnel.
+     *
+     * L'indirizzo non si salva: la porta locale la sceglie il tunnel ogni volta,
+     * e domani quella di oggi non porterebbe da nessuna parte.
+     */
+    private fun apriMappa(mappa: MappaWeb.Mappa) {
+        b.btnMappa.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val esito = runCatching {
+                val candidate = McRepository.porteCandidate()
+                val porta = MappaWeb.portaDellaMappa(mappa, candidate)
+                    ?: throw IllegalStateException(
+                        if (candidate.isEmpty()) {
+                            "${mappa.nome} non risponde su nessuna porta: il server e' spento, " +
+                                    "oppure la mappa sta ancora disegnando il mondo."
+                        } else {
+                            "Non so quale sia la mappa fra le porte in ascolto " +
+                                    "(${candidate.joinToString(", ")}). Scrivi l'indirizzo " +
+                                    "nella casella qui sotto."
+                        }
+                    )
+                MappaWeb.indirizzoNelTunnel(SshManager.openTunnel(Prefs.load(), porta))
+            }
+            val bind = _b ?: return@launch
+            bind.btnMappa.isEnabled = true
+            esito.fold(
+                onSuccess = {
+                    startActivity(
+                        Intent(requireContext(), WebMapActivity::class.java).putExtra("url", it)
+                    )
+                },
+                onFailure = { showText("${mappa.nome} non si apre", it.userMessage()) }
+            )
         }
     }
 

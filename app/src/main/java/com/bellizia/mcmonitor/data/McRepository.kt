@@ -26,6 +26,8 @@ import com.bellizia.mcmonitor.lgsm.ServerParam
 import com.bellizia.mcmonitor.lgsm.ServerParams
 import com.bellizia.mcmonitor.lgsm.VersionConfig
 import com.bellizia.mcmonitor.lgsm.PlayerEntry
+import com.bellizia.mcmonitor.lgsm.MappaWeb
+import com.bellizia.mcmonitor.mods.Modrinth
 import com.bellizia.mcmonitor.lgsm.PlayerPos
 import com.bellizia.mcmonitor.lgsm.Posta
 import com.bellizia.mcmonitor.lgsm.Provision
@@ -629,6 +631,102 @@ object McRepository {
      */
     internal fun passwordRifiutata(esito: Result<String>): Boolean =
         esito.exceptionOrNull()?.message?.contains("rifiutata", ignoreCase = true) == true
+
+    // ------------------------------------------------ la mappa del mondo
+
+    /** Quale mappa web c'e' gia', se c'e'. */
+    suspend fun mappaInstallata(): MappaWeb.Mappa? =
+        MappaWeb.installata(ModRepository.installed().map { it.fileName })
+
+    /**
+     * Le porte in ascolto che non sappiamo gia' cosa sono.
+     *
+     * La porta del gioco si legge da server.properties invece di darla per
+     * scontata a 25565: chi ha due mondi sulla stessa macchina ne ha per forza
+     * spostato uno, e se la si desse per scontata il secondo comparirebbe fra
+     * le candidate come se fosse una mappa.
+     */
+    suspend fun porteCandidate(): List<Int> {
+        val c = cfg()
+        val gioco = runCatching { properties()["server-port"]?.toIntOrNull() }.getOrNull() ?: 25565
+        val r = SshManager.exec(c, MappaWeb.comandoPorteInAscolto(), 30_000)
+        return MappaWeb.porteCandidate(Lgsm.clean(r.text), gioco = gioco, rcon = c.rconPort)
+    }
+
+    /**
+     * Installa una mappa e aspetta che si affacci.
+     *
+     * Torna il resoconto e la porta trovata, oppure null se non si e' capito
+     * dove si e' messa: in quel caso l'installazione puo' essere andata bene
+     * lo stesso, e dirlo e' meglio che aprire una porta a caso.
+     */
+    suspend fun installaMappa(
+        mappa: MappaWeb.Mappa,
+        step: (String) -> Unit
+    ): Pair<String, Int?> {
+        val report = StringBuilder()
+        fun log(riga: String) {
+            report.append(riga).append('\n')
+            step(report.toString())
+        }
+
+        log("1/4 · Guardo cosa gira sul server…")
+        val env = ModRepository.environment()
+        val versione = env.minecraftVersion
+        log("     Minecraft ${versione ?: "?"} con ${env.loader}")
+        if (env.loader.equals("vanilla", true)) {
+            log("\nQuesta mappa e' una mod, e un server vanilla non ne carica nessuna.")
+            log("Installa prima Fabric dalla scheda Mod, poi torna qui.")
+            return report.toString() to null
+        }
+
+        log("\n2/4 · Cerco ${mappa.nome} per questa versione…")
+        val disponibili = Modrinth.versions(mappa.slug, versione, env.loader)
+        val file = disponibili.firstOrNull()
+        if (file == null) {
+            log("     nessuna versione di ${mappa.nome} per Minecraft ${versione ?: "?"} con ${env.loader}.")
+            log("\nNon vuol dire che non esista: vuol dire che non c'e' ancora per " +
+                    "questa versione di Minecraft. Prova un'altra delle tre.")
+            return report.toString() to null
+        }
+        log("     trovata ${file.name} (${file.dateLabel})")
+
+        log("\n3/4 · Scarico e installo…")
+        log("     " + ModRepository.install(file).replace("\n", "\n     "))
+
+        log("\n4/4 · Riavvio il server e aspetto che la mappa si affacci…")
+        log("     " + runCatching { restart() }.fold(
+            onSuccess = { "riavvio inviato" },
+            onFailure = { "ERRORE nel riavvio: ${it.message}" }
+        ))
+
+        // La prima volta una mappa deve disegnare il mondo, e prima di aprire la
+        // porta puo' metterci parecchio: si guarda ogni dieci secondi per due
+        // minuti invece di chiedere una volta sola e dire di no.
+        var porta: Int? = null
+        repeat(12) {
+            if (porta != null) return@repeat
+            delay(10_000)
+            val candidate = runCatching { porteCandidate() }.getOrDefault(emptyList())
+            porta = MappaWeb.portaDellaMappa(mappa, candidate)
+            if (porta == null && candidate.isNotEmpty()) {
+                log("     in ascolto: ${candidate.joinToString(", ")} — non so quale sia la mappa")
+            }
+        }
+
+        if (porta != null) {
+            log("\n     ${mappa.nome} risponde sulla porta $porta.")
+            log("\nNon serve aprire niente sul firewall: la mappa passa dentro il " +
+                    "collegamento che l'app usa gia'. Dal di fuori quella porta resta " +
+                    "chiusa, ed e' meglio cosi': una mappa aperta a tutti dice a " +
+                    "chiunque dove hai costruito casa.")
+        } else {
+            log("\n     Installata, ma non ho capito su che porta si e' messa.")
+            log("\nPuo' darsi che stia ancora disegnando il mondo: riprova fra qualche " +
+                    "minuto. Se sai gia' l'indirizzo, scrivilo nella casella qui sotto.")
+        }
+        return report.toString() to porta
+    }
 
     /** Strumenti presenti sul server, con la versione di Java quando disponibile. */
     suspend fun requirements(): Pair<List<RequirementResult>, String?> {
