@@ -524,6 +524,8 @@ object Help {
         Ban — chi hai bloccato. Puoi sempre togliergli il blocco.
 
         Toccando un nome si apre un pannello con tutto quello che puoi fare su quella persona: seguirla sulla mappa, leggere cosa ha scritto in chat, spostarla, cambiarle la modalità di gioco, o buttarla fuori.
+
+        Ricordati che la migliore strategia in Minecraft è il lavoro di gruppo. Minestrat!
         """.trimIndent()
     )
 
