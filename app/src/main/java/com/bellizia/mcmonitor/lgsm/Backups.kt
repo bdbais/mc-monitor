@@ -57,7 +57,8 @@ object Backups {
      * cerca `*.tar.*`, quindi anche un archivio rimasto a metà per il disco pieno
      * viene contato come backup.
      */
-    private fun dir(cfg: ServerConfig) = "${cfg.lgsmDir.trimEnd('/')}/lgsm/backup"
+    /** La cartella dei backup di LinuxGSM. La usa anche ArchivioGiocatore. */
+    internal fun dir(cfg: ServerConfig) = "${cfg.lgsmDir.trimEnd('/')}/lgsm/backup"
 
     /**
      * Elenco delle copie, con quando e quanto pesano, più lo spazio della cartella
@@ -127,7 +128,8 @@ object Backups {
     /** Codice di uscita convenzionale: l'estrazione è fallita ed è stato rimesso tutto com'era. */
     const val EXIT_ESTRAZIONE = 91
 
-    private fun nomeValido(nome: String) =
+    /** Un nome di archivio che non puo' uscire dalla sua cartella. */
+    internal fun nomeValido(nome: String) =
         nome.isNotBlank() &&
                 !nome.contains('/') &&
                 !nome.contains("..") &&
