@@ -21,6 +21,9 @@ import com.bellizia.mcmonitor.data.PresenceRepository
 import com.bellizia.mcmonitor.databinding.FragmentStatusBinding
 import com.bellizia.mcmonitor.databinding.ItemKeyValueBinding
 import com.bellizia.mcmonitor.lgsm.Lgsm
+import com.bellizia.mcmonitor.data.ServerConfig
+import com.bellizia.mcmonitor.lgsm.SegnaleRcon
+import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.lgsm.VersionConfig
 import com.bellizia.mcmonitor.mods.MojangVersions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -182,16 +185,49 @@ class StatusFragment : Fragment() {
         }
 
         val parsed = Lgsm.parseDetails(details)
+        val cfg = Prefs.load()
         showAddress(parsed)
+        mostraRcon(cfg)
         b.fields.removeAllViews()
         interesting.forEach { key ->
             val value = parsed[key] ?: return@forEach
             val row = ItemKeyValueBinding.inflate(layoutInflater, b.fields, false)
             row.key.text = key
-            row.value.text = value
+            // Questa tabella non passava dal mascheramento: sotto, l'uscita
+            // grezza era coperta e qui «Internet IP» stava in chiaro. Un
+            // indirizzo pubblico in uno screenshot e' esattamente la cosa che
+            // la modalita' privacy esiste per evitare.
+            row.value.text = Privacy.text(value, cfg)
             b.fields.addView(row.root)
         }
         b.output.text = Privacy.text(details.trim().ifBlank { "(nessun output)" }, Prefs.load())
+    }
+
+    /**
+     * Se i comandi arrivano.
+     *
+     * E' la prima cosa che si vuole sapere aprendo un server, e finora si
+     * scopriva solo andando in Console e provando a mandarne uno. Il verde
+     * arriva solo dopo che qualcuno ha bussato davvero: quello che dice il file
+     * di configurazione non basta, e per due giorni ha detto il contrario della
+     * verita'.
+     */
+    private fun mostraRcon(cfg: ServerConfig) {
+        fun mostra(stato: SegnaleRcon.Stato) {
+            val bind = _b ?: return
+            bind.rcon.text = SegnaleRcon.etichetta(stato)
+            bind.rcon.setTextColor(SegnaleRcon.colore(stato))
+        }
+
+        val iniziale = SegnaleRcon.iniziale(cfg.rconEnabled, cfg.rconPassword.isNotBlank())
+        mostra(iniziale)
+        if (!SegnaleRcon.daProvare(iniziale)) return
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val riuscita = runCatching { RconManager.test(cfg) }.isSuccess
+            if (!isAdded) return@launch
+            mostra(SegnaleRcon.dopoLaProva(riuscita))
+        }
     }
 
     /**
