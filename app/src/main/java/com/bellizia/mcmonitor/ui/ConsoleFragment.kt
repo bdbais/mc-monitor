@@ -26,6 +26,7 @@ import com.bellizia.mcmonitor.MainActivity
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.lgsm.Registro
 import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.databinding.FragmentConsoleBinding
 import kotlinx.coroutines.delay
@@ -83,12 +84,20 @@ class ConsoleFragment : Fragment() {
             filtro = it?.toString().orEmpty()
             renderLog()
         }
-        b.log.setOnClickListener(null)
-        b.log.setOnTouchListener(doppioTapPerCopiare())
+        /*
+         * Nessun gestore di tocchi sul registro.
+         *
+         * Prima c'era un doppio tap che copiava la riga, ma il rilevatore
+         * dichiarava di aver gestito ogni tocco e il TextView non ne vedeva
+         * nessuno: selezionare era impossibile. La selezione di Android da'
+         * gia' scegli, seleziona tutto, copia e condividi -- meglio di
+         * qualsiasi scorciatoia scritta a mano.
+         */
         b.btnWrap.setOnClickListener { setWrap(!wrapLines) }
         b.btnFullscreen.setOnClickListener { setFullscreen(true) }
         b.btnEsciSchermo.setOnClickListener { setFullscreen(false) }
         b.btnComandi.setOnClickListener { showCommandList() }
+        b.btnRegistro.setOnClickListener { menuRegistro() }
 
         /*
          * In orizzontale lo spazio in altezza e' pochissimo: barra, schede,
@@ -334,52 +343,22 @@ class ConsoleFragment : Fragment() {
 
     private fun renderLog() {
         val bind = _b ?: return
+        // Prima il filtro degli errori, poi la ricerca per testo: cercare una
+        // parola dentro i soli errori e' utile, il contrario non vuol dire niente.
+        val base = if (soloErrori) Registro.soloGuai(logCompleto) else logCompleto
         if (filtro.isBlank()) {
-            bind.log.text = logCompleto
+            bind.log.text = if (soloErrori && base.isBlank()) {
+                "Nessun errore nel registro."
+            } else base
             bind.esitoFiltro.text = ""
             return
         }
-        val righe = logCompleto.lines().filter { it.contains(filtro, ignoreCase = true) }
+        val righe = base.lines().filter { it.contains(filtro, ignoreCase = true) }
         bind.log.text = if (righe.isEmpty()) "(nessuna riga con \"$filtro\")" else righe.joinToString("\n")
         bind.esitoFiltro.text = "${righe.size} righe"
     }
 
-    /**
-     * Due tocchi su una riga la selezionano tutta e la copiano: nel log serve
-     * spesso prendere una riga intera per incollarla altrove, e trascinare le
-     * maniglie della selezione su testo monospazio e' un supplizio.
-     */
-    private fun doppioTapPerCopiare(): View.OnTouchListener {
-        val rilevatore = GestureDetector(
-            requireContext(),
-            object : GestureDetector.SimpleOnGestureListener() {
-                override fun onDown(e: MotionEvent) = true
 
-                override fun onDoubleTap(e: MotionEvent): Boolean {
-                    val bind = _b ?: return false
-                    val riga = rigaAlPunto(bind.log, e.x, e.y) ?: return false
-                    requireContext().getSystemService(ClipboardManager::class.java)
-                        ?.setPrimaryClip(ClipData.newPlainText("riga di log", riga))
-                    toast("Riga copiata")
-                    return true
-                }
-            }
-        )
-        return View.OnTouchListener { view, event ->
-            val gestito = rilevatore.onTouchEvent(event)
-            if (!gestito) view.performClick()
-            gestito
-        }
-    }
-
-    /** Quale riga del TextView sta sotto il dito. */
-    private fun rigaAlPunto(view: TextView, x: Float, y: Float): String? {
-        val layout = view.layout ?: return null
-        val riga = layout.getLineForVertical((y - view.totalPaddingTop).toInt().coerceAtLeast(0))
-        val inizio = layout.getLineStart(riga)
-        val fine = layout.getLineEnd(riga)
-        return view.text?.substring(inizio, fine)?.trim()?.takeIf { it.isNotBlank() }
-    }
 
     private fun showKeyboardFor(target: View) {
         requireContext().getSystemService(InputMethodManager::class.java)
@@ -459,6 +438,104 @@ class ConsoleFragment : Fragment() {
                     .show()
             }
         }
+    }
+
+    // -------------------------------------------------------------- registro
+
+    /** Se il registro a schermo mostra solo le righe che parlano di un guaio. */
+    private var soloErrori = false
+
+    /**
+     * Cosa fare col registro.
+     *
+     * Tre cose che servono nello stesso momento -- quando qualcosa si e' rotto:
+     * trovare l'errore in mezzo a centinaia di righe, prenderlo, e mandarlo a
+     * qualcuno. Stanno insieme perche' si usano insieme.
+     */
+    private fun menuRegistro() {
+        val guai = Registro.quantiGuai(logCompleto)
+        val voci = arrayOf(
+            if (soloErrori) "Mostra tutto il registro"
+            else if (guai > 0) "Mostra solo gli errori ($guai)"
+            else "Mostra solo gli errori (nessuno)",
+            "Copia tutto",
+            "Condividi il registro"
+        )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Registro")
+            .setItems(voci) { _, quale ->
+                when (quale) {
+                    0 -> { soloErrori = !soloErrori; renderLog() }
+                    1 -> copiaTutto()
+                    2 -> condividiRegistro()
+                }
+            }
+            .setNegativeButton("Chiudi", null)
+            .show()
+    }
+
+    private fun copiaTutto() {
+        if (logCompleto.isBlank()) { toast("Non c'è ancora niente da copiare"); return }
+        requireContext().getSystemService(ClipboardManager::class.java)
+            ?.setPrimaryClip(ClipData.newPlainText("registro del server", logCompleto))
+        toast("Registro copiato")
+    }
+
+    /**
+     * Scrive il registro in un file e lo passa a un'altra app: posta, messaggi,
+     * quello che c'e'.
+     *
+     * Gli indirizzi IP vengono coperti prima di uscire -- in un log di Minecraft
+     * sono le case dei giocatori, e per capire un errore non servono mai. In cima
+     * al file c'e' scritto che sono stati coperti, o chi lo riceve li cerchera' a
+     * lungo senza trovarli.
+     */
+    private fun condividiRegistro() {
+        if (logCompleto.isBlank()) { toast("Non c'è ancora niente da condividere"); return }
+        if (!requireContext().puoCondividereFile()) {
+            copiaTutto()
+            toast("Questa copia dell'app non può passare file: l'ho messo negli appunti")
+            return
+        }
+        val cfg = Prefs.load()
+        val quando = java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.ITALY)
+            .format(java.util.Date())
+        val testo = Registro.perCondivisione(
+            logCompleto,
+            listOf(
+                // La versione dal gestore pacchetti e non da BuildConfig, che questo
+                // progetto non genera.
+                "MC Monitor ${runCatching {
+                    requireContext().packageManager
+                        .getPackageInfo(requireContext().packageName, 0).versionName
+                }.getOrNull() ?: "?"}",
+                "Android ${android.os.Build.VERSION.RELEASE} · ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
+                // Anche l'intestazione passa dal mascheramento: nel corpo
+                // l'indirizzo e' coperto, e lasciarlo in chiaro qui sopra
+                // vanificherebbe tutto il resto.
+                "server: ${Privacy.text(cfg.displayName, cfg)}",
+                "RCON: ${if (cfg.rconUsable) "attivo" else "non attivo"}",
+                "registro del $quando",
+            )
+        )
+        runCatching {
+            val file = java.io.File(requireContext().cacheDir, "mc-monitor-registro-$quando.txt")
+            file.writeText(testo)
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                requireContext(), "${requireContext().packageName}.updates", file
+            )
+            startActivity(
+                Intent.createChooser(
+                    Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(Intent.EXTRA_SUBJECT, "Registro di ${cfg.displayName}")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    },
+                    "Manda il registro"
+                )
+            )
+        }.onFailure { toast("Non sono riuscito a preparare il file: ${it.message}") }
     }
 
     override fun onDestroyView() {
