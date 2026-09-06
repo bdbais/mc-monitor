@@ -2,6 +2,7 @@ package com.bellizia.mcmonitor.ui
 
 import android.app.Activity
 import android.content.Intent
+import com.bellizia.mcmonitor.data.Prefs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
@@ -27,6 +28,7 @@ object Impostazioni {
         val voci = buildList {
             primaVoce?.let { add(it) }
             add("Blocco e amministratore" to { LockSettings.show(activity) })
+            add("Facce dei giocatori" to { facce(activity) })
             add("Profili salvati" to {
                 activity.startActivity(Intent(activity, ServersActivity::class.java))
             })
@@ -37,6 +39,40 @@ object Impostazioni {
             .setTitle("Impostazioni")
             .setItems(voci.map { it.first }.toTypedArray()) { _, quale -> voci[quale].second() }
             .setNegativeButton("Chiudi", null)
+            .show()
+    }
+
+    /**
+     * Da dove vengono le facce.
+     *
+     * La scelta è scritta per intero invece che come interruttore «usa skin
+     * online», perché chi la legge deve capire cosa scambia: non è una
+     * questione di grafica più bella, è che una delle due opzioni manda fuori i
+     * nomi di chi gioca sul tuo server. Detta così la si può anche scegliere —
+     * ma sapendola.
+     */
+    private fun facce(activity: Activity) {
+        val opzioni = arrayOf(
+            "Disegnate dall'app",
+            "Skin vere, prese da internet"
+        )
+        val attuale = if (Prefs.skinDaInternet) 1 else 0
+        MaterialAlertDialogBuilder(activity)
+            .setTitle("Facce dei giocatori")
+            .setMessage(
+                "Disegnate dall'app: ogni giocatore ha una faccia sempre uguale, " +
+                        "ricavata dal nome. Non somiglia alla sua skin, ma non esce niente " +
+                        "dal telefono e funziona anche senza campo.\n\n" +
+                        "Skin vere: si scaricano da un servizio esterno, e per chiederle " +
+                        "bisogna dirgli i nomi di chi gioca sul tuo server, ogni volta che " +
+                        "la schermata si aggiorna. È l'unica cosa nell'app che esca verso " +
+                        "qualcuno che non sei tu."
+            )
+            .setSingleChoiceItems(opzioni, attuale) { dialogo, quale ->
+                Prefs.skinDaInternet = quale == 1
+                dialogo.dismiss()
+            }
+            .setNegativeButton("Annulla", null)
             .show()
     }
 }

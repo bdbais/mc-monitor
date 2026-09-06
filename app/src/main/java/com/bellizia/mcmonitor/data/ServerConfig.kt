@@ -551,6 +551,22 @@ object Prefs {
             sp.edit().putBoolean("modoEsperto", value).apply()
         }
 
+    /**
+     * Le facce dei giocatori: disegnate qui, oppure le skin vere prese da un
+     * servizio esterno.
+     *
+     * Spenta di default, e non per prudenza generica: è l'unica cosa in tutta
+     * l'app che manderebbe fuori qualcosa di tuo — i nomi di chi gioca sul tuo
+     * server, a ogni giro del cruscotto, a un sito che non è né tuo né nostro.
+     * Chi la vuole se la accende sapendo cosa scambia; chi non la tocca non
+     * scambia niente.
+     */
+    var skinDaInternet: Boolean
+        get() = sp.getBoolean("skinDaInternet", false)
+        set(value) {
+            sp.edit().putBoolean("skinDaInternet", value).apply()
+        }
+
     var privacyMode: Boolean
         get() = sp.getBoolean("privacyMode", true)
         set(value) {
