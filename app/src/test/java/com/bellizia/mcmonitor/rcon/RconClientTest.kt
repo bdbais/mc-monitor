@@ -1,5 +1,6 @@
 package com.bellizia.mcmonitor.rcon
 
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -14,116 +15,148 @@ import java.nio.charset.StandardCharsets
 import kotlin.concurrent.thread
 
 /**
- * Cosa dice l'app quando RCON non va.
+ * Verifica la codifica dei pacchetti RCON contro un finto server che parla il
+ * protocollo Source, compreso il caso della risposta spezzata in più pacchetti.
  *
- * Il difetto che questi test tengono fermo e' arrivato da uno screenshot vero:
- * l'attivazione di RCON finiva con «FALLITA: Errore RCON». Quel testo e' quello
- * che resta quando l'eccezione non ha messaggio — e infatti la chiusura secca di
- * un socket arriva come EOFException, che il messaggio non ce l'ha. Chi legge
- * non sa se ha sbagliato la password o se il server sta ancora partendo, cioe'
- * non sa se deve correggere qualcosa o solo aspettare.
+ * E poi cosa dice l'app quando RCON non va: quel pezzo è arrivato da uno
+ * screenshot vero, dove l'attivazione finiva con «FALLITA: Errore RCON». Quel
+ * testo è quello che resta quando l'eccezione non ha messaggio, e chi legge non
+ * sa se ha sbagliato la password o se il server sta ancora partendo — cioè non
+ * sa se deve correggere qualcosa o solo aspettare.
  */
 class RconClientTest {
 
-    /** Un server finto, che fa una cosa sola e poi smette. */
-    private class Finto(val comportamento: (Socket) -> Unit) : AutoCloseable {
-        private val server = ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())
-        val porta: Int get() = server.localPort
+    private var server: ServerSocket? = null
 
-        init {
-            thread(isDaemon = true) {
-                runCatching { server.accept().use(comportamento) }
+    @After
+    fun stop() {
+        runCatching { server?.close() }
+    }
+
+    private fun startServer(
+        expectedPassword: String,
+        responses: Map<String, List<String>>
+    ): Int {
+        val socket = ServerSocket(0)
+        server = socket
+        thread(isDaemon = true) {
+            runCatching {
+                val client = socket.accept()
+                val input = DataInputStream(client.getInputStream())
+                val output = DataOutputStream(client.getOutputStream())
+                while (!client.isClosed) {
+                    val packet = readPacket(input) ?: break
+                    when (packet.type) {
+                        3 -> { // autenticazione
+                            val id = if (packet.body == expectedPassword) packet.id else -1
+                            writePacket(output, id, 2, "")
+                        }
+                        2 -> { // comando: risposta eventualmente su più pacchetti
+                            (responses[packet.body] ?: listOf("")).forEach {
+                                writePacket(output, packet.id, 0, it)
+                            }
+                        }
+                        else -> writePacket(output, packet.id, 0, "") // sentinella
+                    }
+                }
             }
         }
+        return socket.localPort
+    }
 
-        override fun close() {
-            runCatching { server.close() }
+    private class Raw(val id: Int, val type: Int, val body: String)
+
+    private fun readPacket(input: DataInputStream): Raw? {
+        val header = ByteArray(4)
+        return try {
+            input.readFully(header)
+            val length = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN).int
+            val payload = ByteArray(length)
+            input.readFully(payload)
+            val buffer = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN)
+            val id = buffer.int
+            val type = buffer.int
+            val body = ByteArray(length - 10)
+            buffer.get(body)
+            Raw(id, type, String(body, StandardCharsets.UTF_8))
+        } catch (e: Exception) {
+            null
         }
     }
 
-    private fun scrivi(uscita: DataOutputStream, id: Int, tipo: Int, corpo: String) {
-        val payload = corpo.toByteArray(StandardCharsets.UTF_8)
-        val b = ByteBuffer.allocate(payload.size + 14).order(ByteOrder.LITTLE_ENDIAN)
-        b.putInt(payload.size + 10)
-        b.putInt(id)
-        b.putInt(tipo)
-        b.put(payload)
-        b.put(0)
-        b.put(0)
-        uscita.write(b.array())
-        uscita.flush()
+    private fun writePacket(output: DataOutputStream, id: Int, type: Int, body: String) {
+        val payload = body.toByteArray(StandardCharsets.UTF_8)
+        val buffer = ByteBuffer.allocate(payload.size + 14).order(ByteOrder.LITTLE_ENDIAN)
+        buffer.putInt(payload.size + 10)
+        buffer.putInt(id)
+        buffer.putInt(type)
+        buffer.put(payload)
+        buffer.put(0)
+        buffer.put(0)
+        output.write(buffer.array())
+        output.flush()
     }
 
-    /** Legge un pacchetto del client e ne restituisce l'identificativo. */
-    private fun leggiId(ingresso: DataInputStream): Int {
-        val testa = ByteArray(4)
-        ingresso.readFully(testa)
-        val lunghezza = ByteBuffer.wrap(testa).order(ByteOrder.LITTLE_ENDIAN).int
-        val resto = ByteArray(lunghezza)
-        ingresso.readFully(resto)
-        return ByteBuffer.wrap(resto).order(ByteOrder.LITTLE_ENDIAN).int
+    @Test
+    fun `autentica ed esegue un comando`() {
+        val port = startServer(
+            "segreta123",
+            mapOf("list" to listOf("There are 2 of a max of 20 players online: Fede, Luca"))
+        )
+        val client = RconClient("127.0.0.1", port, "segreta123", timeoutMs = 4_000)
+        client.connect()
+        assertEquals("There are 2 of a max of 20 players online: Fede, Luca", client.exec("list"))
+        client.close()
+    }
+
+    @Test
+    fun `ricompone una risposta divisa su più pacchetti`() {
+        val port = startServer(
+            "segreta123",
+            mapOf("help" to listOf("prima parte ", "seconda parte ", "terza parte"))
+        )
+        val client = RconClient("127.0.0.1", port, "segreta123", timeoutMs = 4_000)
+        client.connect()
+        assertEquals("prima parte seconda parte terza parte", client.exec("help"))
+        client.close()
+    }
+
+    @Test
+    fun `password errata viene segnalata`() {
+        val port = startServer("giusta123", emptyMap())
+        val client = RconClient("127.0.0.1", port, "sbagliata123", timeoutMs = 4_000)
+        val error = runCatching { client.connect() }.exceptionOrNull()
+        assertTrue(error is RconException)
+        assertTrue(error!!.message!!.contains("rifiutata"))
+    }
+
+    /**
+     * Un server che accetta il collegamento e chiude subito.
+     *
+     * Non è un caso di laboratorio: è come si comporta un server Minecraft
+     * appena riavviato, che la porta l'ha già aperta ma il thread RCON non l'ha
+     * ancora avviato.
+     */
+    private fun chiudeSubito(): Int {
+        val socket = ServerSocket(0)
+        server = socket
+        thread(isDaemon = true) { runCatching { socket.accept().close() } }
+        return socket.localPort
     }
 
     @Test
     fun `un server che chiude senza rispondere non diventa un errore muto`() {
-        Finto { socket -> socket.close() }.use { finto ->
-            val errore = runCatching {
-                RconClient("127.0.0.1", finto.porta, "segreto", timeoutMs = 3_000).connect()
-            }.exceptionOrNull()
+        val client = RconClient("127.0.0.1", chiudeSubito(), "segreto", timeoutMs = 3_000)
+        val errore = runCatching { client.connect() }.exceptionOrNull()
 
-            assertTrue("atteso RconException, arrivato $errore", errore is RconException)
-            val detto = errore!!.message.orEmpty()
-            assertFalse("il messaggio e' ancora quello muto: $detto", detto == "Errore RCON")
-            assertTrue("non dice della password: $detto", detto.contains("password"))
-            assertTrue("non dice di riprovare: $detto", detto.contains("riprova"))
-        }
-    }
-
-    @Test
-    fun `una password rifiutata si chiama per nome`() {
-        // Il server che segue il protocollo risponde con identificativo -1. Qui
-        // il messaggio deve dire «rifiutata», perche' e' su quella parola che
-        // l'attivazione decide di smettere di riprovare invece di insistere per
-        // un minuto su una password che resterebbe sbagliata.
-        Finto { socket ->
-            val ingresso = DataInputStream(socket.getInputStream())
-            val uscita = DataOutputStream(socket.getOutputStream())
-            leggiId(ingresso)
-            scrivi(uscita, -1, 2, "")
-            Thread.sleep(200)
-        }.use { finto ->
-            val errore = runCatching {
-                RconClient("127.0.0.1", finto.porta, "sbagliata", timeoutMs = 3_000).connect()
-            }.exceptionOrNull()
-
-            assertTrue(errore is RconException)
-            assertTrue(errore!!.message.orEmpty().contains("rifiutata", ignoreCase = true))
-        }
-    }
-
-    @Test
-    fun `quando la password e' giusta il comando torna indietro`() {
-        // Se questo si rompesse, i due test qui sopra passerebbero lo stesso: un
-        // client che fallisce sempre li supera entrambi.
-        Finto { socket ->
-            val ingresso = DataInputStream(socket.getInputStream())
-            val uscita = DataOutputStream(socket.getOutputStream())
-            val autenticazione = leggiId(ingresso)
-            scrivi(uscita, autenticazione, 2, "")
-            val comando = leggiId(ingresso)
-            val sentinella = leggiId(ingresso)
-            scrivi(uscita, comando, 0, "There are 2 of a max of 20 players online: Anna, Bruno")
-            scrivi(uscita, sentinella, 0, "")
-            Thread.sleep(200)
-        }.use { finto ->
-            val client = RconClient("127.0.0.1", finto.porta, "giusta", timeoutMs = 3_000)
-            client.connect()
-            assertEquals(
-                "There are 2 of a max of 20 players online: Anna, Bruno",
-                client.exec("list")
-            )
-            client.close()
-        }
+        assertTrue("atteso RconException, arrivato $errore", errore is RconException)
+        val detto = errore!!.message.orEmpty()
+        // La chiusura secca arriva come EOFException su Linux e come
+        // SocketException su Windows, e nessuna delle due ha un messaggio
+        // utile: quello che arriva a schermo dev'essere questo.
+        assertFalse("il messaggio è ancora quello muto: $detto", detto == "Errore RCON")
+        assertTrue("non dice della password: $detto", detto.contains("password"))
+        assertTrue("non dice di riprovare: $detto", detto.contains("riprova"))
     }
 
     @Test
@@ -132,5 +165,13 @@ class RconClientTest {
         val muta = RconManager.descrivi(java.io.EOFException())
         assertFalse(muta.isBlank())
         assertTrue("non dice di che guasto si tratta: $muta", muta.contains("EOFException"))
+    }
+
+    @Test
+    fun `porta chiusa produce un errore leggibile`() {
+        val free = ServerSocket(0).use { it.localPort }
+        val client = RconClient("127.0.0.1", free, "qualsiasi1", timeoutMs = 2_000)
+        val error = runCatching { client.connect() }.exceptionOrNull()
+        assertTrue(error is RconException)
     }
 }
