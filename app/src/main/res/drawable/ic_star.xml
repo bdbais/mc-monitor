@@ -4,8 +4,9 @@
     android:viewportWidth="16"
     android:viewportHeight="16">
 
-    <!-- Stella a pixel: i consigli, non una valutazione. -->
+    <!-- Stella a pixel, cinque punte attaccate al corpo: quella di prima aveva
+         le gambe staccate e a trenta pixel sembrava un ragno. -->
     <path
         android:fillColor="#C8A32E"
-        android:pathData="M7,2h2v3h-2zM4,5h8v2h-8zM5,7h6v2h-6zM4,9h2v2h-2zM10,9h2v2h-2zM3,11h2v2h-2zM11,11h2v2h-2z" />
+        android:pathData="M7,2h2v2h-2zM6,4h4v2h-4zM1,6h14v1h-14zM2,7h12v1h-12zM3,8h10v1h-10zM4,9h8v2h-8zM4,11h3v1h-3zM9,11h3v1h-3zM3,12h3v1h-3zM10,12h3v1h-3zM2,13h3v1h-3zM11,13h3v1h-3z" />
 </vector>

@@ -27,6 +27,7 @@ import com.bellizia.mcmonitor.lgsm.ChatMessage
 import com.bellizia.mcmonitor.lgsm.JoinAttempt
 import com.bellizia.mcmonitor.lgsm.PlayerEntry
 import com.bellizia.mcmonitor.lgsm.PlayerPos
+import com.bellizia.mcmonitor.lgsm.Segni
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -38,6 +39,9 @@ class PlayersFragment : Fragment() {
     private var _b: FragmentPlayersBinding? = null
     private val b get() = _b!!
 
+    private var preferiti: Set<String> = emptySet()
+    private var sorvegliati: Set<String> = emptySet()
+
     private var lastNames: List<String> = emptyList()
     private var lastPositions: List<PlayerPos> = emptyList()
 
@@ -47,6 +51,10 @@ class PlayersFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        val server = Prefs.activeId()
+        preferiti = Prefs.preferiti(server)
+        sorvegliati = Prefs.sorvegliati(server)
+
         b.swipe.setOnRefreshListener { refresh() }
         b.btnPosta.setOnClickListener { apriPosta() }
         b.btnAllinea.setOnClickListener { scegliDoveAllineare() }
@@ -240,9 +248,10 @@ class PlayersFragment : Fragment() {
             return
         }
         val byName = positions.associateBy { it.name }
-        names.forEach { name ->
+        Segni.ordina(names, preferiti).forEach { name ->
             val row = ItemPlayerBinding.inflate(layoutInflater, list, false)
             val pos = byName[name]
+            segni(row, name)
             row.name.text = Privacy.name(name)
             row.subtitle.text = if (pos == null) {
                 "posizione non disponibile"
@@ -270,6 +279,7 @@ class PlayersFragment : Fragment() {
         }
         entries.forEach { entry ->
             val row = ItemPlayerBinding.inflate(layoutInflater, list, false)
+            segni(row, entry.name)
             row.name.text = Privacy.name(entry.name)
             row.subtitle.text = listOfNotNull(
                 entry.reason.takeIf { it.isNotBlank() && it != "Banned by an operator." },
@@ -287,11 +297,56 @@ class PlayersFragment : Fragment() {
         }
     }
 
+    /**
+     * I due segni su una riga: la stella e l'occhio.
+     *
+     * Sono spenti in grigio e accesi a colori, invece che presenti/assenti:
+     * un'icona che compare e sparisce fa ballare la riga e non dice che si puo'
+     * premere.
+     */
+    private fun segni(row: ItemPlayerBinding, nome: String) {
+        fun disegna() {
+            row.preferito.setColorFilter(
+                if (Segni.segnato(preferiti, nome)) 0xFFC8A32E.toInt() else 0xFF5A6169.toInt()
+            )
+            row.sorvegliato.setColorFilter(
+                if (Segni.segnato(sorvegliati, nome)) 0xFF5FBF6B.toInt() else 0xFF5A6169.toInt()
+            )
+        }
+        disegna()
+
+        row.preferito.setOnClickListener {
+            preferiti = Segni.cambiaPreferito(preferiti, nome)
+            Prefs.setPreferiti(Prefs.activeId(), preferiti)
+            disegna()
+            // L'elenco si riordina solo al giro dopo: spostare la riga sotto il
+            // dito di chi ha appena premuto e' il modo piu' rapido per far
+            // premere due volte la cosa sbagliata.
+        }
+
+        row.sorvegliato.setOnClickListener {
+            when (val esito = Segni.cambiaSorvegliato(sorvegliati, nome)) {
+                is Segni.Esito.Fatto -> {
+                    sorvegliati = esito.insieme
+                    Prefs.setSorvegliati(Prefs.activeId(), sorvegliati)
+                    disegna()
+                }
+                is Segni.Esito.Pieno -> MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Cruscotto pieno")
+                    .setMessage(Segni.spiegazionePieno(esito.quanti))
+                    .setPositiveButton("Ho capito", null)
+                    .show()
+            }
+        }
+    }
+
     private fun addEmpty(list: LinearLayout, text: String) {
         val row = ItemPlayerBinding.inflate(layoutInflater, list, false)
         row.name.text = text
         row.subtitle.visible(false)
         row.action.visible(false)
+        row.preferito.visible(false)
+        row.sorvegliato.visible(false)
         list.addView(row.root)
     }
 

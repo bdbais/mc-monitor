@@ -29,6 +29,31 @@
             android:textSize="12sp" />
     </LinearLayout>
 
+    <!-- I due segni. Stanno nella riga e non dentro il pannello delle azioni
+         perche' segnare qualcuno e' un gesto da fare scorrendo l'elenco: se
+         costa due tocchi in piu' nessuno lo fa, e il cruscotto resta vuoto. -->
+    <ImageButton
+        android:id="@+id/preferito"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Preferito"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_star"
+        android:tooltipText="Preferito" />
+
+    <ImageButton
+        android:id="@+id/sorvegliato"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Tieni d'occhio nel cruscotto"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_occhio_mc"
+        android:tooltipText="Cruscotto" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/action"
         style="@style/McButton.Text"

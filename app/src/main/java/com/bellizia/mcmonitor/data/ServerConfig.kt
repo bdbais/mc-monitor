@@ -4,7 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
+import com.bellizia.mcmonitor.lgsm.Cruscotto
 import com.bellizia.mcmonitor.lgsm.Cron
+import com.bellizia.mcmonitor.lgsm.Segni
 import com.bellizia.mcmonitor.lgsm.Macro
 import java.util.UUID
 
@@ -377,6 +379,34 @@ object Prefs {
      * backup: "rimetti com'era" nella schermata Backup riportava indietro anche
      * la posta, riaccendendo una consegna appena spenta.
      */
+    // ------------------------------------------ i segni accanto ai giocatori
+
+    /**
+     * Preferiti e sorvegliati sono per server: le stesse persone su due mondi
+     * diversi non sono la stessa comunità, e chi tieni d'occhio di là non è
+     * detto che ti interessi di qua.
+     *
+     * In lettura si passa sempre da [Segni.ripulisci]: quello che c'è scritto
+     * può venire da una versione precedente, e fidarsi di com'era stato scritto
+     * è il modo di ritrovarsi otto facce su un cruscotto che ne tiene sei.
+     */
+    fun preferiti(serverId: String): Set<String> =
+        Segni.ripulisci(sp.getStringSet("preferiti_$serverId", emptySet()).orEmpty())
+
+    fun setPreferiti(serverId: String, nomi: Set<String>) {
+        sp.edit().putStringSet("preferiti_$serverId", nomi).apply()
+    }
+
+    fun sorvegliati(serverId: String): Set<String> =
+        Segni.ripulisci(
+            sp.getStringSet("sorvegliati_$serverId", emptySet()).orEmpty(),
+            Cruscotto.MASSIMO
+        )
+
+    fun setSorvegliati(serverId: String, nomi: Set<String>) {
+        sp.edit().putStringSet("sorvegliati_$serverId", nomi).apply()
+    }
+
     fun cronBackup(serverId: String): String? = sp.getString("cronBackup_$serverId", null)
 
     /**
