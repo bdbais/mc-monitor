@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.bellizia.mcmonitor.MainActivity
 import com.bellizia.mcmonitor.notify.ServerWatchService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.lifecycle.lifecycleScope
@@ -152,8 +153,16 @@ class SettingsFragment : Fragment() {
             Prefs.esperto = esperto
             mostraModo()
             // Le schede si decidono all'apertura: per farle sparire (o tornare)
-            // serve far ripartire la pagina.
-            activity?.recreate()
+            // serve far ripartire la pagina. Si riparte da questa stessa
+            // scheda, non da dove capita: chi ha appena spento l'esperto deve
+            // trovarsi davanti l'interruttore per riaccenderlo, non doverlo
+            // cercare. E' cosi' che l'interruttore era diventato a senso unico.
+            val a = activity ?: return@setOnCheckedChangeListener
+            a.startActivity(
+                Intent(a, MainActivity::class.java)
+                    .putExtra(MainActivity.EXTRA_OPEN_SETTINGS, true)
+            )
+            a.finish()
         }
 
         b.privacyMode.isChecked = Prefs.privacyMode

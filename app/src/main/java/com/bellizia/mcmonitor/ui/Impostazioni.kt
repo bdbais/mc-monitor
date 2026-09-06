@@ -2,6 +2,7 @@ package com.bellizia.mcmonitor.ui
 
 import android.app.Activity
 import android.content.Intent
+import com.bellizia.mcmonitor.MainActivity
 import com.bellizia.mcmonitor.data.Prefs
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -27,6 +28,7 @@ object Impostazioni {
     fun mostra(activity: Activity, primaVoce: Pair<String, () -> Unit>? = null) {
         val voci = buildList {
             primaVoce?.let { add(it) }
+            add(modo() to { quantaApp(activity) })
             add("Blocco e amministratore" to { LockSettings.show(activity) })
             add("Facce dei giocatori" to { facce(activity) })
             add("Profili salvati" to {
@@ -42,8 +44,71 @@ object Impostazioni {
             .show()
     }
 
+    /** La voce dice gia' com'e' messo adesso, senza doverla aprire. */
+    private fun modo(): String =
+        "Quanta app vedi · " + (if (Prefs.esperto) "modalita' esperto" else "essenziale")
+
     /**
-     * Da dove vengono le facce.
+     * Quanta app vedere.
+     *
+     * Sta qui, e non solo nella scheda Impostazioni di un server, per un motivo
+     * scoperto sbagliando: spegnendo la modalita' esperto l'app riparte e non
+     * torna su quella scheda, e chi l'aveva appena spenta non ritrovava piu'
+     * l'interruttore per riaccenderla. Un interruttore che si puo' spegnere ma
+     * non riaccendere non e' un interruttore.
+     *
+     * L'ingranaggio c'e' su ogni schermata, prima pagina compresa: da qui la
+     * strada del ritorno esiste sempre.
+     */
+    private fun quantaApp(activity: Activity) {
+        val esperto = Prefs.esperto
+        MaterialAlertDialogBuilder(activity)
+            .setTitle("Quanta app vuoi vedere")
+            .setMessage(
+                if (esperto) {
+                    "Adesso vedi tutto: la console del server, i comandi di LinuxGSM, i " +
+                            "parametri tecnici e RCON.\n\nSpegnendo la modalita' esperto " +
+                            "quelle cose spariscono, ma restano qui: si riaccendono da questo " +
+                            "stesso posto, l'ingranaggio in alto."
+                } else {
+                    "Adesso vedi le cose che servono per far girare il server: accendere e " +
+                            "spegnere, chi c'e', whitelist e ban, backup, mod, mappa, " +
+                            "sicurezza e posta.\n\nCon la modalita' esperto compaiono anche " +
+                            "la console, i comandi di LinuxGSM, i parametri tecnici e RCON."
+                }
+            )
+            .setPositiveButton(if (esperto) "Spegni l'esperto" else "Accendi l'esperto") { _, _ ->
+                Prefs.esperto = !esperto
+                riapri(activity)
+            }
+            .setNegativeButton("Lascia com'e'", null)
+            .show()
+    }
+
+    /**
+     * Fa ripartire la pagina, e la fa ripartire nel punto giusto.
+     *
+     * Le schede si decidono all'apertura, quindi per farle sparire o tornare
+     * bisogna ricominciare. Ma un `recreate()` secco riporta su una scheda
+     * qualsiasi -- quella dove ci si trovava, o la piu' vicina se quella non
+     * esiste piu' -- e chi ha appena toccato l'interruttore si ritrova altrove
+     * a chiedersi dove sia finito. Da dentro un server si riparte dalle
+     * Impostazioni, che e' dove l'interruttore vive anche li'.
+     */
+    private fun riapri(activity: Activity) {
+        if (activity is MainActivity) {
+            activity.startActivity(
+                Intent(activity, MainActivity::class.java)
+                    .putExtra(MainActivity.EXTRA_OPEN_SETTINGS, true)
+            )
+            activity.finish()
+        } else {
+            activity.recreate()
+        }
+    }
+
+    /**
+     * Da cosa vengono le facce.
      *
      * La scelta è scritta per intero invece che come interruttore «usa skin
      * online», perché chi la legge deve capire cosa scambia: non è una
