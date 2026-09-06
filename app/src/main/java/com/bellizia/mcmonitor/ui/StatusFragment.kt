@@ -124,17 +124,26 @@ class StatusFragment : Fragment() {
         loadVersion()
         loadUltimoBackup()
         viewLifecycleOwner.lifecycleScope.launch {
-            runCatching { McRepository.details() }
+            val esito = runCatching { McRepository.details() }
+            /*
+             * Il collegamento puo' durare secondi, e in quei secondi si cambia
+             * scheda o si torna all'elenco: la vista non c'e' piu' e scriverci
+             * sopra fa cadere l'app. Il controllo va fatto qui, una volta, dopo
+             * l'attesa e prima di toccare qualsiasi campo -- non dentro i singoli
+             * rami, dove basta dimenticarne uno.
+             */
+            val bind = _b ?: return@launch
+            esito
                 .onSuccess {
                     render(it)
                     checkRequirementsOnce()
                 }
                 .onFailure {
                     setStatus("ERRORE", Color.parseColor("#EF5350"))
-                    b.output.text = it.userMessage()
-                    b.fields.removeAllViews()
+                    bind.output.text = it.userMessage()
+                    bind.fields.removeAllViews()
                 }
-            _b?.swipe?.isRefreshing = false
+            bind.swipe.isRefreshing = false
         }
     }
 
@@ -429,10 +438,19 @@ class StatusFragment : Fragment() {
         }
     }
 
+    /**
+     * Scrive lo stato in cima.
+     *
+     * Non usa `b` ma `_b`: la chiamano anche coroutine che finiscono dopo che la
+     * scheda e' stata lasciata, e con `b` -- che e' `_b!!` -- l'app cadeva.
+     * Successo su un Samsung con Android 16, aprendo un server e cambiando
+     * schermata mentre il collegamento era ancora in corso.
+     */
     private fun setStatus(text: String, color: Int) {
-        b.status.text = text
-        b.status.setTextColor(color)
-        b.statusDot.setBackgroundColor(color)
+        val bind = _b ?: return
+        bind.status.text = text
+        bind.status.setTextColor(color)
+        bind.statusDot.setBackgroundColor(color)
     }
 
     private fun colorFor(status: String) = when {

@@ -429,6 +429,68 @@ object Help {
         """.trimIndent()
     )
 
+    val RCON_DIRETTO = Page(
+        "Collegamento diretto a RCON",
+        """
+        Serve per i server a cui non hai accesso al computer: uno su un pannello di hosting, quello di un amico, o un Minecraft su Windows dove SSH non c'è proprio.
+
+        Ti bastano tre cose: l'indirizzo, la porta di RCON (quasi sempre 25575) e la password di RCON. Se il server è nella tua rete di casa e non sai l'indirizzo, "Cerca nella rete" lo trova da solo: bussa a ogni indirizzo e chiede la stessa cosa che chiede il gioco per riempire l'elenco dei multigiocatore.
+
+        COSA FUNZIONA
+        Comandi con la risposta vera del server, chi è online, whitelist e ban, op e kick, teletrasporto, modalità di gioco, ora e meteo, il seed del mondo, la mappa con le posizioni dei giocatori, e le macro.
+
+        COSA NO
+        Accendere e spegnere il server, il registro, i backup e il ripristino, le mod, server.properties, i parametri di LinuxGSM, l'inventario, la cronologia della chat. Vogliono tutte i file di quel computer, e RCON i file non li dà.
+
+        La scheda Console qui non mostra il registro — quello è un file — ma quello che chiedi e quello che il server risponde. Per molte cose è meglio: la risposta arriva subito invece di doverla cercare fra le righe.
+
+        UNA COSA DA SAPERE
+        RCON manda la password in chiaro, senza cifratura. Nella tua rete di casa è un rischio piccolo. Su internet no: chi sta nel mezzo la legge, e con quella password possiede il server — può fermarlo, darsi i permessi, cancellare.
+
+        Se devi comandare un server via internet, la strada giusta è il collegamento SSH: lì RCON viaggia dentro il tunnel e la password non esce mai allo scoperto. Se puoi farlo solo così, usa una password RCON lunga e usata soltanto lì.
+        """.trimIndent()
+    )
+
+    val RCON_WINDOWS = Page(
+        "Attivare RCON su un Minecraft per Windows",
+        """
+        Sono cinque minuti, e si fa una volta sola.
+
+        1. FERMA IL SERVER
+        Nella finestra del server scrivi stop e premi Invio, oppure chiudila dal pulsante. Non farlo mentre gira: il server riscriverebbe il file salvandoci sopra le tue modifiche.
+
+        2. APRI server.properties
+        Sta nella stessa cartella del file .jar del server. Se non c'è, il server non è mai partito: fallo partire una volta, accetta la EULA (eula.txt, metti eula=true) e fermalo di nuovo.
+        Si apre col Blocco note: tasto destro, Apri con, Blocco note. È un file di testo normale.
+
+        3. CAMBIA TRE RIGHE
+        Cerca queste voci e mettile così — se una non c'è, aggiungila in fondo:
+
+        enable-rcon=true
+        rcon.port=25575
+        rcon.password=
+
+        Dopo rcon.password= scrivi una password lunga, senza spazi. Non lasciarla vuota: con la password vuota il server non accende RCON e basta, senza dirti perché.
+        Facoltativa ma consigliata: broadcast-rcon-to-ops=false, così i comandi che mandi dall'app non compaiono nella chat degli operatori.
+
+        4. SALVA E RIAVVIA
+        Salva col Blocco note (Ctrl+S) e riavvia il server. Nella finestra deve comparire una riga tipo "RCON running on 0.0.0.0:25575". Se non compare, la password era vuota o c'è uno spazio di troppo.
+
+        5. IL FIREWALL DI WINDOWS
+        Serve solo se il telefono non è sullo stesso computer, cioè quasi sempre.
+        Pannello di controllo, Windows Defender Firewall, Impostazioni avanzate, Regole connessioni in entrata, Nuova regola, Porta, TCP, porta specifica 25575, Consenti connessione.
+        Spunta solo Privato. NON spuntare Pubblico: quella è la regola che apre la porta anche quando il portatile è attaccato al wifi di un bar.
+
+        6. L'INDIRIZZO
+        Nella finestra del prompt dei comandi (tasto Windows, scrivi cmd) dai ipconfig e leggi "Indirizzo IPv4": è quello da scrivere nell'app, tipo 192.168.1.20.
+
+        SE NON SI COLLEGA
+        • "Connessione rifiutata": il server non ha acceso RCON — ricontrolla il punto 4.
+        • Non risponde e basta: è il firewall, punto 5.
+        • "Password errata": nel file c'è uno spazio prima o dopo la password.
+        """.trimIndent()
+    )
+
     val CONSOLE = Page(
         "Console",
         """

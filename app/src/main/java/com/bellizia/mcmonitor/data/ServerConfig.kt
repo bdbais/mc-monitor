@@ -35,6 +35,16 @@ data class ServerConfig(
     val rconPort: Int = 25575,
     val rconPassword: String = "",
     val rconTunnel: Boolean = true,
+    /**
+     * Collegamento al solo RCON, senza SSH.
+     *
+     * Serve per i server a cui non si ha accesso al computer: quelli di casa di
+     * qualcun altro, quelli su un pannello di hosting, o un Minecraft su Windows
+     * dove SSH non c'e' proprio. Si ottiene molto meno -- niente file, quindi
+     * niente registro, backup, mod, avvio e spegnimento -- ma i comandi e le
+     * risposte, i giocatori e la mappa arrivano tutti da RCON.
+     */
+    val soloRcon: Boolean = false,
     val webMapUrl: String = "",
     val mapPollSeconds: Int = 6,
     /** Notifiche: attivazione e scelta degli eventi, server per server. */
@@ -52,7 +62,30 @@ data class ServerConfig(
     val requirementsChecked: Boolean = false
 ) {
     val isComplete: Boolean
-        get() = hasCredentials && lgsmDir.isNotBlank() && script.isNotBlank()
+        get() = if (soloRcon) rconPronto else hasCredentials && lgsmDir.isNotBlank() && script.isNotBlank()
+
+    /**
+     * Basta per parlare con RCON: indirizzo, porta e password.
+     *
+     * Non si chiede altro perche' non serve altro, e chiedere l'utente o la
+     * cartella di LinuxGSM a chi non ha accesso a quel computer vorrebbe dire
+     * chiedere una cosa che non puo' sapere.
+     */
+    val rconPronto: Boolean
+        get() = host.isNotBlank() && rconPort in 1..65535 && rconPassword.isNotBlank()
+
+    /**
+     * Se la password RCON viaggia in chiaro su una rete che non e' quella di casa.
+     *
+     * RCON non cifra niente: chi sta sul percorso legge la password, e con quella
+     * possiede il server. Dentro il tunnel SSH il problema non si pone; qui il
+     * tunnel non c'e', e allora conta dove sta il server.
+     */
+    val rconInChiaroFuoriCasa: Boolean
+        get() = soloRcon && host.isNotBlank() &&
+                !com.bellizia.mcmonitor.rete.Sottorete.privato(host) &&
+                !host.equals("localhost", ignoreCase = true) &&
+                !host.startsWith("127.")
 
     /**
      * Basta per entrare nel computer, non ancora per comandare un server:
@@ -127,6 +160,7 @@ data class ServerConfig(
         put("rconPort", rconPort)
         put("rconPassword", rconPassword)
         put("rconTunnel", rconTunnel)
+        put("soloRcon", soloRcon)
         put("webMapUrl", webMapUrl)
         put("mapPollSeconds", mapPollSeconds)
         put("notifyEnabled", notifyEnabled)
@@ -161,6 +195,7 @@ data class ServerConfig(
             rconPort = o.optInt("rconPort", 25575),
             rconPassword = o.optString("rconPassword"),
             rconTunnel = o.optBoolean("rconTunnel", true),
+            soloRcon = o.optBoolean("soloRcon", false),
             webMapUrl = o.optString("webMapUrl"),
             mapPollSeconds = o.optInt("mapPollSeconds", 6),
             notifyEnabled = o.optBoolean("notifyEnabled", false),
