@@ -104,28 +104,48 @@ class RconClient(
         }
     }
 
+    /**
+     * Manda un comando e riporta la risposta.
+     *
+     * Qui **non** si usa la sentinella. Il trucco classico del protocollo Source
+     * e' mandare, subito dopo il comando, un pacchetto vuoto di tipo 0 e usare
+     * la sua risposta per sapere dove finisce quella vera. Minecraft quel tipo
+     * non lo prevede: riceve una richiesta che non conosce e chiude il
+     * collegamento. Dal log del server si vedeva un «Thread RCON Client
+     * started» seguito da «shutting down» nello stesso secondo, a ogni comando,
+     * con l'autenticazione perfettamente riuscita -- e dall'app sembrava che
+     * fosse sbagliata la password.
+     *
+     * Dove finisce la risposta si sa in un altro modo, che e' come la manda
+     * Minecraft davvero: le risposte lunghe le spezza in pezzi da [MAX_BODY]
+     * byte esatti. Un pezzo piu' corto e' l'ultimo. Cosi' il caso normale --
+     * una risposta corta, un pezzo solo -- non aspetta niente.
+     */
     fun exec(command: String): String {
         if (!isConnected) connect()
         val id = ++nextId
         write(id, TYPE_COMMAND, command)
-        // Sentinella: la sua risposta segna la fine di quella del comando.
-        val sentinel = ++nextId
-        write(sentinel, TYPE_RESPONSE, "")
 
         val body = StringBuilder()
+        var ricevutoQualcosa = false
         while (true) {
             val packet = try {
                 read()
             } catch (e: SocketTimeoutException) {
-                break // risposta già completa: alcuni server ignorano la sentinella
+                break // il server non ha altro da dire
             } catch (e: IOException) {
+                // Un server che chiude dopo aver risposto ha finito, non e'
+                // guasto: la risposta ce l'abbiamo gia' in mano.
                 close()
+                if (ricevutoQualcosa) break
                 throw RconException(
                     "Il server ha chiuso la connessione RCON mentre rispondeva.", e
                 )
             }
-            if (packet.id == sentinel) break
+            ricevutoQualcosa = true
             body.append(packet.body)
+            // Pezzo piu' corto del massimo: era l'ultimo.
+            if (packet.body.toByteArray(StandardCharsets.UTF_8).size < MAX_BODY) break
         }
         return body.toString().trim()
     }

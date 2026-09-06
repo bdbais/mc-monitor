@@ -529,6 +529,17 @@
                 android:layout_height="wrap_content"
                 android:text="Attiva RCON sul server e riavvia" />
 
+            <!-- Quando l'attivazione riesce e RCON non va lo stesso, le cose
+                 che possono essere andate storte sono sei o sette e quasi tutte
+                 non si vedono guardando il file. Questo tasto le guarda. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRconRipara"
+                style="@style/McButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="RCON non va: cerca il guasto" />
+
         </LinearLayout>
 
         <TextView

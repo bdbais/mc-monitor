@@ -35,6 +35,7 @@ import com.bellizia.mcmonitor.databinding.DialogPasswordBinding
 import com.bellizia.mcmonitor.databinding.FragmentSettingsBinding
 import com.bellizia.mcmonitor.lgsm.Lgsm
 import com.bellizia.mcmonitor.lgsm.Provision
+import com.bellizia.mcmonitor.lgsm.RiparaRcon
 import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.ssh.SshManager
 import kotlinx.coroutines.launch
@@ -141,6 +142,7 @@ class SettingsFragment : Fragment() {
         }
 
         b.btnRconSetup.setOnClickListener { setupRcon() }
+        b.btnRconRipara.setOnClickListener { cercaGuastoRcon() }
         b.btnMappa.setOnClickListener { scegliMappa() }
 
         mostraModo()
@@ -737,6 +739,103 @@ class SettingsFragment : Fragment() {
                 },
                 onFailure = { showText("${mappa.nome} non si apre", it.userMessage()) }
             )
+        }
+    }
+
+
+    // ------------------------------------------------ riparazione di RCON
+
+    /**
+     * Cerca il guasto e propone di aggiustarlo.
+     *
+     * Prima si guarda, poi si chiede, e solo dopo si tocca: la riparazione
+     * riscrive un file di configurazione e riavvia il server, che non e' una
+     * cosa da far partire premendo un tasto senza sapere cosa fara'.
+     */
+    private fun cercaGuastoRcon() {
+        val cfg = collect()
+        Prefs.save(cfg)
+        if (!cfg.isComplete) {
+            toast("Completa prima i dati di connessione")
+            return
+        }
+        b.btnRconRipara.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val esito = runCatching { McRepository.diagnosiRcon() }
+            val bind = _b ?: return@launch
+            bind.btnRconRipara.isEnabled = true
+            esito.fold(
+                onSuccess = { mostraDiagnosi(it) },
+                onFailure = { showText("Non sono riuscito a guardare", it.userMessage()) }
+            )
+        }
+    }
+
+    private fun mostraDiagnosi(d: RiparaRcon.Diagnosi) {
+        val testo = buildString {
+            d.problemi.forEach { p ->
+                append(
+                    when (p.gravita) {
+                        RiparaRcon.Gravita.ROTTO -> "[!] "
+                        RiparaRcon.Gravita.SOSPETTO -> "[?] "
+                        RiparaRcon.Gravita.BENE -> "[ok] "
+                    }
+                )
+                append(p.cosa).append("\n     ").append(p.rimedio.replace("\n", "\n     "))
+                append("\n\n")
+            }
+            if (d.riparabile) {
+                append(
+                    "La riparazione riscrive enable-rcon, rcon.port, rcon.password e " +
+                            "broadcast-rcon-to-ops da zero (togliendo le righe doppie), tiene " +
+                            "una copia del file com'era, e RIAVVIA il server: chi sta giocando " +
+                            "viene disconnesso."
+                )
+            }
+        }.trim()
+
+        val view = TextView(requireContext()).apply {
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            setTextIsSelectable(true)
+            setPadding(40, 30, 40, 10)
+            text = testo
+        }
+        val builder = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(if (d.rotto) "Ho trovato il guasto" else "Cosa ho trovato")
+            .setView(ScrollView(requireContext()).apply { addView(view) })
+            .setNegativeButton("Chiudi", null)
+        if (d.riparabile) builder.setPositiveButton("Ripara e riavvia") { _, _ -> riparaRcon() }
+        builder.show()
+    }
+
+    private fun riparaRcon() {
+        val view = TextView(requireContext()).apply {
+            typeface = Typeface.MONOSPACE
+            textSize = 11f
+            setTextIsSelectable(true)
+            setPadding(40, 30, 40, 10)
+            text = "Avvio…"
+        }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Riparazione di RCON")
+            .setView(ScrollView(requireContext()).apply { addView(view) })
+            .setCancelable(false)
+            .setPositiveButton("Chiudi", null)
+            .show()
+
+        b.btnRconRipara.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val report = runCatching {
+                McRepository.riparaRcon { progresso -> view.text = progresso }
+            }.getOrElse { "Riparazione interrotta: ${it.userMessage()}" }
+            view.text = report
+            dialog.setCancelable(true)
+            _b?.let {
+                it.btnRconRipara.isEnabled = true
+                it.testResult.text = report
+                fill(Prefs.load())
+            }
         }
     }
 

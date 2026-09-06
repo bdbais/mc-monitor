@@ -34,6 +34,7 @@ import com.bellizia.mcmonitor.lgsm.Provision
 import com.bellizia.mcmonitor.lgsm.Provvedimenti
 import com.bellizia.mcmonitor.lgsm.RequirementResult
 import com.bellizia.mcmonitor.lgsm.Rapporto
+import com.bellizia.mcmonitor.lgsm.RiparaRcon
 import com.bellizia.mcmonitor.lgsm.Restore
 import com.bellizia.mcmonitor.lgsm.SecurityCheck
 import com.bellizia.mcmonitor.lgsm.ServerInspection
@@ -726,6 +727,71 @@ object McRepository {
                     "minuto. Se sai gia' l'indirizzo, scrivilo nella casella qui sotto.")
         }
         return report.toString() to porta
+    }
+
+    // ------------------------------------------------ riparazione di RCON
+
+    /** Guarda com'e' messo il file e dice cosa non va. */
+    suspend fun diagnosiRcon(): RiparaRcon.Diagnosi {
+        val c = cfg()
+        val r = SshManager.exec(c, RiparaRcon.comandoDiagnosi(c, c.rconPort), 45_000)
+        return RiparaRcon.leggi(Lgsm.clean(r.text), c.rconPort, Lgsm.impronta(c.rconPassword))
+    }
+
+    /**
+     * Riscrive le quattro righe e riavvia.
+     *
+     * Il riavvio non e' un di piu': Minecraft legge server.properties una volta
+     * sola, all'avvio. Riscrivere il file e dire «fatto» senza riavviare
+     * lascerebbe il server esattamente com'era, e chi ha premuto crederebbe di
+     * aver riparato.
+     */
+    suspend fun riparaRcon(step: (String) -> Unit): String {
+        val report = StringBuilder()
+        fun log(riga: String) {
+            report.append(riga).append('\n')
+            step(report.toString())
+        }
+
+        val c = cfg()
+        if (c.rconPassword.isBlank()) {
+            return "Non c'e' nessuna password RCON salvata nell'app: non saprei cosa scrivere " +
+                    "nel file. Usa prima \"Attiva RCON\"."
+        }
+
+        log("1/3 · Riscrivo le quattro righe…")
+        val scrittura = SshManager.exec(
+            c, RiparaRcon.comandoRiparazione(c, c.rconPort, c.rconPassword), 45_000
+        )
+        val testo = Lgsm.clean(scrittura.text).trim()
+        if (scrittura.exitCode == Lgsm.EXIT_NO_PROPERTIES) {
+            log("     FALLITO: $testo")
+            log("\nControlla la cartella del server nelle impostazioni.")
+            return report.toString()
+        }
+        testo.lineSequence().forEach { log("     $it") }
+
+        log("\n2/3 · Riavvio il server…")
+        log("     " + runCatching { restart() }.fold(
+            onSuccess = { "riavvio inviato" },
+            onFailure = { "ERRORE: ${it.message}" }
+        ))
+
+        log("\n3/3 · Riprovo il collegamento…")
+        var esito = runCatching { RconManager.test(Prefs.load()) }
+        var tentativi = 1
+        while (esito.isFailure && tentativi < 6 && !passwordRifiutata(esito)) {
+            log("     non ancora pronto, riprovo… ($tentativi)")
+            delay(10_000)
+            RconManager.disconnect()
+            esito = runCatching { RconManager.test(Prefs.load()) }
+            tentativi++
+        }
+        log(esito.fold(
+            onSuccess = { "     RIUSCITO · il server ha risposto: $it" },
+            onFailure = { "     ancora niente dopo $tentativi tentativi: ${it.message}" }
+        ))
+        return report.toString()
     }
 
     /** Strumenti presenti sul server, con la versione di Java quando disponibile. */

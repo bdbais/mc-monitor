@@ -111,14 +111,112 @@ class RconClientTest {
 
     @Test
     fun `ricompone una risposta divisa su più pacchetti`() {
-        val port = startServer(
-            "segreta123",
-            mapOf("help" to listOf("prima parte ", "seconda parte ", "terza parte"))
-        )
+        // Minecraft spezza le risposte lunghe in pezzi da 4096 byte esatti, e un
+        // pezzo più corto è l'ultimo: è così che si sa dove finisce. I pezzi qui
+        // sono fatti della stessa misura, o il test proverebbe una cosa che
+        // nessun server fa.
+        val pieno = "a".repeat(4096)
+        val coda = "fine"
+        val port = startServer("segreta123", mapOf("help" to listOf(pieno, pieno, coda)))
         val client = RconClient("127.0.0.1", port, "segreta123", timeoutMs = 4_000)
         client.connect()
-        assertEquals("prima parte seconda parte terza parte", client.exec("help"))
+        assertEquals(pieno + pieno + coda, client.exec("help"))
         client.close()
+    }
+
+    /**
+     * Un server che chiude appena vede un pacchetto che non conosce.
+     *
+     * È Minecraft: il trucco della sentinella — un pacchetto vuoto di tipo 0
+     * mandato dopo il comando per sapere dove finisce la risposta — lui non lo
+     * prevede, e chiude. Nel log del server si vedeva «Thread RCON Client
+     * started» e «shutting down» nello stesso secondo, a ogni comando, con
+     * l'autenticazione riuscita; dall'app sembrava sbagliata la password.
+     */
+    private fun chiudeSuTipoSconosciuto(risposta: String): Int {
+        val socket = ServerSocket(0)
+        server = socket
+        thread(isDaemon = true) {
+            runCatching {
+                val client = socket.accept()
+                val input = DataInputStream(client.getInputStream())
+                val output = DataOutputStream(client.getOutputStream())
+                while (!client.isClosed) {
+                    val packet = readPacket(input) ?: break
+                    when (packet.type) {
+                        3 -> writePacket(output, packet.id, 2, "")
+                        2 -> writePacket(output, packet.id, 0, risposta)
+                        else -> { client.close(); return@runCatching }
+                    }
+                }
+            }
+        }
+        return socket.localPort
+    }
+
+    @Test
+    fun `un server che chiude dopo aver risposto ha finito, non e' guasto`() {
+        val port = chiudeSuTipoSconosciuto("There are 0 of a max of 20 players online:")
+        val client = RconClient("127.0.0.1", port, "segreta123", timeoutMs = 4_000)
+        client.connect()
+        assertEquals("There are 0 of a max of 20 players online:", client.exec("list"))
+        client.close()
+    }
+
+    @Test
+    fun `una risposta lunga esatta seguita dalla chiusura non va persa`() {
+        // Il caso che sfugge alla regola del pezzo corto: la risposta e' lunga
+        // esattamente quanto un pezzo pieno, quindi l'app ne aspetta un altro, e
+        // invece il server chiude. Senza il trattamento della chiusura, una
+        // risposta gia' arrivata per intero diventerebbe un errore.
+        val pieno = "b".repeat(4096)
+        val socket = ServerSocket(0)
+        server = socket
+        thread(isDaemon = true) {
+            runCatching {
+                val client = socket.accept()
+                val input = DataInputStream(client.getInputStream())
+                val output = DataOutputStream(client.getOutputStream())
+                writePacket(output, readPacket(input)!!.id, 2, "") // autenticazione
+                writePacket(output, readPacket(input)!!.id, 0, pieno)
+                Thread.sleep(100)
+                client.close()
+            }
+        }
+        val client = RconClient("127.0.0.1", socket.localPort, "segreta123", timeoutMs = 4_000)
+        client.connect()
+        assertEquals(pieno, client.exec("help"))
+        client.close()
+    }
+
+    @Test
+    fun `dopo il comando non parte nessun pacchetto di troppo`() {
+        // La prova che la sentinella non c'e' piu': questo finto server registra
+        // i tipi che riceve, e deve vedere solo l'autenticazione e il comando.
+        val tipi = java.util.Collections.synchronizedList(mutableListOf<Int>())
+        val socket = ServerSocket(0)
+        server = socket
+        thread(isDaemon = true) {
+            runCatching {
+                val client = socket.accept()
+                val input = DataInputStream(client.getInputStream())
+                val output = DataOutputStream(client.getOutputStream())
+                while (!client.isClosed) {
+                    val packet = readPacket(input) ?: break
+                    tipi.add(packet.type)
+                    when (packet.type) {
+                        3 -> writePacket(output, packet.id, 2, "")
+                        else -> writePacket(output, packet.id, 0, "ok")
+                    }
+                }
+            }
+        }
+        val client = RconClient("127.0.0.1", socket.localPort, "segreta123", timeoutMs = 4_000)
+        client.connect()
+        client.exec("list")
+        client.close()
+        Thread.sleep(300)
+        assertEquals("tipi ricevuti: $tipi", listOf(3, 2), tipi.toList())
     }
 
     @Test
