@@ -1,0 +1,17 @@
+{
+  "name": "mc-monitor",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // Il Worker gira PRIMA degli asset: se girasse dopo, le pagine
+    // uscirebbero dallo strato statico senza le intestazioni di sicurezza,
+    // che e' l'unico motivo per cui ci passano.
+    "run_worker_first": true
+  },
+  // Il sito ha un indirizzo solo (mcmonitor.bais.info, un Custom Domain).
+  "workers_dev": false,
+  "preview_urls": false,
+  "observability": { "enabled": true }
+}

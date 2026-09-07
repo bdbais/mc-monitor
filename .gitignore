@@ -25,3 +25,7 @@
 
 # scarti del compilatore Kotlin
 .kotlin/
+
+# La cache di wrangler: ci finiscono identificativo e nome dell'account,
+# e questo repository e' pubblico.
+.wrangler/
