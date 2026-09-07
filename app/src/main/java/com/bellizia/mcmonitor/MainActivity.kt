@@ -153,7 +153,7 @@ class MainActivity : AppCompatActivity() {
      * lo sblocco puo' arrivare mentre si guarda la console, e comparire subito
      * dopo -- senza dover chiudere e riaprire l'app -- e' meta' dell'effetto.
      */
-    private fun aggiornaTrovato() {
+    fun aggiornaTrovato() {
         binding.btnTrovato.visible(Prefs.trovato)
         binding.btnTrovato.setOnClickListener {
             startActivity(Intent(this, SvagoActivity::class.java))

@@ -27,6 +27,7 @@ import com.bellizia.mcmonitor.rcon.RconManager
 import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
 import com.bellizia.mcmonitor.lgsm.Ascolto
+import com.bellizia.mcmonitor.ui.svago.SvagoActivity
 import com.bellizia.mcmonitor.lgsm.Registro
 import com.bellizia.mcmonitor.data.Privacy
 import com.bellizia.mcmonitor.databinding.FragmentConsoleBinding
@@ -403,6 +404,10 @@ class ConsoleFragment : Fragment() {
             val result = runCatching { McRepository.log(400) }
             busy = false
             val bind = _b ?: return@launch
+            // Lo scambio fra due giocatori si riconosce leggendo il registro:
+            // se e' successo adesso, il premio deve comparire adesso e non alla
+            // prossima apertura della schermata.
+            (activity as? MainActivity)?.aggiornaTrovato()
             logCompleto = Privacy.text(
                 result.getOrElse { "Errore lettura log:\n${it.userMessage()}" }.trim().ifBlank { "(log vuoto)" },
                 Prefs.load()
@@ -422,7 +427,21 @@ class ConsoleFragment : Fragment() {
             Prefs.trovato = true
             b.input.setText("")
             b.log.append("\n$risposta\n")
-            toast(risposta)
+            // Il premio deve comparire adesso, non alla prossima apertura
+            // della schermata: il momento in cui si scopre una cosa nascosta e'
+            // tutto quello che quella cosa ha da dare, e farlo aspettare lo
+            // butta via.
+            (activity as? MainActivity)?.aggiornaTrovato()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(risposta)
+                .setMessage(
+                    "L'hai trovata.\n\nDa adesso c'e' un piccone qui in alto: e' li' che si torna, quando vuoi."
+                )
+                .setPositiveButton("Gioca") { _, _ ->
+                    startActivity(Intent(requireContext(), SvagoActivity::class.java))
+                }
+                .setNegativeButton("Dopo", null)
+                .show()
             return
         }
         if (!configured()) return
