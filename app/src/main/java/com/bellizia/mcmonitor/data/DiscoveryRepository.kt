@@ -2,6 +2,8 @@ package com.bellizia.mcmonitor.data
 
 import com.bellizia.mcmonitor.lgsm.DiscoveredServer
 import com.bellizia.mcmonitor.lgsm.Discovery
+import com.bellizia.mcmonitor.lgsm.Crontab
+import com.bellizia.mcmonitor.lgsm.Cron
 import com.bellizia.mcmonitor.lgsm.Lgsm
 import com.bellizia.mcmonitor.lgsm.LgsmUpdate
 import com.bellizia.mcmonitor.ssh.SshException
@@ -33,7 +35,53 @@ object DiscoveryRepository {
         if (!Discovery.removed(text)) {
             throw SshException(text.ifBlank { "Il server non ha risposto alla cancellazione." })
         }
-        return text
+        return text + pulisciQuelCheResta(account, server)
+    }
+
+    /**
+     * Quello che l'app aveva lasciato sul computer per quel server.
+     *
+     * La cartella dell'istanza se n'e' andata; restavano le righe di crontab e
+     * i file sotto `~/.mcmonitor/`. Una riga di cron che ogni notte prova a
+     * fare il backup di una cartella che non c'e' piu' e' una cosa che non si
+     * spegne da sola e che nessuno sa da dove arrivi -- perche' da quel momento
+     * l'app quel server non lo elenca nemmeno piu'.
+     *
+     * Non fa fallire la cancellazione: il server e' gia' andato, e dire
+     * «cancellazione non riuscita» perche' non si e' potuto ripulire il crontab
+     * sarebbe falso. Si dice cosa e' rimasto.
+     */
+    private suspend fun pulisciQuelCheResta(
+        account: ServerConfig,
+        server: DiscoveredServer,
+    ): String = buildString {
+        val slug = server.directory.trimEnd('/').substringAfterLast('/')
+
+        val cron = runCatching {
+            val letto = Cron.parseRead(SshManager.exec(account, Cron.read(), 30_000).text)
+            val attuale = (letto as? Crontab.Letto)?.testo ?: return@runCatching 0
+            val quanti = Cron.quantiBlocchi(attuale, slug)
+            if (quanti > 0) {
+                val nuovo = Cron.senzaBlocchi(attuale, slug)
+                SshManager.upload(
+                    account,
+                    nuovo.toByteArray(Charsets.ISO_8859_1).inputStream(),
+                    Cron.FILE_NUOVO
+                )
+                SshManager.exec(account, Cron.install(), 45_000)
+            }
+            quanti
+        }.getOrNull()
+
+        when {
+            cron == null -> append("\n\nAttenzione: non sono riuscito a leggere il crontab. " +
+                    "Se avevi programmato dei backup, quelle righe sono ancora li'.")
+            cron > 0 -> append("\n\nTolte anche $cron righe programmate dal crontab.")
+        }
+
+        runCatching {
+            SshManager.exec(account, Discovery.rimuoviTracce(slug), 30_000)
+        }
     }
 
     /** Aggiorna gli script LinuxGSM di un'istanza: scarica e sostituisce i moduli. */

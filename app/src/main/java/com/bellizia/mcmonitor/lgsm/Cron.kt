@@ -273,6 +273,46 @@ object Cron {
         return !dentro && aperture <= 1
     }
 
+    /**
+     * Toglie **tutti** i nostri blocchi di un server, qualunque sia il lavoro.
+     *
+     * Serve quando il server sparisce: cancellare l'istanza e lasciare in
+     * crontab una riga che ogni notte prova a fare il backup di una cartella
+     * che non c'e' piu' e' il modo di lasciare in casa d'altri una cosa che non
+     * si spegne da sola e che nessuno sa da dove arrivi -- perche' l'app quel
+     * server non lo elenca nemmeno piu'.
+     *
+     * Si riconoscono dai marcatori e non dal contenuto: cosi' funziona anche
+     * per i lavori che questa versione non conosce, e per quelli che
+     * aggiungeremo dopo.
+     */
+    fun senzaBlocchi(attuale: String, slug: String): String {
+        val nome = pulisci(slug)
+        val apre = "# >>> MC Monitor: "
+        val chiude = "# <<< MC Monitor: "
+        val tenute = mutableListOf<String>()
+        var dentro = false
+        attuale.split("\n").forEach { riga ->
+            val r = riga.trimEnd()
+            when {
+                r.startsWith(apre) && r.endsWith("di $nome (scritto dall'app)") -> dentro = true
+                r.startsWith(chiude) && r.endsWith("di $nome") -> dentro = false
+                !dentro -> tenute += riga
+            }
+        }
+        while (tenute.isNotEmpty() && tenute.last().isBlank()) tenute.removeAt(tenute.size - 1)
+        return if (tenute.isEmpty()) "" else tenute.joinToString("\n") + "\n"
+    }
+
+    /** Quanti nostri blocchi ci sono, per quel server. */
+    fun quantiBlocchi(attuale: String, slug: String): Int {
+        val nome = pulisci(slug)
+        return attuale.split("\n").count {
+            it.trimEnd().startsWith("# >>> MC Monitor: ") &&
+                    it.trimEnd().endsWith("di $nome (scritto dall'app)")
+        }
+    }
+
     fun componi(
         attuale: String,
         cfg: ServerConfig,

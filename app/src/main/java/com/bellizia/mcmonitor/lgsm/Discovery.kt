@@ -154,6 +154,37 @@ object Discovery {
         """.trimIndent()
     }
 
+    /**
+     * I file che l'app ha lasciato sul computer per quel server.
+     *
+     * La cartella dell'istanza la porta via `remove`. Questi stanno altrove --
+     * sotto `~/.mcmonitor/` -- e senza questo comando resterebbero li' per
+     * sempre: la cassetta della posta, il suo script, il registro delle
+     * consegne. Roba piccola, ma e' roba di qualcun altro rimasta in casa sua
+     * senza che nessuno sappia piu' da dove viene.
+     *
+     * Il nome del file si costruisce dallo slug normalizzato, lo stesso che si
+     * usa per scriverlo: se qui si normalizzasse diversamente non si
+     * troverebbe niente e il comando direbbe «fatto» senza aver fatto.
+     */
+    fun rimuoviTracce(slug: String): String {
+        // Si guarda lo slug **prima** di normalizzarlo: `normalizzaSlug` di una
+        // stringa vuota torna «server», e con quel nome si andrebbero a
+        // cancellare i file di un server che si chiama davvero cosi'. Un `rm`
+        // costruito da un nome che non c'era e' il modo di cancellare la roba
+        // di qualcun altro.
+        if (slug.none { it.isLetterOrDigit() }) return "echo 'niente da togliere'"
+        val nome = Cron.normalizzaSlug(slug)
+        val base = "\"\$HOME\"/.mcmonitor"
+        return """
+            n=0
+            for f in $base/posta/${'$'}{NOME}.txt $base/posta/${'$'}{NOME}.sh                      $base/posta/${'$'}{NOME}-consegnati.log; do
+              [ -e "${'$'}f" ] && rm -f "${'$'}f" && n=${'$'}((n+1))
+            done
+            echo "TOLTI ${'$'}n"
+        """.trimIndent().replace("${'$'}{NOME}", nome)
+    }
+
     /** Vero solo se il server ha risposto che la cancellazione è andata a buon fine. */
     fun removed(output: String): Boolean = Lgsm.clean(output).contains("CANCELLATO")
 
