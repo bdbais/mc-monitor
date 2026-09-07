@@ -22,3 +22,6 @@
 # Modpack e mod di terzi: restano locali, non si ridistribuiscono
 /mods/
 *.mrpack
+
+# scarti del compilatore Kotlin
+.kotlin/
