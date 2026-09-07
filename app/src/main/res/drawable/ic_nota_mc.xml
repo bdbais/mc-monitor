@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+
+    <!-- Una nota a pixel: gambo, bandierina e testa piena. -->
+    <path
+        android:fillColor="#5FBF6B"
+        android:pathData="M7,2h6v2h-6zM11,4h2v6h-2zM7,4h2v7h-2zM4,9h5v4h-5zM10,8h4v3h-4z" />
+</vector>

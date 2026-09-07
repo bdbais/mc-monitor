@@ -624,6 +624,13 @@ object Prefs {
             sp.edit().putString("tabellaRecord", value).apply()
         }
 
+    /** L'audio del passatempo. Acceso di suo: spento non si scoprirebbe che c'e'. */
+    var suoniAccesi: Boolean
+        get() = sp.getBoolean("suoniAccesi", true)
+        set(value) {
+            sp.edit().putBoolean("suoniAccesi", value).apply()
+        }
+
     var privacyMode: Boolean
         get() = sp.getBoolean("privacyMode", true)
         set(value) {

@@ -33,6 +33,7 @@ class SvagoActivity : AppCompatActivity() {
     private var punti = 0
     private var mosse = 0
     private var stato: Stato? = null
+    private val suoni = Suoni()
 
     private companion object {
         const val VITE = 3
@@ -57,7 +58,22 @@ class SvagoActivity : AppCompatActivity() {
         b.destra.setOnClickListener { muovi(Direzione.DESTRA) }
         b.ricomincia.setOnClickListener { perdiUnaVita() }
 
+        suoni.acceso = Prefs.suoniAccesi
+        aggiornaAudio()
+        b.audio.setOnClickListener {
+            Prefs.suoniAccesi = !Prefs.suoniAccesi
+            suoni.acceso = Prefs.suoniAccesi
+            aggiornaAudio()
+        }
+
         carica(0)
+    }
+
+    override fun onDestroy() {
+        // Una traccia audio e' una risorsa di sistema: sette lasciate aperte
+        // per una partita finita si notano quando il telefono scalda.
+        suoni.chiudi()
+        super.onDestroy()
     }
 
     private fun carica(quale: Int) {
@@ -76,10 +92,39 @@ class SvagoActivity : AppCompatActivity() {
         b.punteggio.text = "PUNTI $punti   MOSSE $mosse   ${indice + 1}/${Livelli.TUTTI.size}"
     }
 
+    private fun aggiornaAudio() {
+        b.audio.alpha = if (Prefs.suoniAccesi) 1f else 0.35f
+    }
+
+    /**
+     * Il suono si sceglie da quello che è successo, non da quello che si è
+     * premuto: la stessa freccia può camminare, scavare o non fare niente.
+     */
+    private fun faiSentire(prima: Stato, esito: Mossa, d: Direzione) {
+        when (esito.esito) {
+            Esito.NULLA -> suoni.rifiutato()
+            Esito.CREPATO -> suoni.picconata(bersaglio(prima, d)?.durezza ?: 0)
+            Esito.SCAVATO -> suoni.rotto()
+            Esito.MOSSO -> {
+                val passi = kotlin.math.abs(esito.stato.giocatore.x - prima.giocatore.x) +
+                        kotlin.math.abs(esito.stato.giocatore.y - prima.giocatore.y)
+                if (passi > 1) suoni.scivolata(passi)
+                // Raccogliere copre il fruscio: è la cosa più importante delle
+                // due, e sentirle insieme non farebbe capire nessuna delle due.
+                if (esito.stato.inMano?.piccone != prima.inMano?.piccone) suoni.raccolto()
+            }
+            Esito.VINTO -> Unit
+        }
+    }
+
+    private fun bersaglio(stato: Stato, d: Direzione): Blocco? =
+        stato.bloccoIn(Punto(stato.giocatore.x + d.dx, stato.giocatore.y + d.dy))
+
     private fun muovi(d: Direzione) {
         val ora = stato ?: return
         if (ora.vinto) return
         val esito = Motore.muovi(ora, d)
+        faiSentire(ora, esito, d)
         // Una mossa che non fa niente non conta: sbattere contro un muro non
         // deve costare punti, o si finisce a giocare guardando il contatore
         // invece che il campo.
@@ -92,6 +137,7 @@ class SvagoActivity : AppCompatActivity() {
     }
 
     private fun vinto() {
+        suoni.vinto()
         val guadagno = (BASE - mosse * COSTO_MOSSA).coerceAtLeast(MINIMO)
         punti += guadagno
         aggiornaTesta()
@@ -108,6 +154,7 @@ class SvagoActivity : AppCompatActivity() {
     }
 
     private fun perdiUnaVita() {
+        suoni.persa()
         vite--
         if (vite <= 0) {
             finePartita("GAME OVER") {
