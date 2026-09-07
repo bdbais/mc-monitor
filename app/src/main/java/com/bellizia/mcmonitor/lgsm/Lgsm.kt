@@ -232,6 +232,21 @@ object Lgsm {
                 "sha256sum 2>/dev/null | cut -c1-8 || echo IMPRONTA_NON_CALCOLABILE"
     }
 
+    /**
+     * La password RCON scritta nel file del server.
+     *
+     * Si legge, non si impone: se là dentro ce n'è già una, è quella che il
+     * server sta usando e che gli altri amministratori hanno. Sovrascriverla
+     * con la propria vuol dire rompere l'app a loro.
+     *
+     * Esce da sola su una riga, senza etichette, così una riga di errore non
+     * si può confondere con un valore.
+     */
+    fun leggiRconPassword(cfg: ServerConfig): String {
+        val f = path("${cfg.serverFiles.trimEnd('/')}/server.properties")
+        return """sed -n 's/^rcon\.password=//p' $f 2>/dev/null | head -1 | tr -d '\r\n'"""
+    }
+
     /** L'impronta della password che ha l'app, fatta allo stesso modo. */
     fun impronta(password: String): String {
         val digest = java.security.MessageDigest.getInstance("SHA-256")

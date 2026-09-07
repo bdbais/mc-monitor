@@ -36,6 +36,7 @@ import com.bellizia.mcmonitor.lgsm.Provvedimenti
 import com.bellizia.mcmonitor.lgsm.RequirementResult
 import com.bellizia.mcmonitor.lgsm.Rapporto
 import com.bellizia.mcmonitor.lgsm.RiparaRcon
+import com.bellizia.mcmonitor.lgsm.RconCondivisa
 import com.bellizia.mcmonitor.lgsm.Restore
 import com.bellizia.mcmonitor.lgsm.SecurityCheck
 import com.bellizia.mcmonitor.lgsm.ServerInspection
@@ -603,6 +604,19 @@ object McRepository {
         // guardava la risposta del server, che quando chiude di colpo non dice
         // niente, e si finiva a indovinare. Adesso si va a vedere.
         log("     primo tentativo fallito: ${test.exceptionOrNull()?.message}")
+
+        // Prima di tutto: qualcun altro l'ha cambiata? In quel caso non c'e'
+        // niente da riparare, c'e' da allinearsi -- ed e' il caso piu' comune
+        // quando gli amministratori sono piu' di uno.
+        if (runCatching { allineaPasswordRcon() }.getOrDefault(false)) {
+            log("     un altro amministratore l'ha cambiata: ho preso la sua.")
+            test = runCatching { RconManager.test(Prefs.load()) }
+            if (test.isSuccess) {
+                log("     OK · risposta del server: ${test.getOrNull()}")
+                return report.toString()
+            }
+        }
+
         log("\n     Confronto la password salvata con quella scritta sul server…")
         val scritta = runCatching {
             Lgsm.clean(SshManager.exec(c, Lgsm.rconPasswordFingerprint(c), 20_000).text).trim()
@@ -746,6 +760,45 @@ object McRepository {
                     "minuto. Se sai gia' l'indirizzo, scrivilo nella casella qui sotto.")
         }
         return report.toString() to porta
+    }
+
+    // --------------------------------------- la password RCON, che e' del server
+
+    /**
+     * La password RCON scritta sul server, o stringa vuota se non c'e'.
+     *
+     * Non viene mai mostrata ne' registrata da nessuna parte: serve solo a
+     * essere usata.
+     */
+    suspend fun passwordRconSulServer(): String {
+        val c = cfg()
+        val letta = runCatching {
+            Lgsm.clean(SshManager.exec(c, Lgsm.leggiRconPassword(c), 20_000).text).trim()
+        }.getOrDefault("")
+        return if (RconCondivisa.utilizzabile(letta)) letta else ""
+    }
+
+    /**
+     * Allinea l'app al server, se il server ha gia' una sua password.
+     *
+     * E' la correzione di un difetto vero fra piu' amministratori: due persone
+     * premevano «genera», ognuna scriveva la propria nel file, e da quel momento
+     * funzionava solo l'ultima. Adesso il file del server comanda e i due
+     * telefoni convergono invece di alternarsi.
+     *
+     * Torna true se qualcosa e' cambiato nel profilo.
+     */
+    suspend fun allineaPasswordRcon(): Boolean {
+        val c = cfg()
+        val sulServer = passwordRconSulServer()
+        return when (val scelta = RconCondivisa.decidi(c.rconPassword, sulServer)) {
+            is RconCondivisa.Scelta.Adotta -> {
+                Prefs.save(c.copy(rconPassword = scelta.password, rconEnabled = true))
+                RconManager.disconnect()
+                true
+            }
+            else -> false
+        }
     }
 
     // ------------------------------------------------ riparazione di RCON

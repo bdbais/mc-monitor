@@ -84,6 +84,22 @@ class ImprontaRconTest {
     }
 
     @Test
+    fun `la lettura della password toglie l'a capo di Windows`() {
+        // Senza, una password letta da un file con gli a capo di Windows si
+        // porta dietro un carattere invisibile e viene rifiutata sempre.
+        val c = Lgsm.leggiRconPassword(cfg)
+        assertTrue("non toglie gli a capo: $c", c.contains("tr -d"))
+        assertTrue("gli a capo sono collassati: $c", c.contains("""\r"""))
+    }
+
+    @Test
+    fun `la lettura prende il valore e non la riga intera`() {
+        val c = Lgsm.leggiRconPassword(cfg)
+        assertTrue(c.contains("""s/^rcon\.password=//p"""))
+        assertFalse("con grep tornerebbe anche la chiave", c.contains("grep"))
+    }
+
+    @Test
     fun `la tilde della cartella viene espansa`() {
         // Dentro apici singoli `~` resta una tilde e il file non si trova mai.
         val comando = Lgsm.rconPasswordFingerprint(cfg)
