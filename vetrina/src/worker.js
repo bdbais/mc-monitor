@@ -15,13 +15,13 @@ const API = `https://api.github.com/repos/${REPO}/releases/latest`;
 const PAGINA_RELEASE = `https://github.com/${REPO}/releases/latest`;
 
 /** Se GitHub non risponde si mostra questo, che e' vero al momento del deploy. */
-const RISERVA = {
-    versione: "1.34",
-    file: "MC-Monitor-1.34.apk",
-    url: "https://github.com/bdbais/mc-monitor/releases/download/v1.34/MC-Monitor-1.34.apk",
-    byte: 5881516,
-    sha256: "afee2c71d1458e8615a8b2b2940d16ae9ae3137687c74c8bfed5612e5de61900",
-    data: "2026-08-24",
+export const RISERVA = {
+    versione: "1.37",
+    file: "MC-Monitor-1.37.apk",
+    url: "https://github.com/bdbais/mc-monitor/releases/download/v1.37/MC-Monitor-1.37.apk",
+    byte: 5990039,
+    sha256: "53275ebc3724df1a03d0c33031c24f7f44ff8d20f2ba4b765f7348ec804a037f",
+    data: "2026-09-07",
     riserva: true,
 };
 
