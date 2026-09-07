@@ -39,7 +39,7 @@ class SvagoActivity : AppCompatActivity() {
         const val BASE = 1000
         const val COSTO_MOSSA = 10
         const val MINIMO = 100
-        const val SEGUITO = "https://github.com/bdbais"
+        const val SEGUITO = "https://minestrat.bais.info"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

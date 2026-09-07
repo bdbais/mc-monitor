@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Come il bottone di pietra, ma rosso: stesso rilievo, stessa inversione da
+     premuto. Serve a una cosa sola in tutta l'app, e deve saltare all'occhio
+     in mezzo a una barra di pietra grigia. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:state_pressed="true">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="#7A1F1A" />
+                </shape>
+            </item>
+            <item android:top="2dp" android:start="2dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#B33A30" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+
+    <item>
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="#E8695C" />
+                </shape>
+            </item>
+            <item android:bottom="2dp" android:end="2dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#C4392E" />
+                </shape>
+            </item>
+            <item android:top="2dp" android:start="2dp" android:bottom="3dp" android:end="3dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="#B33A30" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>
