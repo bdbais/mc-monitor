@@ -609,6 +609,13 @@ object Prefs {
             if (value) sp.edit().putBoolean("trovato", true).apply()
         }
 
+    /** La tabella dei record, in una riga sola. */
+    var tabellaRecord: String
+        get() = sp.getString("tabellaRecord", "") ?: ""
+        set(value) {
+            sp.edit().putString("tabellaRecord", value).apply()
+        }
+
     var privacyMode: Boolean
         get() = sp.getBoolean("privacyMode", true)
         set(value) {

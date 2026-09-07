@@ -3,6 +3,13 @@ package com.bellizia.mcmonitor.ui.svago
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import com.bellizia.mcmonitor.data.Prefs
+import android.widget.TextView
+import android.widget.FrameLayout
+import android.widget.EditText
+import android.view.Gravity
+import android.text.InputFilter
+import android.graphics.Typeface
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import com.bellizia.mcmonitor.databinding.ActivitySvagoBinding
@@ -103,20 +110,72 @@ class SvagoActivity : AppCompatActivity() {
     private fun perdiUnaVita() {
         vite--
         if (vite <= 0) {
-            MaterialAlertDialogBuilder(this)
-                .setTitle("GAME OVER")
-                .setMessage("Punteggio: $punti")
-                .setCancelable(false)
-                .setPositiveButton("Da capo") { _, _ ->
-                    vite = VITE
-                    punti = 0
-                    carica(0)
-                }
-                .setNegativeButton("Basta") { _, _ -> finish() }
-                .show()
+            finePartita("GAME OVER") {
+                vite = VITE
+                punti = 0
+                carica(0)
+            }
             return
         }
         carica(indice)
+    }
+
+    /**
+     * La fine di una partita, comunque sia andata.
+     *
+     * Prima le iniziali, poi la tabella, poi cosa si fa adesso. In quest'ordine
+     * e non in un altro: chiedere le iniziali dopo aver gia' mostrato la
+     * classifica toglie l'unico momento per cui si giocava.
+     */
+    private fun finePartita(titolo: String, poi: () -> Unit) {
+        val tabella = Record.leggi(Prefs.tabellaRecord)
+        if (!Record.entra(tabella, punti)) {
+            mostraTabellone(titolo, tabella, null, poi)
+            return
+        }
+        val casella = EditText(this).apply {
+            hint = "AAA"
+            filters = arrayOf(InputFilter.LengthFilter(3), InputFilter.AllCaps())
+            setSingleLine()
+            gravity = Gravity.CENTER
+            textSize = 28f
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("$titolo · $punti punti")
+            .setMessage("Sei in classifica. Tre lettere.")
+            .setView(FrameLayout(this).apply {
+                setPadding(60, 20, 60, 0)
+                addView(casella)
+            })
+            .setCancelable(false)
+            .setPositiveButton("Metti") { _, _ ->
+                val riga = Record.Riga(Record.iniziali(casella.text?.toString().orEmpty()), punti)
+                val nuova = Record.inserisci(tabella, riga)
+                Prefs.tabellaRecord = Record.scrivi(nuova)
+                mostraTabellone(titolo, nuova, riga, poi)
+            }
+            .show()
+    }
+
+    private fun mostraTabellone(
+        titolo: String,
+        tabella: List<Record.Riga>,
+        mia: Record.Riga?,
+        poi: () -> Unit,
+    ) {
+        val corpo = TextView(this).apply {
+            typeface = Typeface.MONOSPACE
+            textSize = 16f
+            setPadding(60, 30, 60, 10)
+            text = Record.tabellone(tabella, mia)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("$titolo · $punti")
+            .setView(corpo)
+            .setCancelable(false)
+            .setPositiveButton("Da capo") { _, _ -> poi() }
+            .setNegativeButton("Basta") { _, _ -> finish() }
+            .show()
     }
 
     /**
@@ -142,7 +201,9 @@ class SvagoActivity : AppCompatActivity() {
                 }
                 finish()
             }
-            .setNegativeButton("Un'altra volta") { _, _ -> finish() }
+            .setNegativeButton("Il tabellone") { _, _ ->
+                finePartita("FINITO") { vite = VITE; punti = 0; carica(0) }
+            }
             .show()
     }
 }
