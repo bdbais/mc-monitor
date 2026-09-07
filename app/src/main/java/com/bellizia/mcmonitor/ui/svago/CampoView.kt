@@ -36,6 +36,79 @@ class CampoView @JvmOverloads constructor(
 
     var onMossa: ((Direzione) -> Unit)? = null
 
+    /*
+     * Il modello si muove subito, il disegno insegue.
+     *
+     * Queste variabili sono solo l'immagine che recupera: lo stato e' gia'
+     * quello nuovo. E ogni animazione e' interrompibile -- se arriva la mossa
+     * dopo, quella in corso salta alla fine. Al contrario, chi gioca in fretta
+     * perderebbe le mosse.
+     */
+    private var daDove: Punto? = null
+    private var partenza = 0L
+    private var durata = 0
+    private var colpoSu: Punto? = null
+    private var schegge: List<Scheggia> = emptyList()
+
+    private class Scheggia(val dove: Punto, val dx: Float, val dy: Float, val colore: Int)
+
+    /**
+     * Racconta alla vista cosa e' appena successo, perche' lo disegni.
+     *
+     * La vista non lo deduce da sola confrontando due stati: la differenza fra
+     * «ha scavato» e «ha camminato» la sa chi ha chiamato il motore, e
+     * ricavarla di nuovo qui vorrebbe dire due regole da tenere d'accordo.
+     */
+    fun mostra(prima: Stato, mossa: Mossa, direzione: Direzione) {
+        val adesso = System.nanoTime() / 1_000_000
+        stato = mossa.stato
+        when (mossa.esito) {
+            Esito.MOSSO -> {
+                val passi = kotlin.math.abs(mossa.stato.giocatore.x - prima.giocatore.x) +
+                        kotlin.math.abs(mossa.stato.giocatore.y - prima.giocatore.y)
+                daDove = prima.giocatore
+                durata = Animazioni.durata(passi)
+                partenza = adesso
+                colpoSu = null
+            }
+            Esito.CREPATO, Esito.SCAVATO -> {
+                val bersaglio = Punto(
+                    prima.giocatore.x + direzione.dx,
+                    prima.giocatore.y + direzione.dy
+                )
+                daDove = null
+                colpoSu = bersaglio
+                durata = if (mossa.esito == Esito.SCAVATO) Animazioni.ROTTURA_MS else Animazioni.COLPO_MS
+                partenza = adesso
+                schegge = if (mossa.esito == Esito.SCAVATO) {
+                    val colore = prima.bloccoIn(bersaglio)?.let { coloreDi(it) } ?: 0
+                    listOf(
+                        Scheggia(bersaglio, -1.1f, -1.2f, colore),
+                        Scheggia(bersaglio, 1.1f, -1.4f, colore),
+                        Scheggia(bersaglio, -0.5f, -1.7f, colore),
+                        Scheggia(bersaglio, 0.6f, -1.0f, colore),
+                        Scheggia(bersaglio, 0f, -1.9f, colore),
+                    )
+                } else {
+                    emptyList()
+                }
+            }
+            else -> {
+                daDove = null
+                colpoSu = null
+                schegge = emptyList()
+                durata = 0
+            }
+        }
+        invalidate()
+    }
+
+    private fun avanzamento(): Float {
+        if (durata <= 0) return 1f
+        val trascorso = System.nanoTime() / 1_000_000 - partenza
+        return Animazioni.progresso(trascorso, durata)
+    }
+
     private val pennello = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val riquadro = RectF()
 
@@ -159,8 +232,52 @@ class CampoView @JvmOverloads constructor(
             disegnaPiccone(canvas, piccone, lato)
         }
 
-        casella(s.giocatore.x, s.giocatore.y)
+        val t = avanzamento()
+
+        // Le schegge stanno sopra al campo e sotto al giocatore: sono detriti,
+        // non un velo davanti a tutto.
+        if (schegge.isNotEmpty() && t < 1f) {
+            schegge.forEach { sc ->
+                val (dx, dy, opacita) = Animazioni.scheggia(t, sc.dx, sc.dy)
+                casella(sc.dove.x, sc.dove.y)
+                pennello.color = (sc.colore and 0x00FFFFFF) or ((opacita * 255).toInt() shl 24)
+                val q = lato / 5f
+                canvas.drawRect(
+                    riquadro.left + lato / 2f + dx * lato - q / 2,
+                    riquadro.top + lato / 2f + dy * lato - q / 2,
+                    riquadro.left + lato / 2f + dx * lato + q / 2,
+                    riquadro.top + lato / 2f + dy * lato + q / 2,
+                    pennello
+                )
+            }
+        }
+
+        // Il giocatore: fra dove era e dove e' arrivato.
+        val da = daDove
+        if (da != null && t < 1f) {
+            val x = Animazioni.fra(da.x, s.giocatore.x, Animazioni.morbido(t))
+            val y = Animazioni.fra(da.y, s.giocatore.y, Animazioni.morbido(t))
+            riquadro.set(offX + x * lato, offY + y * lato, offX + (x + 1) * lato, offY + (y + 1) * lato)
+        } else {
+            casella(s.giocatore.x, s.giocatore.y)
+        }
         disegnaTesta(canvas, lato)
+
+        // Il colpo: il giocatore si sporge verso il blocco che sta rompendo.
+        val colpo = colpoSu
+        if (colpo != null && t < 1f && schegge.isEmpty()) {
+            val spinta = Animazioni.inclinazione(t, 0.22f)
+            val vx = (colpo.x - s.giocatore.x) * spinta
+            val vy = (colpo.y - s.giocatore.y) * spinta
+            casella(s.giocatore.x, s.giocatore.y)
+            riquadro.offset(vx * lato, vy * lato)
+            disegnaTesta(canvas, lato)
+        }
+
+        // Finche' qualcosa si muove si chiede il fotogramma dopo. Quando non si
+        // muove piu' niente, si smette: un ciclo che gira sempre scalda il
+        // telefono per disegnare la stessa cosa.
+        if (t < 1f) postInvalidateOnAnimation()
     }
 
     /**

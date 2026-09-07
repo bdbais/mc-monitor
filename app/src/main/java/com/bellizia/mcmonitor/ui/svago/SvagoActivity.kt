@@ -131,7 +131,10 @@ class SvagoActivity : AppCompatActivity() {
         if (esito.esito == Esito.NULLA) return
         mosse++
         stato = esito.stato
-        b.campo.stato = esito.stato
+        // La vista riceve il prima e il dopo: la differenza fra «ha scavato» e
+        // «ha camminato» la sa chi ha chiamato il motore, e farla dedurre di
+        // nuovo al disegno vorrebbe dire due regole da tenere d'accordo.
+        b.campo.mostra(ora, esito, d)
         aggiornaTesta()
         if (esito.stato.vinto) vinto()
     }
