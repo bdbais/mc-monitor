@@ -407,6 +407,14 @@ object Prefs {
         sp.edit().putStringSet("sorvegliati_$serverId", nomi).apply()
     }
 
+    /** Quando e' stato fatto l'ultimo controllo di sicurezza, per server. */
+    fun ultimoControlloSicurezza(serverId: String): Long =
+        sp.getLong("sicurezza_$serverId", 0L)
+
+    fun segnaControlloSicurezza(serverId: String, quando: Long) {
+        sp.edit().putLong("sicurezza_$serverId", quando).apply()
+    }
+
     fun cronBackup(serverId: String): String? = sp.getString("cronBackup_$serverId", null)
 
     /**

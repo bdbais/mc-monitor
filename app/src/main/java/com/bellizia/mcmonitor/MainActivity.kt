@@ -10,7 +10,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.bellizia.mcmonitor.data.PlayerTracker
+import com.bellizia.mcmonitor.data.McRepository
 import com.bellizia.mcmonitor.data.Prefs
+import com.bellizia.mcmonitor.lgsm.ControlloSettimanale
 import com.bellizia.mcmonitor.data.PresenceRepository
 import com.bellizia.mcmonitor.lgsm.Presence
 import com.bellizia.mcmonitor.notify.Notifications
@@ -134,6 +136,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, com.bellizia.mcmonitor.ui.AdminActivity::class.java))
         }
         watchOtherAdmins()
+        controlloSicurezzaSettimanale()
 
         // Si parte dalle Impostazioni quando si arriva da "Modifica" o quando la
         // configurazione è incompleta; altrimenti direttamente dallo stato del server.
@@ -170,6 +173,48 @@ class MainActivity : AppCompatActivity() {
      * da soli non serve a nessuno, sapere che c'è qualcun altro sì, perché da qui
      * si spegne un server.
      */
+    /**
+     * Il controllo di sicurezza che si rifà da solo, una volta a settimana.
+     *
+     * Non gira in sottofondo e non è una scorciatoia: da Android 14 un lavoro
+     * periodico di un'app come questa viene rimandato o non eseguito, e sui
+     * telefoni Samsung anche prima. «Ogni lunedì» sarebbe una promessa che
+     * decide il sistema operativo, non noi. Gira invece alla prima apertura di
+     * un server dopo che è passata una settimana, che è una promessa
+     * mantenibile: il collegamento è già acceso e si sta già aspettando.
+     *
+     * Va in fondo alla coda e non blocca niente: se fallisce — server spento,
+     * rete assente — non si segna la data e si riproverà alla prossima
+     * apertura. Un controllo saltato non deve valere come un controllo fatto.
+     */
+    private fun controlloSicurezzaSettimanale() {
+        val cfg = Prefs.load()
+        if (!cfg.isComplete) return
+        val quando = System.currentTimeMillis()
+        if (!ControlloSettimanale.deveGirare(
+                esperto = Prefs.esperto,
+                ultimoControllo = Prefs.ultimoControlloSicurezza(cfg.id),
+                adesso = quando,
+            )
+        ) return
+
+        lifecycleScope.launch {
+            // Prima si lascia respirare la schermata: aprire un server e
+            // trovarlo lento perche' sta facendo un controllo di sicurezza e'
+            // il modo di far disattivare il controllo di sicurezza.
+            delay(20_000)
+            val rapporto = runCatching { McRepository.controlloSicurezza() }.getOrNull() ?: return@launch
+            Prefs.segnaControlloSicurezza(cfg.id, quando)
+            if (!ControlloSettimanale.vaSegnalato(rapporto)) return@launch
+            Notifications.event(
+                applicationContext,
+                Notifications.CHANNEL_SICUREZZA,
+                ControlloSettimanale.titolo(cfg.displayName, rapporto),
+                ControlloSettimanale.testo(rapporto),
+            )
+        }
+    }
+
     private fun watchOtherAdmins() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.RESUMED) {

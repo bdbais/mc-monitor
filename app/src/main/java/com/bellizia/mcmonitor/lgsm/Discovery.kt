@@ -30,6 +30,24 @@ data class DiscoveredServer(
     val modded: Boolean
         get() = mods.isNotEmpty() || loader != null
 
+    /**
+     * Acceso o spento, tenendo conto di quello che si e' visto davvero.
+     *
+     * `running` viene dalla sessione tmux di LinuxGSM: un server avviato a mano,
+     * fuori da LinuxGSM, risulta fermo anche mentre gira. Ma se RCON ha appena
+     * risposto, il server e' acceso e non c'e' niente da discutere -- e la riga
+     * non deve dire «fermo» sopra a un cartellino verde che dice «risponde».
+     */
+    fun acceso(rconHaRisposto: Boolean): Boolean = running || rconHaRisposto
+
+    fun sommario(rconHaRisposto: Boolean = false): String = buildString {
+        append(if (acceso(rconHaRisposto)) "in esecuzione" else "fermo")
+        minecraftVersion?.let { append(" · Minecraft $it") }
+        gamePort?.let { append(" · porta $it") }
+        if (rconEnabled) rconPort?.let { append(" · RCON $it") }
+        if (!hasServerFiles) append(" · non ancora installato")
+    }
+
     val summary: String
         get() = buildString {
             append(if (running) "in esecuzione" else "fermo")

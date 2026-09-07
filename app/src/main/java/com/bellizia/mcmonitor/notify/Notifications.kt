@@ -21,6 +21,7 @@ object Notifications {
     const val CHANNEL_STATUS = "stato-server"
     const val CHANNEL_PLAYERS = "giocatori"
     const val CHANNEL_CHAT = "messaggi-admin"
+    const val CHANNEL_SICUREZZA = "sicurezza"
 
     const val ID_SERVICE = 1
 
@@ -58,6 +59,15 @@ object Notifications {
                 "Messaggi fra amministratori",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply { description = "Messaggi lasciati dagli altri amministratori del server" }
+        )
+        manager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_SICUREZZA,
+                "Controllo di sicurezza",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Il controllo settimanale su quanto e' chiuso il server"
+            }
         )
     }
 

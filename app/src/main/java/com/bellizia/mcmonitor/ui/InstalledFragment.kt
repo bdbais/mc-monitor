@@ -391,6 +391,15 @@ class InstalledFragment : Fragment() {
         fun mostra(stato: SegnaleRcon.Stato) {
             item.rcon.text = SegnaleRcon.etichetta(stato)
             item.rcon.setTextColor(SegnaleRcon.colore(stato))
+            // Se RCON ha risposto il server e' acceso, qualunque cosa dica
+            // tmux: la riga non puo' dire «fermo» sopra a «il server risponde».
+            val risponde = stato == SegnaleRcon.Stato.RISPONDE
+            if (risponde && !server.running) {
+                item.riepilogo.text = server.sommario(rconHaRisposto = true)
+                item.stato.setBackgroundColor(
+                    ContextCompat.getColor(requireContext(), R.color.grass)
+                )
+            }
         }
 
         val iniziale = SegnaleRcon.iniziale(server.rconEnabled, conPassword)
