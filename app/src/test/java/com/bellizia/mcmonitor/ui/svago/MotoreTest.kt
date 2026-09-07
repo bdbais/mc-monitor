@@ -137,11 +137,14 @@ class MotoreTest {
 
     @Test
     fun `il piccone giusto apre e consuma un colpo`() {
-        val prima = campo("@p.", inMano = Piccone.LEGNO)
-        val m = Motore.muovi(prima, Direzione.DESTRA)
-        assertEquals(Esito.SCAVATO, m.esito)
-        assertNull(m.stato.bloccoIn(Punto(1, 0)))
-        assertEquals(Piccone.LEGNO.durabilita - 1, m.stato.inMano!!.colpiRimasti)
+        // Quante picconate servono e come cresce la crepa stanno in
+        // PicconateTest: qui interessa solo che il piccone giusto apra e che
+        // ogni colpo si paghi.
+        var stato = campo("@p.", inMano = Piccone.LEGNO)
+        val quanti = Motore.colpiNecessari(Blocco.PIETRA, Piccone.LEGNO)
+        repeat(quanti) { stato = Motore.muovi(stato, Direzione.DESTRA).stato }
+        assertNull(stato.bloccoIn(Punto(1, 0)))
+        assertEquals(Piccone.LEGNO.durabilita - quanti, stato.inMano!!.colpiRimasti)
     }
 
     @Test
@@ -151,15 +154,19 @@ class MotoreTest {
         // Un colpo per blocco, e fra un colpo e l'altro si avanza di una
         // casella: per consumare dodici colpi servono dodici blocchi, non
         // dodici mosse.
-        val quanti = Piccone.LEGNO.durabilita
+        // La pietra col legno vuole due picconate: dodici colpi bastano per sei
+        // blocchi, non per dodici.
+        val colpi = Piccone.LEGNO.durabilita
+        val perBlocco = Motore.colpiNecessari(Blocco.PIETRA, Piccone.LEGNO)
+        val quanti = colpi / perBlocco
         var stato = campo("@" + "p".repeat(quanti + 1), inMano = Piccone.LEGNO)
         var scavi = 0
-        repeat(quanti * 3) {
+        repeat(colpi * 3) {
             val m = Motore.muovi(stato, Direzione.DESTRA)
             if (m.esito == Esito.SCAVATO) scavi++
             stato = m.stato
         }
-        assertEquals("ha scavato piu' colpi di quanti ne aveva", quanti, scavi)
+        assertEquals("ha rotto piu' blocchi di quanti ne poteva rompere", quanti, scavi)
         assertNull("il piccone doveva essere finito", stato.inMano)
         assertEquals(
             "senza piccone non si scava piu'",
@@ -173,14 +180,17 @@ class MotoreTest {
 
     @Test
     fun `l'ossidiana cede solo al diamante`() {
+        // Col ferro non succede niente, mai. Col diamante succede, ma non in
+        // un colpo: l'ossidiana e' il blocco piu' duro che ci sia.
         assertEquals(
             Esito.NULLA,
             Motore.muovi(campo("@#.", inMano = Piccone.FERRO), Direzione.DESTRA).esito
         )
-        assertEquals(
-            Esito.SCAVATO,
-            Motore.muovi(campo("@#.", inMano = Piccone.DIAMANTE), Direzione.DESTRA).esito
-        )
+        var stato = campo("@#.", inMano = Piccone.DIAMANTE)
+        val quanti = Motore.colpiNecessari(Blocco.OSSIDIANA, Piccone.DIAMANTE)
+        assertTrue("l'ossidiana doveva costare piu' di un colpo", quanti > 1)
+        repeat(quanti) { stato = Motore.muovi(stato, Direzione.DESTRA).stato }
+        assertNull(stato.bloccoIn(Punto(1, 0)))
     }
 
     // ---------------------------------------------------------- i picconi

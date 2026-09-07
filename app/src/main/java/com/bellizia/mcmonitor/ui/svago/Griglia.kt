@@ -86,6 +86,9 @@ enum class Esito {
     /** Si è rotto un blocco: la mossa è servita a quello. */
     SCAVATO,
 
+    /** Una picconata data, ma il blocco è ancora in piedi. */
+    CREPATO,
+
     /** Niente: muro, piccone insufficiente o scarico. Il turno non si consuma. */
     NULLA,
 
@@ -113,6 +116,15 @@ data class Stato(
     val picconi: Map<Punto, Piccone>,
     val giocatore: Punto,
     val inMano: InMano?,
+    /**
+     * Quante picconate ha già preso ogni blocco.
+     *
+     * Restano dove sono anche se ci si allontana. In Minecraft la crepa si
+     * richiude appena stacchi il tasto, ma qui il tempo non scorre: se si
+     * azzerasse, «andare a prendere il piccone giusto e tornare» diventerebbe
+     * una punizione invece che un piano.
+     */
+    val danni: Map<Punto, Int> = emptyMap(),
     val vinto: Boolean = false,
 ) {
     fun dentro(p: Punto) = p.x in 0 until larghezza && p.y in 0 until altezza
@@ -127,6 +139,51 @@ data class Stato(
 }
 
 object Motore {
+
+    /**
+     * Quante picconate servono per rompere un blocco con quel piccone.
+     *
+     * Con l'attrezzo appena sufficiente ci si mette parecchio; ogni livello in
+     * più è una picconata in meno, fino a un minimo di una. Così il piccone non
+     * è solo una chiave che apre o non apre: continua a contare anche dopo che
+     * ha aperto, e portarsi dietro quello buono ha un valore che si misura in
+     * mosse.
+     *
+     * `2·durezza + 1 - livello`, che in pratica vuol dire:
+     *
+     * | blocco    | col minimo | col diamante |
+     * |-----------|-----------:|-------------:|
+     * | terra     |          1 |            1 |
+     * | pietra    |          2 |            1 |
+     * | ferro     |          3 |            1 |
+     * | diamante  |          4 |            2 |
+     * | ossidiana |          5 |            5 |
+     */
+    fun colpiNecessari(blocco: Blocco, piccone: Piccone?): Int {
+        val durezza = blocco.durezza ?: return Int.MAX_VALUE
+        val livello = piccone?.livello ?: 0
+        if (livello < durezza) return Int.MAX_VALUE
+        return maxOf(1, 2 * durezza + 1 - livello)
+    }
+
+    /**
+     * A che punto è la crepa, da 0 (intatto) a [STADI]-1 (sta per cedere).
+     *
+     * Serve solo a disegnare, ma sta qui perché è la stessa aritmetica che
+     * decide quando il blocco cade: due conti separati vorrebbero dire una
+     * crepa piena su un blocco ancora sano.
+     */
+    fun crepa(stato: Stato, dove: Punto): Int {
+        val blocco = stato.bloccoIn(dove) ?: return 0
+        val fatti = stato.danni[dove] ?: 0
+        if (fatti <= 0) return 0
+        val servono = colpiNecessari(blocco, stato.inMano?.piccone)
+        if (servono <= 1 || servono == Int.MAX_VALUE) return STADI - 1
+        return ((fatti * STADI) / servono).coerceIn(0, STADI - 1)
+    }
+
+    /** Quanti stadi di crepa: gli stessi di Minecraft. */
+    const val STADI = 8
 
     private fun Punto.piu(d: Direzione) = Punto(x + d.dx, y + d.dy)
 
@@ -224,6 +281,14 @@ object Motore {
      * Quando finisce, il piccone sparisce dalle mani: restare con un piccone
      * scarico in mano sarebbe la stessa cosa che non averlo, ma detta peggio.
      */
+    /**
+     * Una picconata.
+     *
+     * Non rompe più per forza: aggiunge un colpo, e il blocco cade solo quando
+     * ne ha presi abbastanza. Ogni colpo costa un turno e un punto di
+     * durabilità — che è il motivo per cui l'attrezzo giusto vale: con quello
+     * sbagliato ma sufficiente, lo stesso blocco si porta via tre volte tanto.
+     */
     private fun scava(stato: Stato, dove: Punto, blocco: Blocco): Mossa {
         val durezza = blocco.durezza ?: return Mossa(Esito.NULLA, stato)
         val mano = stato.inMano
@@ -233,8 +298,8 @@ object Motore {
             if (mano.piccone.livello < durezza) return Mossa(Esito.NULLA, stato)
         }
 
-        val nuovi = stato.blocchi.toMutableMap()
-        nuovi.remove(dove)
+        val servono = colpiNecessari(blocco, mano?.piccone)
+        val fatti = (stato.danni[dove] ?: 0) + 1
 
         // La terra si scava anche a mani nude, e allora non consuma niente.
         val manoDopo = if (durezza == 0 || mano == null) {
@@ -243,6 +308,16 @@ object Motore {
             (mano.colpiRimasti - 1).let { if (it <= 0) null else mano.copy(colpiRimasti = it) }
         }
 
-        return Mossa(Esito.SCAVATO, stato.copy(blocchi = nuovi, inMano = manoDopo))
+        if (fatti < servono) {
+            val danni = stato.danni.toMutableMap()
+            danni[dove] = fatti
+            return Mossa(Esito.CREPATO, stato.copy(danni = danni, inMano = manoDopo))
+        }
+
+        val nuovi = stato.blocchi.toMutableMap()
+        nuovi.remove(dove)
+        val danni = stato.danni.toMutableMap()
+        danni.remove(dove)
+        return Mossa(Esito.SCAVATO, stato.copy(blocchi = nuovi, danni = danni, inMano = manoDopo))
     }
 }

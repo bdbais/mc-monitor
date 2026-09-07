@@ -30,9 +30,12 @@ class LivelliTest {
     fun `il primo si finisce`() {
         // Scava la terra a mani nude, gira sotto, raccoglie il piccone, apre la
         // pietra e arriva all'uscita.
+        // La pietra col piccone di legno vuole due picconate, non una: una
+        // mossa in piu' rispetto a prima, ed e' esattamente quello che la
+        // regola nuova deve costare.
         val fine = gioca(
             Livelli.TUTTI[0],
-            listOf(D, D, D, D, G, G, S, D, D, D, D, D, D)
+            listOf(D, D, D, D, G, G, S, D, D, D, D, D, D, D)
         )
         assertTrue("il primo campo non si chiude", fine.vinto)
     }

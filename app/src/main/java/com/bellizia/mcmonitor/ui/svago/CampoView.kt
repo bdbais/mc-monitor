@@ -150,6 +150,8 @@ class CampoView @JvmOverloads constructor(
             pennello.color = OMBRA
             canvas.drawRect(riquadro.left, riquadro.bottom - spessore, riquadro.right, riquadro.bottom, pennello)
             canvas.drawRect(riquadro.right - spessore, riquadro.top, riquadro.right, riquadro.bottom, pennello)
+
+            disegnaCrepa(canvas, Motore.crepa(s, p), lato)
         }
 
         s.picconi.forEach { (p, piccone) ->
@@ -159,6 +161,36 @@ class CampoView @JvmOverloads constructor(
 
         casella(s.giocatore.x, s.giocatore.y)
         disegnaTesta(canvas, lato)
+    }
+
+    /**
+     * La crepa: quanto manca perche' il blocco ceda.
+     *
+     * Non e' decorazione. Adesso un blocco puo' volerci cinque picconate, e
+     * senza un segno visibile chi gioca non ha modo di sapere se sta facendo
+     * progressi o se sta sbattendo contro qualcosa che non cedera' mai. La
+     * crepa e' l'unica cosa che distingue le due situazioni.
+     *
+     * Si disegna a righe nere che si infittiscono, come le crepe a pixel del
+     * gioco: niente immagini, e a otto stadi la differenza fra uno e l'altro si
+     * vede anche su una casella piccola.
+     */
+    private fun disegnaCrepa(canvas: Canvas, stadio: Int, lato: Float) {
+        if (stadio <= 0) return
+        val u = lato / 8f
+        pennello.color = 0xAA000000.toInt()
+        // Un segno in piu' per stadio, sparsi ma sempre negli stessi posti:
+        // devono sembrare crepe che si allargano, non puntini a caso che
+        // cambiano a ogni ridisegno.
+        val segni = listOf(
+            2 to 1, 5 to 2, 1 to 4, 6 to 5, 3 to 3, 4 to 6, 0 to 2, 7 to 4,
+        )
+        segni.take(stadio).forEach { (x, y) ->
+            canvas.drawRect(
+                riquadro.left + x * u, riquadro.top + y * u,
+                riquadro.left + (x + 1) * u, riquadro.top + (y + 1) * u, pennello
+            )
+        }
     }
 
     /** Il manico in diagonale e la punta del colore del materiale. */
