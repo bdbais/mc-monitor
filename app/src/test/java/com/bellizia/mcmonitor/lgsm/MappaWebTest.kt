@@ -368,4 +368,84 @@ class MappaWebTest {
             MappaWeb.portaDellaMappa(bluemap, candidate, sondaggio = null)
         )
     }
+
+    // -------------------------------- piu' server Minecraft nello stesso Linux
+
+    @Test
+    fun `la porta scritta a mano vince su tutto`() {
+        // Chi l'ha scritta sa qualcosa che l'app non puo' sapere: qui due
+        // BlueMap sulla stessa macchina, e solo lui sa quale dei due mondi e'
+        // il suo.
+        val s = sonda(8100 to paginaBlueMap, 8123 to paginaBlueMap)
+        assertEquals(
+            MappaWeb.Scelta.Aprila(8123),
+            MappaWeb.scegliLaPorta(
+                bluemap, listOf(8100, 8123), ricordata = 8100, fissata = 8123, sondaggio = s
+            )
+        )
+    }
+
+    @Test
+    fun `una porta scritta a mano che non risponde non si aggira`() {
+        // Ripiegare su un'altra porta sarebbe la cosa peggiore che l'app possa
+        // fare qui: mostrerebbe la mappa di un mondo diverso spacciandola per
+        // la tua. Meglio dire che non si apre.
+        assertEquals(
+            MappaWeb.Scelta.FissataMuta(8123),
+            MappaWeb.scegliLaPorta(bluemap, listOf(8100), fissata = 8123)
+        )
+    }
+
+    @Test
+    fun `due mappe uguali sulla stessa macchina non si tirano a indovinare`() {
+        // Due server Minecraft nello stesso Linux: le mappe si presentano tutte
+        // e due come BlueMap, e una delle due e' sulla porta predefinita. Se
+        // vincesse la predefinita sarebbe testa o croce, e una delle due facce
+        // mostra il mondo sbagliato dicendo che e' il tuo.
+        val candidate = listOf(bluemap.portaPredefinita, 8101)
+        val s = sonda(bluemap.portaPredefinita to paginaBlueMap, 8101 to paginaBlueMap)
+        assertEquals(
+            MappaWeb.Scelta.Chiedi(candidate),
+            MappaWeb.scegliLaPorta(bluemap, candidate, sondaggio = s)
+        )
+        // E durante l'installazione, dove non si puo' chiedere niente, non si
+        // sceglie affatto.
+        assertNull(MappaWeb.portaDellaMappa(bluemap, candidate, sondaggio = s))
+    }
+
+    @Test
+    fun `fra due mappe uguali la porta di ieri decide senza chiedere`() {
+        // La domanda si fa una volta sola: e' il motivo per cui la risposta si
+        // ricorda.
+        val candidate = listOf(bluemap.portaPredefinita, 8101)
+        val s = sonda(bluemap.portaPredefinita to paginaBlueMap, 8101 to paginaBlueMap)
+        assertEquals(
+            MappaWeb.Scelta.Aprila(8101),
+            MappaWeb.scegliLaPorta(bluemap, candidate, ricordata = 8101, sondaggio = s)
+        )
+    }
+
+    @Test
+    fun `chi si e' nominato esclude chi non ha detto niente`() {
+        // Una porta muta non puo' battere una che ha detto di essere lei,
+        // nemmeno quando la muta e' quella predefinita.
+        val candidate = listOf(bluemap.portaPredefinita, 8101)
+        val s = sonda(
+            bluemap.portaPredefinita to "<html><body>pannello</body></html>",
+            8101 to paginaBlueMap,
+        )
+        assertEquals(listOf(8101), MappaWeb.restano(bluemap, candidate, s))
+        assertEquals(
+            MappaWeb.Scelta.Aprila(8101),
+            MappaWeb.scegliLaPorta(bluemap, candidate, sondaggio = s)
+        )
+    }
+
+    @Test
+    fun `senza niente in ascolto lo si dice, invece di chiedere a vuoto`() {
+        assertEquals(
+            MappaWeb.Scelta.NienteDaAprire,
+            MappaWeb.scegliLaPorta(bluemap, emptyList())
+        )
+    }
 }

@@ -575,6 +575,35 @@
             android:visibility="gone" />
 
 
+        <LinearLayout
+            android:id="@+id/sezionePortaMappa"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:text="Lascia vuota la porta: l'app la trova da sola. Scrivila solo se in questo Linux girano piu' server Minecraft, perche' le loro mappe si chiamano tutte allo stesso modo e l'app non puo' sapere quale e' la tua."
+                android:textColor="@color/text_dim"
+                android:textSize="12sp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Porta della mappa (vuoto = la trova da sola)">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/mapPortaFissa"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

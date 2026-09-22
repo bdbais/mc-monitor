@@ -61,6 +61,22 @@ data class ServerConfig(
      * a mano quando cambia qualcosa.
      */
     val mapPort: Int = 0,
+    /**
+     * La porta della mappa scritta a mano, quando l'app non puo' indovinarla.
+     *
+     * Zero vuol dire «trovala tu», ed e' il caso normale. Serve quando nello
+     * stesso Linux girano piu' server Minecraft: le loro mappe si presentano
+     * tutte con lo stesso nome, e la porta predefinita e' una sola per tutte.
+     * Li' non c'e' niente da riconoscere -- la risposta la sa solo chi ha
+     * montato i server, e la scrive qui.
+     *
+     * E' separata da [mapPort] apposta: quella e' un promemoria che l'app si
+     * scrive da sola e puo' riscrivere quando cambia qualcosa, questa e' una
+     * decisione presa da fuori e non si tocca. Tenerle nello stesso posto
+     * vorrebbe dire che una scoperta automatica diventa una scelta, e che una
+     * scelta si cancella da sola.
+     */
+    val mapPortFissa: Int = 0,
     val mapPollSeconds: Int = 6,
     /** Notifiche: attivazione e scelta degli eventi, server per server. */
     val notifyEnabled: Boolean = false,
@@ -178,6 +194,7 @@ data class ServerConfig(
         put("soloRcon", soloRcon)
         put("webMapUrl", webMapUrl)
         put("mapPort", mapPort)
+        put("mapPortFissa", mapPortFissa)
         put("mapPollSeconds", mapPollSeconds)
         put("notifyEnabled", notifyEnabled)
         put("notifyOffline", notifyOffline)
@@ -214,6 +231,7 @@ data class ServerConfig(
             soloRcon = o.optBoolean("soloRcon", false),
             webMapUrl = o.optString("webMapUrl"),
             mapPort = o.optInt("mapPort", 0),
+            mapPortFissa = o.optInt("mapPortFissa", 0),
             mapPollSeconds = o.optInt("mapPollSeconds", 6),
             notifyEnabled = o.optBoolean("notifyEnabled", false),
             notifyOffline = o.optBoolean("notifyOffline", true),

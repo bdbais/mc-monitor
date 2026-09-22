@@ -725,29 +725,45 @@ class SettingsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             // Prima si guarda cosa e' in ascolto, poi si chiede a quelle porte
             // chi sono: la mappa risponde e si nomina, e a quel punto non c'e'
-            // piu' niente da indovinare. La porta di ieri resta come ripiego,
-            // e vale solo se e' ancora li'.
+            // piu' niente da indovinare. Una porta scritta a mano in
+            // configurazione batte tutto: chi l'ha scritta sa qualcosa che
+            // l'app non puo' sapere.
+            val cfg = Prefs.load()
             val esito = runCatching {
                 val candidate = McRepository.porteCandidate()
-                val sondaggio = McRepository.sonda(candidate)
-                val porta = MappaWeb.portaDellaMappa(
-                    mappa, candidate, Prefs.load().mapPort, sondaggio
+                MappaWeb.scegliLaPorta(
+                    mappa,
+                    candidate,
+                    ricordata = cfg.mapPort,
+                    fissata = cfg.mapPortFissa,
+                    sondaggio = McRepository.sonda(candidate),
                 )
-                porta to MappaWeb.restano(mappa, candidate, sondaggio)
             }
             val bind = _b ?: return@launch
             bind.btnMappa.isEnabled = true
             esito.fold(
-                onSuccess = { (porta, rimaste) ->
-                    when {
-                        porta != null -> apriSullaPorta(mappa, porta)
-                        rimaste.isEmpty() -> showText(
+                onSuccess = { scelta ->
+                    when (scelta) {
+                        is MappaWeb.Scelta.Aprila -> apriSullaPorta(mappa, scelta.porta)
+                        is MappaWeb.Scelta.Chiedi -> chiediQualePorta(mappa, scelta.fra)
+                        is MappaWeb.Scelta.FissataMuta -> showText(
                             "${mappa.nome} non si apre",
-                            "Ho chiesto a tutte le porte aperte sul server e nessuna risponde " +
-                                    "come un sito. O il server e' spento, o la mappa sta ancora " +
-                                    "disegnando il mondo: la prima volta puo' metterci parecchio."
+                            "Nelle impostazioni c'e' scritto di aprire la porta " +
+                                    "${scelta.porta}, ma li' non risponde nessuno.\n\n" +
+                                    "Non ne provo un'altra apposta: se in questo Linux " +
+                                    "girano piu' server, un'altra porta sarebbe la mappa " +
+                                    "di un mondo diverso, e te la mostrerei come se fosse " +
+                                    "la tua. Controlla che il server sia acceso, o " +
+                                    "cancella la porta dalle impostazioni per farmela " +
+                                    "cercare da sola."
                         )
-                        else -> chiediQualePorta(mappa, rimaste)
+                        MappaWeb.Scelta.NienteDaAprire -> showText(
+                            "${mappa.nome} non si apre",
+                            "Ho chiesto a tutte le porte aperte sul server e nessuna " +
+                                    "risponde come un sito. O il server e' spento, o la " +
+                                    "mappa sta ancora disegnando il mondo: la prima volta " +
+                                    "puo' metterci parecchio."
+                        )
                     }
                 },
                 onFailure = { showText("${mappa.nome} non si apre", it.userMessage()) }
@@ -964,6 +980,10 @@ class SettingsFragment : Fragment() {
                     "tecnici e RCON: si riaccendono da qui quando servono."
         }
         b.sezioneRcon.visible(esperto)
+        // La porta della mappa a mano serve a chi ha piu' server nello stesso
+        // Linux, e chi ha piu' server nello stesso Linux non sta in essenziale.
+        // Per tutti gli altri e' una casella in piu' da non capire.
+        b.sezionePortaMappa.visible(esperto)
     }
 
     private fun fill(cfg: ServerConfig) {
@@ -991,6 +1011,7 @@ class SettingsFragment : Fragment() {
         b.rconPort.setText(cfg.rconPort.toString())
         b.rconPassword.setText(cfg.rconPassword)
         b.webMapUrl.setText(cfg.webMapUrl)
+        b.mapPortaFissa.setText(if (cfg.mapPortFissa > 0) cfg.mapPortFissa.toString() else "")
         b.pollSeconds.setText(cfg.mapPollSeconds.toString())
         b.useLgsmSend.isChecked = cfg.useLgsmSend
     }
@@ -1035,6 +1056,10 @@ class SettingsFragment : Fragment() {
         rconPassword = b.rconPassword.text?.toString()?.trim().orEmpty(),
         rconTunnel = b.rconTunnel.isChecked,
         webMapUrl = b.webMapUrl.text?.toString()?.trim().orEmpty(),
+        // Fuori dai numeri di porta validi vale come non scritta: uno zero o
+        // un 99999 non e' una scelta, e' una distrazione.
+        mapPortFissa = b.mapPortaFissa.text?.toString()?.trim()?.toIntOrNull()
+            ?.takeIf { it in 1..65535 } ?: 0,
         mapPollSeconds = b.pollSeconds.text?.toString()?.trim()?.toIntOrNull() ?: 6,
         useLgsmSend = b.useLgsmSend.isChecked,
         hostKeyFingerprint = Prefs.load().hostKeyFingerprint

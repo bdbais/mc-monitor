@@ -758,7 +758,15 @@ object McRepository {
             delay(10_000)
             val candidate = runCatching { porteCandidate() }.getOrDefault(emptyList())
             val sondaggio = runCatching { sonda(candidate) }.getOrNull()
-            porta = MappaWeb.portaDellaMappa(mappa, candidate, sondaggio = sondaggio)
+            // Anche qui la porta scritta a mano vale: chi ha piu' server nello
+            // stesso Linux l'ha scritta proprio per non vedersi trovare quella
+            // dell'altro mondo.
+            porta = (MappaWeb.scegliLaPorta(
+                mappa,
+                candidate,
+                fissata = cfg().mapPortFissa,
+                sondaggio = sondaggio,
+            ) as? MappaWeb.Scelta.Aprila)?.porta
             if (porta == null && candidate.isNotEmpty()) {
                 log("     in ascolto: ${candidate.joinToString(", ")} — non so quale sia la mappa")
             }

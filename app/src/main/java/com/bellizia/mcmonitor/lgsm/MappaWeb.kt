@@ -223,51 +223,90 @@ object MappaWeb {
      */
     fun restano(mappa: Mappa, candidate: List<Int>, sondaggio: Sondaggio? = null): List<Int> {
         val s = sondaggio?.takeIf { it.utile } ?: return candidate
-        return candidate.filter { porta ->
-            val chi = s.riconosciute[porta]
-            if (chi != null) chi == mappa.slug else porta in s.web
+        // Se qualcuna si è nominata, le altre non sono in gara: una porta che
+        // non ha detto niente non può battere una che ha detto di essere lei.
+        val sue = candidate.filter { s.riconosciute[it] == mappa.slug }
+        if (sue.isNotEmpty()) return sue
+        return candidate.filter { s.riconosciute[it] == null && it in s.web }
+    }
+
+    /** Cosa fare, dopo aver guardato le porte. */
+    sealed interface Scelta {
+        /** Si è capito: è questa. */
+        data class Aprila(val porta: Int) : Scelta
+
+        /** Restano più possibilità vere, e la differenza la sa solo chi guarda. */
+        data class Chiedi(val fra: List<Int>) : Scelta
+
+        /** C'è una porta scritta a mano in configurazione, e lì non risponde nessuno. */
+        data class FissataMuta(val porta: Int) : Scelta
+
+        /** Non c'è niente da aprire da nessuna parte. */
+        data object NienteDaAprire : Scelta
+    }
+
+    /**
+     * Quale porta aprire, e cosa dire quando non si sa.
+     *
+     * L'ordine delle risposte è la regola:
+     *
+     * 1. **la porta scritta a mano**, se c'è. Non si discute e non si corregge:
+     *    chi l'ha scritta sa qualcosa che l'app non può sapere. Se lì non
+     *    risponde nessuno lo si dice e ci si ferma — ripiegare su un'altra
+     *    porta vorrebbe dire aprire la mappa di un mondo diverso facendola
+     *    passare per questa;
+     * 2. **la porta dove la mappa ha detto di essere lei**, se è una sola. Non
+     *    è una supposizione come le altre: è la mappa che risponde e si nomina;
+     * 3. la porta che ha funzionato l'ultima volta, se è ancora lì. Serve a chi
+     *    la mappa se l'è messa dietro qualcosa che non si fa riconoscere, e
+     *    serve a distinguere due mappe uguali su due server diversi;
+     * 4. la porta predefinita della mappa scelta;
+     * 5. l'unica rimasta, se ne è rimasta una sola.
+     *
+     * **Due mappe uguali sulla stessa macchina** — due server Minecraft nello
+     * stesso Linux, che è il caso per cui la porta si può scrivere a mano — si
+     * presentano tutte e due con lo stesso nome. Lì la predefinita non è una
+     * risposta: sarebbe testa o croce, e una delle due facce mostra il mondo
+     * sbagliato dicendo che è il tuo. Quindi si chiede, e la risposta si
+     * ricorda.
+     */
+    fun scegliLaPorta(
+        mappa: Mappa,
+        candidate: List<Int>,
+        ricordata: Int = 0,
+        fissata: Int = 0,
+        sondaggio: Sondaggio? = null,
+    ): Scelta {
+        if (fissata > 0) {
+            return if (fissata in candidate) Scelta.Aprila(fissata) else Scelta.FissataMuta(fissata)
+        }
+        val rimaste = restano(mappa, candidate, sondaggio)
+        val s = sondaggio?.takeIf { it.utile }
+        val dettesi = rimaste.filter { s?.riconosciute?.get(it) == mappa.slug }
+        return when {
+            dettesi.size == 1 -> Scelta.Aprila(dettesi.first())
+            ricordata > 0 && ricordata in rimaste -> Scelta.Aprila(ricordata)
+            dettesi.size > 1 -> Scelta.Chiedi(dettesi)
+            mappa.portaPredefinita in rimaste -> Scelta.Aprila(mappa.portaPredefinita)
+            rimaste.size == 1 -> Scelta.Aprila(rimaste.first())
+            rimaste.isEmpty() -> Scelta.NienteDaAprire
+            else -> Scelta.Chiedi(rimaste)
         }
     }
 
     /**
-     * Quale porta aprire.
+     * La porta, quando basta un numero o niente.
      *
-     * L'ordine delle risposte è la regola:
-     *
-     * 1. **la porta dove la mappa ha detto di essere lei.** Non è una
-     *    supposizione come le altre tre: è la mappa che risponde e si nomina.
-     *    Quando c'è, tutto il resto non serve;
-     * 2. la porta che ha funzionato l'ultima volta, se è ancora lì. Serve a chi
-     *    la mappa se l'è messa dietro qualcosa che non si fa riconoscere;
-     * 3. la porta predefinita della mappa scelta;
-     * 4. l'unica rimasta, se ne è rimasta una sola.
-     *
-     * Se restano diverse porte e nessuna è nota, non si tira a indovinare:
-     * aprire quella sbagliata mostra una pagina bianca e fa credere che
-     * l'installazione sia fallita.
-     *
-     * La porta ricordata vale **solo se è ancora in ascolto**. Non è una
-     * cautela: è quello che rende automatica la riscoperta. Una mappa
-     * reinstallata altrove, o spenta, esce da sola dalle candidate e la regola
-     * ricomincia da capo, senza che nessuno debba cancellare niente.
+     * La regola vera sta in [scegliLaPorta], che sa anche dire *perche'* non ha
+     * scelto. Questa serve dove quella distinzione non c'e': durante
+     * l'installazione, dove si aspetta soltanto che la mappa si affacci.
      */
     fun portaDellaMappa(
         mappa: Mappa,
         candidate: List<Int>,
         ricordata: Int = 0,
         sondaggio: Sondaggio? = null,
-    ): Int? {
-        val rimaste = restano(mappa, candidate, sondaggio)
-        val s = sondaggio?.takeIf { it.utile }
-        val dettasi = rimaste.firstOrNull { s?.riconosciute?.get(it) == mappa.slug }
-        return when {
-            dettasi != null -> dettasi
-            ricordata > 0 && ricordata in rimaste -> ricordata
-            mappa.portaPredefinita in rimaste -> mappa.portaPredefinita
-            rimaste.size == 1 -> rimaste.first()
-            else -> null
-        }
-    }
+    ): Int? = (scegliLaPorta(mappa, candidate, ricordata, 0, sondaggio) as? Scelta.Aprila)?.porta
 
     /**
      * L'indirizzo da aprire, dentro il tunnel.
