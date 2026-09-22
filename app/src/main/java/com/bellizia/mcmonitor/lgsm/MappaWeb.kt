@@ -150,18 +150,51 @@ object MappaWeb {
      * `wget` dietro `curl` perché su una macchina spoglia c'è l'uno o l'altro,
      * quasi mai tutti e due.
      */
+    /**
+     * Quante porte si sondano al massimo.
+     *
+     * Non e' un limite di prudenza, e' un limite di buon senso: oltre una
+     * ventina di porte in ascolto non si sta piu' cercando una mappa fra due
+     * possibilita', si sta bussando a tutte le porte di una macchina piena di
+     * roba. Le candidate arrivano in ordine crescente, e una mappa web non sta
+     * mai in fondo a una lista di sessanta.
+     */
+    const val QUANTE_AL_MASSIMO = 24
+
     fun comandoSonda(porte: List<Int>): String {
-        if (porte.isEmpty()) return "echo"
-        val prendi = "prendi() { curl -fsS -m 3 \"${'$'}1\" 2>/dev/null || " +
-                "wget -qO- -T 3 \"${'$'}1\" 2>/dev/null; }"
-        val giri = porte.joinToString("\n") { p ->
-            "echo '=== PORTA $p'; { " +
-                    "prendi 'http://127.0.0.1:$p/'; " +
-                    "prendi 'http://127.0.0.1:$p/settings.json'; " +
-                    "prendi 'http://127.0.0.1:$p/up/configuration'; " +
-                    "} | head -c 4000; echo"
+        val scelte = porte.take(QUANTE_AL_MASSIMO)
+        if (scelte.isEmpty()) return "echo"
+        // Il dollaro e' della shell, non di Kotlin: queste sono variabili che
+        // esistono sul server.
+        val d = "${'$'}"
+        val righe = mutableListOf(
+            // -t 1 non e' un dettaglio: senza, wget riprova venti volte, e su
+            // una porta che accetta il collegamento e poi non risponde --
+            // Docker, Postgres, un TLS che aspetta il certificato -- venti
+            // volte per due secondi sono quaranta secondi per una porta sola.
+            // Con diciassette porte il comando non finiva piu', e la sonda
+            // scadeva sempre: su un server vero non ha mai funzionato una
+            // volta, e nei test andava benissimo.
+            """prendi() { curl -fsS -m 2 "${d}1" 2>/dev/null || wget -qO- -T 2 -t 1 "${d}1" 2>/dev/null; }""",
+            """cartella="${d}{TMPDIR:-/tmp}/mcmonitor-sonda.${d}${d}"; mkdir -p "${d}cartella" || exit 0""",
+        )
+        // Tutte insieme, non una dopo l'altra: su una macchina che fa anche
+        // altro le porte in ascolto sono quindici o venti, e in fila sarebbero
+        // minuti. La prima versione ci metteva cosi' tanto che il comando
+        // scadeva e non tornava niente -- cioe' la sonda non c'era, e non si
+        // vedeva che non c'era: l'app tornava semplicemente a chiedere.
+        scelte.forEach { p ->
+            righe += """{ { prendi 'http://127.0.0.1:$p/'; """ +
+                    """prendi 'http://127.0.0.1:$p/settings.json'; """ +
+                    """prendi 'http://127.0.0.1:$p/up/configuration'; """ +
+                    """} | head -c 4000 > "${d}cartella/$p"; } &"""
         }
-        return "$prendi\n$giri"
+        righe += "wait"
+        scelte.forEach { p ->
+            righe += """echo '=== PORTA $p'; cat "${d}cartella/$p" 2>/dev/null; echo"""
+        }
+        righe += """rm -rf "${d}cartella""""
+        return righe.joinToString("\n")
     }
 
     /**
@@ -235,8 +268,15 @@ object MappaWeb {
         /** Si è capito: è questa. */
         data class Aprila(val porta: Int) : Scelta
 
-        /** Restano più possibilità vere, e la differenza la sa solo chi guarda. */
-        data class Chiedi(val fra: List<Int>) : Scelta
+        /**
+         * Restano più possibilità vere, e la differenza la sa solo chi guarda.
+         *
+         * [sondato] dice se alle porte è stato chiesto chi sono. Senza questa
+         * distinzione la domanda mente: «nessuna ha detto di essere BlueMap» e
+         * «non sono riuscito a chiederlo a nessuna» portano alla stessa
+         * domanda, ma la seconda è un guasto da aggiustare e la prima no.
+         */
+        data class Chiedi(val fra: List<Int>, val sondato: Boolean = false) : Scelta
 
         /** C'è una porta scritta a mano in configurazione, e lì non risponde nessuno. */
         data class FissataMuta(val porta: Int) : Scelta
@@ -286,11 +326,11 @@ object MappaWeb {
         return when {
             dettesi.size == 1 -> Scelta.Aprila(dettesi.first())
             ricordata > 0 && ricordata in rimaste -> Scelta.Aprila(ricordata)
-            dettesi.size > 1 -> Scelta.Chiedi(dettesi)
+            dettesi.size > 1 -> Scelta.Chiedi(dettesi, sondato = true)
             mappa.portaPredefinita in rimaste -> Scelta.Aprila(mappa.portaPredefinita)
             rimaste.size == 1 -> Scelta.Aprila(rimaste.first())
             rimaste.isEmpty() -> Scelta.NienteDaAprire
-            else -> Scelta.Chiedi(rimaste)
+            else -> Scelta.Chiedi(rimaste, sondato = s != null)
         }
     }
 

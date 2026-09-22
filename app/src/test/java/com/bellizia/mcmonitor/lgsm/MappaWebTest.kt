@@ -238,6 +238,40 @@ class MappaWebTest {
     }
 
     @Test
+    fun `le porte si chiedono tutte insieme, non una dopo l'altra`() {
+        // In fila, su una macchina con quindici porte in ascolto, il comando
+        // scadeva prima di rispondere: la sonda non c'era e non si vedeva che
+        // non c'era, l'app tornava semplicemente a chiedere. E' il difetto che
+        // si e' visto solo su un server vero.
+        val comando = MappaWeb.comandoSonda((9000..9016).toList())
+        assertEquals(17, Regex("""=== PORTA""").findAll(comando).count())
+        assertEquals(17, Regex("""} &${'$'}""", RegexOption.MULTILINE).findAll(comando).count())
+        assertTrue(comando.lineSequence().any { it.trim() == "wait" })
+        // Si aspetta prima di leggere, o si leggono file ancora vuoti.
+        assertTrue(comando.indexOf("\nwait") < comando.indexOf("=== PORTA"))
+    }
+
+    @Test
+    fun `oltre una certa soglia non si bussa a tutte le porte della macchina`() {
+        val comando = MappaWeb.comandoSonda((9000..9100).toList())
+        assertEquals(
+            MappaWeb.QUANTE_AL_MASSIMO,
+            Regex("""=== PORTA""").findAll(comando).count()
+        )
+    }
+
+    @Test
+    fun `nessuno dei due programmi puo' riprovare`() {
+        // Il difetto che ha fatto scadere la sonda su un server vero: wget
+        // riprova venti volte da solo, e una porta che accetta e non risponde
+        // diventa quaranta secondi. Il tempo massimo di una richiesta deve
+        // essere detto per intero, non meta' lasciata ai valori di fabbrica.
+        val comando = MappaWeb.comandoSonda(listOf(8100))
+        assertTrue("wget senza -t 1 riprova venti volte", comando.contains("-t 1"))
+        assertTrue("curl senza -m si ferma solo quando vuole lui", comando.contains("-m 2"))
+    }
+
+    @Test
     fun `senza porte da chiedere non si manda un comando a vuoto`() {
         // Un for su una lista vuota e' un comando che gira per niente: qui
         // arriva anche col server spento, e un giro di SSH costa.
@@ -405,7 +439,7 @@ class MappaWebTest {
         val candidate = listOf(bluemap.portaPredefinita, 8101)
         val s = sonda(bluemap.portaPredefinita to paginaBlueMap, 8101 to paginaBlueMap)
         assertEquals(
-            MappaWeb.Scelta.Chiedi(candidate),
+            MappaWeb.Scelta.Chiedi(candidate, sondato = true),
             MappaWeb.scegliLaPorta(bluemap, candidate, sondaggio = s)
         )
         // E durante l'installazione, dove non si puo' chiedere niente, non si
@@ -447,5 +481,24 @@ class MappaWebTest {
             MappaWeb.Scelta.NienteDaAprire,
             MappaWeb.scegliLaPorta(bluemap, emptyList())
         )
+    }
+
+    @Test
+    fun `chiedere dopo aver sondato non e' come chiedere senza`() {
+        // Senza questa distinzione la domanda mente: «nessuna ha detto di
+        // essere BlueMap» e «non sono riuscito a chiederlo» finiscono nella
+        // stessa finestra, ma la seconda e' un guasto da aggiustare -- sul
+        // server mancano curl e wget -- e chi legge deve poterlo sapere.
+        val senza = MappaWeb.scegliLaPorta(bluemap, listOf(9000, 9001))
+        assertEquals(MappaWeb.Scelta.Chiedi(listOf(9000, 9001), sondato = false), senza)
+        val con = MappaWeb.scegliLaPorta(
+            bluemap,
+            listOf(9000, 9001),
+            sondaggio = sonda(
+                9000 to "<html><body>uno</body></html>",
+                9001 to "<html><body>due</body></html>",
+            ),
+        )
+        assertEquals(MappaWeb.Scelta.Chiedi(listOf(9000, 9001), sondato = true), con)
     }
 }

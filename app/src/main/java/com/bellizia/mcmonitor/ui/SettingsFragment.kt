@@ -731,21 +731,23 @@ class SettingsFragment : Fragment() {
             val cfg = Prefs.load()
             val esito = runCatching {
                 val candidate = McRepository.porteCandidate()
+                val esito = McRepository.sonda(candidate)
                 MappaWeb.scegliLaPorta(
                     mappa,
                     candidate,
                     ricordata = cfg.mapPort,
                     fissata = cfg.mapPortFissa,
-                    sondaggio = McRepository.sonda(candidate),
-                )
+                    sondaggio = esito.sondaggio,
+                ) to esito.motivo
             }
             val bind = _b ?: return@launch
             bind.btnMappa.isEnabled = true
             esito.fold(
-                onSuccess = { scelta ->
+                onSuccess = { (scelta, motivo) ->
                     when (scelta) {
                         is MappaWeb.Scelta.Aprila -> apriSullaPorta(mappa, scelta.porta)
-                        is MappaWeb.Scelta.Chiedi -> chiediQualePorta(mappa, scelta.fra)
+                        is MappaWeb.Scelta.Chiedi ->
+                            chiediQualePorta(mappa, scelta.fra, scelta.sondato, motivo)
                         is MappaWeb.Scelta.FissataMuta -> showText(
                             "${mappa.nome} non si apre",
                             "Nelle impostazioni c'e' scritto di aprire la porta " +
@@ -780,18 +782,29 @@ class SettingsFragment : Fragment() {
      * quelle che a una richiesta web hanno risposto qualcosa, quindi provarle
      * e' ragionevole e sono poche.
      */
-    private fun chiediQualePorta(mappa: MappaWeb.Mappa, candidate: List<Int>) {
-        val voci = candidate.map { "porta $it" }.toTypedArray()
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Quale porta e' ${mappa.nome}?")
-            .setMessage(
-                "Sul server c'e' piu' di un sito in ascolto e nessuno ha detto di " +
-                        "essere ${mappa.nome}. Provane uno: se e' la pagina giusta me " +
-                        "la ricordo, e non te lo chiedo piu'."
-            )
-            .setItems(voci) { _, quale -> apriSullaPorta(mappa, candidate[quale]) }
-            .setNegativeButton("Lascia stare", null)
-            .show()
+    private fun chiediQualePorta(
+        mappa: MappaWeb.Mappa,
+        candidate: List<Int>,
+        sondato: Boolean,
+        motivo: String,
+    ) {
+        ElencoSpiegato.mostra(
+            requireContext(),
+            titolo = "Quale porta e' ${mappa.nome}?",
+            nota = if (sondato) {
+                "Ho chiesto a ognuna di queste chi e' e nessuna ha detto di essere " +
+                        "${mappa.nome}. Provane una: se e' la pagina giusta me la " +
+                        "ricordo, e non te lo chiedo piu'."
+            } else {
+                "Non sono riuscito a chiedere alle porte chi sono" +
+                        (if (motivo.isBlank()) "" else ": $motivo") +
+                        ".\n\nQueste sono quindi tutte le porte in ascolto, non solo i " +
+                        "siti. Provane una: se e' la pagina giusta me la ricordo, e non " +
+                        "te lo chiedo piu'."
+            },
+            voci = candidate.map { "porta $it" },
+            annulla = "Lascia stare",
+        ) { quale -> apriSullaPorta(mappa, candidate[quale]) }
     }
 
     /**

@@ -295,15 +295,17 @@ class BackupActivity : AppCompatActivity() {
                     }
                     .show()
                 Cadenza.MESE -> {
-                    val numeri = (1..28).map { "il $it" }.toTypedArray()
-                    MaterialAlertDialogBuilder(this)
-                        .setTitle("In che giorno del mese")
-                        .setMessage("Fino al 28: dal 29 in poi ci sono mesi che quel giorno non ce l'hanno, e il backup salterebbe.")
-                        .setItems(numeri) { _, quale ->
-                            giornoMese = quale + 1
-                            aggiornaGiorno()
-                        }
-                        .show()
+                    val numeri = (1..28).map { "il $it" }
+                    ElencoSpiegato.mostra(
+                        this,
+                        titolo = "In che giorno del mese",
+                        nota = "Fino al 28: dal 29 in poi ci sono mesi che quel giorno " +
+                                "non ce l'hanno, e il backup salterebbe.",
+                        voci = numeri.toList(),
+                    ) { quale ->
+                        giornoMese = quale + 1
+                        aggiornaGiorno()
+                    }
                 }
                 else -> Unit
             }

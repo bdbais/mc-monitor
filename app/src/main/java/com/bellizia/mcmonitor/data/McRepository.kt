@@ -694,12 +694,28 @@ object McRepository {
      * oppure ne' curl ne' wget sulla macchina -- e in quel caso si ragiona sulle
      * sole porte in ascolto, com'era prima. Un silenzio non e' un no.
      */
-    suspend fun sonda(candidate: List<Int>): MappaWeb.Sondaggio? {
-        if (candidate.isEmpty()) return null
+    /**
+     * L'esito di una domanda alle porte, con il motivo quando non si e' potuta
+     * fare.
+     *
+     * Il motivo non e' per il registro: finisce a schermo. «Non so quale sia la
+     * mappa» e «non sono riuscito a chiederlo» portano alla stessa domanda, ma
+     * la seconda e' un guasto da aggiustare, e senza dirlo resta invisibile per
+     * sempre -- l'app continua a chiedere e sembra che sia fatta cosi'.
+     */
+    data class EsitoSonda(val sondaggio: MappaWeb.Sondaggio?, val motivo: String = "")
+
+    suspend fun sonda(candidate: List<Int>): EsitoSonda {
+        if (candidate.isEmpty()) return EsitoSonda(null, "non c'e' nessuna porta da chiedere")
         val r = runCatching {
-            SshManager.exec(cfg(), MappaWeb.comandoSonda(candidate), 60_000)
-        }.getOrNull() ?: return null
-        return MappaWeb.leggiSonda(Lgsm.clean(r.text)).takeIf { it.utile }
+            SshManager.exec(cfg(), MappaWeb.comandoSonda(candidate), 90_000)
+        }
+        val risposta = r.getOrElse {
+            return EsitoSonda(null, it.message ?: it.toString())
+        }
+        val letto = MappaWeb.leggiSonda(Lgsm.clean(risposta.text))
+        return if (letto.utile) EsitoSonda(letto)
+        else EsitoSonda(null, "nessuna porta ha risposto: sul server mancano curl e wget?")
     }
 
     /**
@@ -757,7 +773,7 @@ object McRepository {
             if (porta != null) return@repeat
             delay(10_000)
             val candidate = runCatching { porteCandidate() }.getOrDefault(emptyList())
-            val sondaggio = runCatching { sonda(candidate) }.getOrNull()
+            val sondaggio = runCatching { sonda(candidate).sondaggio }.getOrNull()
             // Anche qui la porta scritta a mano vale: chi ha piu' server nello
             // stesso Linux l'ha scritta proprio per non vedersi trovare quella
             // dell'altro mondo.
