@@ -723,25 +723,73 @@ class SettingsFragment : Fragment() {
     private fun apriMappa(mappa: MappaWeb.Mappa) {
         b.btnMappa.isEnabled = false
         viewLifecycleOwner.lifecycleScope.launch {
+            // La porta di ieri vale solo se e' ancora in ascolto: e' cosi' che
+            // una mappa spostata o spenta si riscopre da sola, invece di
+            // lasciare in configurazione un numero da correggere a mano.
             val esito = runCatching {
                 val candidate = McRepository.porteCandidate()
-                val porta = MappaWeb.portaDellaMappa(mappa, candidate)
-                    ?: throw IllegalStateException(
-                        if (candidate.isEmpty()) {
-                            "${mappa.nome} non risponde su nessuna porta: il server e' spento, " +
-                                    "oppure la mappa sta ancora disegnando il mondo."
-                        } else {
-                            "Non so quale sia la mappa fra le porte in ascolto " +
-                                    "(${candidate.joinToString(", ")}). Scrivi l'indirizzo " +
-                                    "nella casella qui sotto."
-                        }
-                    )
+                MappaWeb.portaDellaMappa(mappa, candidate, Prefs.load().mapPort) to candidate
+            }
+            val bind = _b ?: return@launch
+            bind.btnMappa.isEnabled = true
+            esito.fold(
+                onSuccess = { (porta, candidate) ->
+                    when {
+                        porta != null -> apriSullaPorta(mappa, porta)
+                        candidate.isEmpty() -> showText(
+                            "${mappa.nome} non si apre",
+                            "Non risponde su nessuna porta: il server e' spento, oppure la " +
+                                    "mappa sta ancora disegnando il mondo. La prima volta puo' " +
+                                    "metterci parecchio."
+                        )
+                        else -> chiediQualePorta(mappa, candidate)
+                    }
+                },
+                onFailure = { showText("${mappa.nome} non si apre", it.userMessage()) }
+            )
+        }
+    }
+
+    /**
+     * Quando le porte in ascolto sono piu' d'una e nessuna e' nota, si chiede.
+     *
+     * Prima qui il discorso finiva: «non so quale sia, scrivi l'indirizzo a
+     * mano». Ma la risposta ce l'ha chi guarda -- basta provarne una -- e una
+     * volta data non va piu' chiesta: la porta scelta viene ricordata, e il
+     * giro dopo la mappa si apre e basta.
+     */
+    private fun chiediQualePorta(mappa: MappaWeb.Mappa, candidate: List<Int>) {
+        val voci = candidate.map { "porta $it" }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Quale porta e' ${mappa.nome}?")
+            .setMessage(
+                "Sul server ce n'e' piu' d'una in ascolto e nessuna e' quella " +
+                        "predefinita di ${mappa.nome}. Provane una: se e' la pagina " +
+                        "giusta me la ricordo, e non te lo chiedo piu'."
+            )
+            .setItems(voci) { _, quale -> apriSullaPorta(mappa, candidate[quale]) }
+            .setNegativeButton("Lascia stare", null)
+            .show()
+    }
+
+    /**
+     * Apre la mappa dentro il tunnel, e si segna la porta che ha funzionato.
+     *
+     * L'indirizzo non si salva: la porta locale la sceglie il tunnel ogni
+     * volta, e domani quella di oggi non porterebbe da nessuna parte. Si salva
+     * la porta **del server**, che invece domani e' ancora quella.
+     */
+    private fun apriSullaPorta(mappa: MappaWeb.Mappa, porta: Int) {
+        b.btnMappa.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            val esito = runCatching {
                 MappaWeb.indirizzoNelTunnel(SshManager.openTunnel(Prefs.load(), porta))
             }
             val bind = _b ?: return@launch
             bind.btnMappa.isEnabled = true
             esito.fold(
                 onSuccess = {
+                    McRepository.ricordaLaPorta(porta)
                     startActivity(
                         Intent(requireContext(), WebMapActivity::class.java).putExtra("url", it)
                     )

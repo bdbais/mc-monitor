@@ -30,6 +30,26 @@ object Impostazioni {
             primaVoce?.let { add(it) }
             add(modo() to { quantaApp(activity) })
             add("Blocco e amministratore" to { LockSettings.show(activity) })
+            /*
+             * Le impostazioni tecniche di LinuxGSM -- memoria della macchina
+             * virtuale, porte, parametri di avvio.
+             *
+             * Ci si arrivava **solo** quando l'avvio falliva e la diagnosi
+             * puntava li'. Una schermata raggiungibile soltanto dopo un guasto
+             * e' una schermata che non esiste finche' qualcosa non si rompe: si
+             * puo' guardare cosa c'e' scritto, e si vorrebbe poterlo fare prima
+             * invece che per forza dopo.
+             *
+             * Sotto la modalita' esperto perche' quel file si scrive da solo
+             * quasi sempre, e toccarlo senza sapere cosa si tocca e' il modo di
+             * non far piu' partire il server. In essenziale la voce non c'e', e
+             * il rimedio dopo il guasto resta comunque al suo posto.
+             */
+            if (Prefs.esperto && Prefs.load().isComplete) {
+                add("Impostazioni tecniche · LinuxGSM" to {
+                    activity.startActivity(Intent(activity, ParamsActivity::class.java))
+                })
+            }
             add("Facce dei giocatori" to { facce(activity) })
             add("Profili salvati" to {
                 activity.startActivity(Intent(activity, ServersActivity::class.java))

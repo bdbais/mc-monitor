@@ -115,12 +115,27 @@ object MappaWeb {
     /**
      * Quale porta proporre.
      *
-     * Se quella predefinita della mappa scelta è in ascolto è quella, senza
-     * discutere. Altrimenti si prende l'unica rimasta; se ne restano diverse non
-     * si tira a indovinare, perché aprire la porta sbagliata mostra una pagina
-     * bianca e fa credere che l'installazione sia fallita.
+     * L'ordine delle tre risposte è la regola:
+     *
+     * 1. **la porta che ha funzionato l'ultima volta**, se è ancora in ascolto.
+     *    È l'unica che risponde al caso che prima restava senza risposta: la
+     *    mappa spostata su una porta sua. Lì il valore predefinito non c'è, le
+     *    candidate sono più d'una, e l'app rinunciava — ogni volta, anche dopo
+     *    che una volta si era capito benissimo qual era;
+     * 2. la porta predefinita della mappa scelta, se è in ascolto;
+     * 3. l'unica rimasta, se ne è rimasta una sola.
+     *
+     * Se ne restano diverse e nessuna è nota, non si tira a indovinare: aprire
+     * la porta sbagliata mostra una pagina bianca e fa credere che
+     * l'installazione sia fallita.
+     *
+     * La porta ricordata vale **solo se è ancora in ascolto**. Non è una
+     * cautela: è quello che rende automatica la riscoperta. Una mappa
+     * reinstallata altrove, o spenta, esce da sola dalle candidate e la regola
+     * ricomincia da capo, senza che nessuno debba cancellare niente.
      */
-    fun portaDellaMappa(mappa: Mappa, candidate: List<Int>): Int? = when {
+    fun portaDellaMappa(mappa: Mappa, candidate: List<Int>, ricordata: Int = 0): Int? = when {
+        ricordata > 0 && ricordata in candidate -> ricordata
         mappa.portaPredefinita in candidate -> mappa.portaPredefinita
         candidate.size == 1 -> candidate.first()
         else -> null

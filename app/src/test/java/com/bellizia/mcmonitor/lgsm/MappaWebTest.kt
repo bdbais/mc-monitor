@@ -143,4 +143,63 @@ class MappaWebTest {
                 MappaWeb.CATALOGO.firstOrNull { altra -> altra !== it && altra.slug == it.slug })
         }
     }
+
+    // ------------------------------------------- la porta che si e' ricordata
+
+    /**
+     * Il caso che prima restava senza risposta.
+     *
+     * Mappa su una porta sua, due porte in ascolto e nessuna predefinita:
+     * l'app rinunciava ogni volta, anche dopo che una volta si era capito
+     * benissimo qual era. Adesso quella che ha funzionato l'ultima volta vale
+     * piu' di tutto il resto.
+     */
+    @Test
+    fun `la porta ricordata vince su tutto, se e' ancora in ascolto`() {
+        val candidate = listOf(9000, 9001)
+        assertNull(MappaWeb.portaDellaMappa(bluemap, candidate))
+        assertEquals(
+            9001,
+            MappaWeb.portaDellaMappa(bluemap, candidate, ricordata = 9001)
+        )
+    }
+
+    @Test
+    fun `la porta ricordata vince anche sulla predefinita`() {
+        // Chi ha spostato la mappa l'ha spostata apposta, e la predefinita in
+        // ascolto e' un'altra cosa -- magari un secondo mondo.
+        val candidate = listOf(bluemap.portaPredefinita, 9001)
+        assertEquals(
+            9001,
+            MappaWeb.portaDellaMappa(bluemap, candidate, ricordata = 9001)
+        )
+    }
+
+    @Test
+    fun `una porta ricordata che non risponde piu' si scarta`() {
+        // E' quello che rende automatica la riscoperta: la mappa reinstallata
+        // altrove, o spenta, esce da sola dalle candidate e la regola
+        // ricomincia da capo. Senza questo, in configurazione resterebbe un
+        // numero sbagliato da correggere a mano.
+        val candidate = listOf(bluemap.portaPredefinita)
+        assertEquals(
+            bluemap.portaPredefinita,
+            MappaWeb.portaDellaMappa(bluemap, candidate, ricordata = 9001)
+        )
+    }
+
+    @Test
+    fun `senza niente in ascolto la porta ricordata non basta`() {
+        // Il server e' spento: aprire un tunnel verso una porta che non c'e'
+        // mostrerebbe una pagina bianca, che si legge come «installazione
+        // fallita».
+        assertNull(MappaWeb.portaDellaMappa(bluemap, emptyList(), ricordata = 9001))
+    }
+
+    @Test
+    fun `zero vuol dire che non si e' mai trovata`() {
+        // E' il valore di partenza in configurazione: non deve diventare una
+        // porta da provare.
+        assertNull(MappaWeb.portaDellaMappa(bluemap, listOf(9000, 9001), ricordata = 0))
+    }
 }

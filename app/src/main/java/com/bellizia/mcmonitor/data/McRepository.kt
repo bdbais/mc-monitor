@@ -749,6 +749,7 @@ object McRepository {
         }
 
         if (porta != null) {
+            ricordaLaPorta(porta)
             log("\n     ${mappa.nome} risponde sulla porta $porta.")
             log("\nNon serve aprire niente sul firewall: la mappa passa dentro il " +
                     "collegamento che l'app usa gia'. Dal di fuori quella porta resta " +
@@ -760,6 +761,22 @@ object McRepository {
                     "minuto. Se sai gia' l'indirizzo, scrivilo nella casella qui sotto.")
         }
         return report.toString() to porta
+    }
+
+    /**
+     * Segna la porta su cui la mappa ha risposto.
+     *
+     * Serve al giro dopo: se quella porta e' ancora in ascolto si riprende
+     * quella, e il caso della mappa spostata su una porta sua smette di essere
+     * un «non so quale sia» ripetuto ogni volta.
+     *
+     * Si scrive solo se e' cambiata: salvare la configurazione a ogni apertura
+     * vorrebbe dire riscrivere le credenziali sul disco per niente.
+     */
+    fun ricordaLaPorta(porta: Int) {
+        val c = cfg()
+        if (porta <= 0 || c.mapPort == porta) return
+        Prefs.save(c.copy(mapPort = porta))
     }
 
     // --------------------------------------- la password RCON, che e' del server

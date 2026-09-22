@@ -48,6 +48,19 @@ data class ServerConfig(
      */
     val soloRcon: Boolean = false,
     val webMapUrl: String = "",
+    /**
+     * La porta su cui la mappa ha risposto l'ultima volta. Zero: mai trovata.
+     *
+     * Si ricorda per il caso che prima restava senza risposta: la mappa messa
+     * su una porta sua invece di quella predefinita. Lì le porte in ascolto
+     * sono più d'una, nessuna è nota, e l'app rinunciava — ogni volta, anche
+     * dopo che una volta si era capito benissimo qual era.
+     *
+     * Vale solo finché quella porta è ancora in ascolto: è così che la
+     * riscoperta resta automatica invece di diventare un valore da cancellare
+     * a mano quando cambia qualcosa.
+     */
+    val mapPort: Int = 0,
     val mapPollSeconds: Int = 6,
     /** Notifiche: attivazione e scelta degli eventi, server per server. */
     val notifyEnabled: Boolean = false,
@@ -164,6 +177,7 @@ data class ServerConfig(
         put("rconTunnel", rconTunnel)
         put("soloRcon", soloRcon)
         put("webMapUrl", webMapUrl)
+        put("mapPort", mapPort)
         put("mapPollSeconds", mapPollSeconds)
         put("notifyEnabled", notifyEnabled)
         put("notifyOffline", notifyOffline)
@@ -199,6 +213,7 @@ data class ServerConfig(
             rconTunnel = o.optBoolean("rconTunnel", true),
             soloRcon = o.optBoolean("soloRcon", false),
             webMapUrl = o.optString("webMapUrl"),
+            mapPort = o.optInt("mapPort", 0),
             mapPollSeconds = o.optInt("mapPollSeconds", 6),
             notifyEnabled = o.optBoolean("notifyEnabled", false),
             notifyOffline = o.optBoolean("notifyOffline", true),
