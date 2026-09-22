@@ -723,26 +723,31 @@ class SettingsFragment : Fragment() {
     private fun apriMappa(mappa: MappaWeb.Mappa) {
         b.btnMappa.isEnabled = false
         viewLifecycleOwner.lifecycleScope.launch {
-            // La porta di ieri vale solo se e' ancora in ascolto: e' cosi' che
-            // una mappa spostata o spenta si riscopre da sola, invece di
-            // lasciare in configurazione un numero da correggere a mano.
+            // Prima si guarda cosa e' in ascolto, poi si chiede a quelle porte
+            // chi sono: la mappa risponde e si nomina, e a quel punto non c'e'
+            // piu' niente da indovinare. La porta di ieri resta come ripiego,
+            // e vale solo se e' ancora li'.
             val esito = runCatching {
                 val candidate = McRepository.porteCandidate()
-                MappaWeb.portaDellaMappa(mappa, candidate, Prefs.load().mapPort) to candidate
+                val sondaggio = McRepository.sonda(candidate)
+                val porta = MappaWeb.portaDellaMappa(
+                    mappa, candidate, Prefs.load().mapPort, sondaggio
+                )
+                porta to MappaWeb.restano(mappa, candidate, sondaggio)
             }
             val bind = _b ?: return@launch
             bind.btnMappa.isEnabled = true
             esito.fold(
-                onSuccess = { (porta, candidate) ->
+                onSuccess = { (porta, rimaste) ->
                     when {
                         porta != null -> apriSullaPorta(mappa, porta)
-                        candidate.isEmpty() -> showText(
+                        rimaste.isEmpty() -> showText(
                             "${mappa.nome} non si apre",
-                            "Non risponde su nessuna porta: il server e' spento, oppure la " +
-                                    "mappa sta ancora disegnando il mondo. La prima volta puo' " +
-                                    "metterci parecchio."
+                            "Ho chiesto a tutte le porte aperte sul server e nessuna risponde " +
+                                    "come un sito. O il server e' spento, o la mappa sta ancora " +
+                                    "disegnando il mondo: la prima volta puo' metterci parecchio."
                         )
-                        else -> chiediQualePorta(mappa, candidate)
+                        else -> chiediQualePorta(mappa, rimaste)
                     }
                 },
                 onFailure = { showText("${mappa.nome} non si apre", it.userMessage()) }
@@ -751,21 +756,22 @@ class SettingsFragment : Fragment() {
     }
 
     /**
-     * Quando le porte in ascolto sono piu' d'una e nessuna e' nota, si chiede.
+     * L'ultima spiaggia: restano piu' siti e nessuno ha detto di essere lui.
      *
-     * Prima qui il discorso finiva: «non so quale sia, scrivi l'indirizzo a
-     * mano». Ma la risposta ce l'ha chi guarda -- basta provarne una -- e una
-     * volta data non va piu' chiesta: la porta scelta viene ricordata, e il
-     * giro dopo la mappa si apre e basta.
+     * Ci si arriva solo quando la mappa non si e' fatta riconoscere -- messa
+     * dietro un proxy, protetta da password, o una versione che cambia la
+     * pagina. Le porte elencate qui non sono piu' «tutte quelle aperte»: sono
+     * quelle che a una richiesta web hanno risposto qualcosa, quindi provarle
+     * e' ragionevole e sono poche.
      */
     private fun chiediQualePorta(mappa: MappaWeb.Mappa, candidate: List<Int>) {
         val voci = candidate.map { "porta $it" }.toTypedArray()
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Quale porta e' ${mappa.nome}?")
             .setMessage(
-                "Sul server ce n'e' piu' d'una in ascolto e nessuna e' quella " +
-                        "predefinita di ${mappa.nome}. Provane una: se e' la pagina " +
-                        "giusta me la ricordo, e non te lo chiedo piu'."
+                "Sul server c'e' piu' di un sito in ascolto e nessuno ha detto di " +
+                        "essere ${mappa.nome}. Provane uno: se e' la pagina giusta me " +
+                        "la ricordo, e non te lo chiedo piu'."
             )
             .setItems(voci) { _, quale -> apriSullaPorta(mappa, candidate[quale]) }
             .setNegativeButton("Lascia stare", null)

@@ -688,6 +688,21 @@ object McRepository {
     }
 
     /**
+     * Chiede alle porte candidate chi sono.
+     *
+     * Torna null quando la domanda non si e' potuta fare -- server irraggiungibile,
+     * oppure ne' curl ne' wget sulla macchina -- e in quel caso si ragiona sulle
+     * sole porte in ascolto, com'era prima. Un silenzio non e' un no.
+     */
+    suspend fun sonda(candidate: List<Int>): MappaWeb.Sondaggio? {
+        if (candidate.isEmpty()) return null
+        val r = runCatching {
+            SshManager.exec(cfg(), MappaWeb.comandoSonda(candidate), 60_000)
+        }.getOrNull() ?: return null
+        return MappaWeb.leggiSonda(Lgsm.clean(r.text)).takeIf { it.utile }
+    }
+
+    /**
      * Installa una mappa e aspetta che si affacci.
      *
      * Torna il resoconto e la porta trovata, oppure null se non si e' capito
@@ -742,7 +757,8 @@ object McRepository {
             if (porta != null) return@repeat
             delay(10_000)
             val candidate = runCatching { porteCandidate() }.getOrDefault(emptyList())
-            porta = MappaWeb.portaDellaMappa(mappa, candidate)
+            val sondaggio = runCatching { sonda(candidate) }.getOrNull()
+            porta = MappaWeb.portaDellaMappa(mappa, candidate, sondaggio = sondaggio)
             if (porta == null && candidate.isNotEmpty()) {
                 log("     in ascolto: ${candidate.joinToString(", ")} — non so quale sia la mappa")
             }

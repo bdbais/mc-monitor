@@ -113,20 +113,137 @@ object MappaWeb {
     }
 
     /**
-     * Quale porta proporre.
+     * Cosa ha risposto ogni porta quando le si è chiesto chi è.
      *
-     * L'ordine delle tre risposte è la regola:
+     * @param riconosciute porta → slug della mappa che si è presentata lì.
+     * @param web le porte che hanno risposto qualcosa a una richiesta HTTP,
+     *   anche senza farsi riconoscere: sono pagine web, quindi *possono* essere
+     *   una mappa. Le altre no.
+     */
+    data class Sondaggio(val riconosciute: Map<Int, String>, val web: Set<Int>) {
+        /**
+         * Una sonda che non ha trovato niente da nessuna parte non è la prova
+         * che non ci sia niente: è più probabile che sul server non ci siano né
+         * `curl` né `wget`. In quel caso vale come non fatta, e si torna a
+         * ragionare sulle sole porte in ascolto.
+         */
+        val utile: Boolean get() = riconosciute.isNotEmpty() || web.isNotEmpty()
+    }
+
+    /**
+     * Chiede a ogni porta chi è.
      *
-     * 1. **la porta che ha funzionato l'ultima volta**, se è ancora in ascolto.
-     *    È l'unica che risponde al caso che prima restava senza risposta: la
-     *    mappa spostata su una porta sua. Lì il valore predefinito non c'è, le
-     *    candidate sono più d'una, e l'app rinunciava — ogni volta, anche dopo
-     *    che una volta si era capito benissimo qual era;
-     * 2. la porta predefinita della mappa scelta, se è in ascolto;
-     * 3. l'unica rimasta, se ne è rimasta una sola.
+     * Qui prima si chiedeva a chi usa l'app: «sono in ascolto la 8100 e la
+     * 9090, quale delle due è la mappa?». Ma quella risposta ce l'ha il server,
+     * e gliela si può chiedere: una mappa è un sito, un sito risponde, e nella
+     * pagina che manda c'è scritto come si chiama. Le tre si presentano tutte e
+     * tre nel titolo della loro pagina.
      *
-     * Se ne restano diverse e nessuna è nota, non si tira a indovinare: aprire
-     * la porta sbagliata mostra una pagina bianca e fa credere che
+     * La richiesta parte **dal server verso se stesso** — `127.0.0.1` — non dal
+     * telefono: così funziona anche quando la mappa è in ascolto solo sul
+     * locale, che è il caso normale e quello giusto.
+     *
+     * Oltre alla pagina si guardano i due file di configurazione che Dynmap e
+     * BlueMap pubblicano: costano una richiesta e servono al caso della pagina
+     * che si disegna da sola col JavaScript e da ferma non dice niente.
+     *
+     * `wget` dietro `curl` perché su una macchina spoglia c'è l'uno o l'altro,
+     * quasi mai tutti e due.
+     */
+    fun comandoSonda(porte: List<Int>): String {
+        if (porte.isEmpty()) return "echo"
+        val prendi = "prendi() { curl -fsS -m 3 \"${'$'}1\" 2>/dev/null || " +
+                "wget -qO- -T 3 \"${'$'}1\" 2>/dev/null; }"
+        val giri = porte.joinToString("\n") { p ->
+            "echo '=== PORTA $p'; { " +
+                    "prendi 'http://127.0.0.1:$p/'; " +
+                    "prendi 'http://127.0.0.1:$p/settings.json'; " +
+                    "prendi 'http://127.0.0.1:$p/up/configuration'; " +
+                    "} | head -c 4000; echo"
+        }
+        return "$prendi\n$giri"
+    }
+
+    /**
+     * Chi si è presentato, e dove.
+     *
+     * Si contano le volte che compare il nome di ognuna delle tre invece di
+     * fermarsi alla prima trovata: la pagina di una mappa nomina se stessa
+     * decine di volte e le altre al massimo una, in un commento o in un link, e
+     * fermarsi alla prima farebbe vincere quella sbagliata per un'inezia. Se
+     * due vanno pari, nessuna delle due viene riconosciuta: meglio non sapere
+     * che sapere male.
+     */
+    fun leggiSonda(risposta: String): Sondaggio {
+        val riconosciute = mutableMapOf<Int, String>()
+        val web = mutableSetOf<Int>()
+        var porta = 0
+        val corpo = StringBuilder()
+
+        fun chiudi() {
+            if (porta > 0) {
+                val testo = corpo.toString()
+                if (testo.isNotBlank()) web += porta
+                val conteggio = CATALOGO
+                    .map { it to Regex(it.nelNomeFile, RegexOption.IGNORE_CASE).findAll(testo).count() }
+                    .filter { it.second > 0 }
+                    .sortedByDescending { it.second }
+                val netta = conteggio.size == 1 ||
+                        (conteggio.size > 1 && conteggio[0].second > conteggio[1].second)
+                if (netta) riconosciute[porta] = conteggio[0].first.slug
+            }
+            porta = 0
+            corpo.setLength(0)
+        }
+
+        risposta.lineSequence().forEach { riga ->
+            val marcatore = Regex("""^=== PORTA (\d{1,5})$""").find(riga.trim())
+            if (marcatore != null) {
+                chiudi()
+                porta = marcatore.groupValues[1].toInt()
+            } else {
+                corpo.append(riga).append('\n')
+            }
+        }
+        chiudi()
+        return Sondaggio(riconosciute, web)
+    }
+
+    /**
+     * Le porte che possono davvero essere questa mappa.
+     *
+     * Quando la sonda ha funzionato restano solo le porte che rispondono a una
+     * richiesta web — una porta muta non è un sito e quindi non è una mappa — e
+     * si tolgono quelle dove si è presentata **un'altra** delle tre: due mappe
+     * installate insieme è un caso raro ma non assurdo, e lì la porta dell'una
+     * non va mai proposta per l'altra.
+     *
+     * Quasi sempre questo basta da solo: delle porte comparse dopo
+     * l'installazione, una sola parla HTTP.
+     */
+    fun restano(mappa: Mappa, candidate: List<Int>, sondaggio: Sondaggio? = null): List<Int> {
+        val s = sondaggio?.takeIf { it.utile } ?: return candidate
+        return candidate.filter { porta ->
+            val chi = s.riconosciute[porta]
+            if (chi != null) chi == mappa.slug else porta in s.web
+        }
+    }
+
+    /**
+     * Quale porta aprire.
+     *
+     * L'ordine delle risposte è la regola:
+     *
+     * 1. **la porta dove la mappa ha detto di essere lei.** Non è una
+     *    supposizione come le altre tre: è la mappa che risponde e si nomina.
+     *    Quando c'è, tutto il resto non serve;
+     * 2. la porta che ha funzionato l'ultima volta, se è ancora lì. Serve a chi
+     *    la mappa se l'è messa dietro qualcosa che non si fa riconoscere;
+     * 3. la porta predefinita della mappa scelta;
+     * 4. l'unica rimasta, se ne è rimasta una sola.
+     *
+     * Se restano diverse porte e nessuna è nota, non si tira a indovinare:
+     * aprire quella sbagliata mostra una pagina bianca e fa credere che
      * l'installazione sia fallita.
      *
      * La porta ricordata vale **solo se è ancora in ascolto**. Non è una
@@ -134,11 +251,22 @@ object MappaWeb {
      * reinstallata altrove, o spenta, esce da sola dalle candidate e la regola
      * ricomincia da capo, senza che nessuno debba cancellare niente.
      */
-    fun portaDellaMappa(mappa: Mappa, candidate: List<Int>, ricordata: Int = 0): Int? = when {
-        ricordata > 0 && ricordata in candidate -> ricordata
-        mappa.portaPredefinita in candidate -> mappa.portaPredefinita
-        candidate.size == 1 -> candidate.first()
-        else -> null
+    fun portaDellaMappa(
+        mappa: Mappa,
+        candidate: List<Int>,
+        ricordata: Int = 0,
+        sondaggio: Sondaggio? = null,
+    ): Int? {
+        val rimaste = restano(mappa, candidate, sondaggio)
+        val s = sondaggio?.takeIf { it.utile }
+        val dettasi = rimaste.firstOrNull { s?.riconosciute?.get(it) == mappa.slug }
+        return when {
+            dettasi != null -> dettasi
+            ricordata > 0 && ricordata in rimaste -> ricordata
+            mappa.portaPredefinita in rimaste -> mappa.portaPredefinita
+            rimaste.size == 1 -> rimaste.first()
+            else -> null
+        }
     }
 
     /**

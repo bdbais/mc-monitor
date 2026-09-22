@@ -202,4 +202,170 @@ class MappaWebTest {
         // porta da provare.
         assertNull(MappaWeb.portaDellaMappa(bluemap, listOf(9000, 9001), ricordata = 0))
     }
+
+    // ------------------------------------------- chiedere alle porte chi sono
+
+    /** La pagina che manda BlueMap: si nomina nel titolo e nei file che carica. */
+    private val paginaBlueMap = """
+        <!DOCTYPE html><html><head><title>BlueMap</title>
+        <link rel="icon" href="assets/bluemap.png">
+        <script src="assets/bluemap.js"></script>
+        </head><body><div id="map-container"></div></body></html>
+    """.trimIndent()
+
+    private val paginaDynmap = """
+        <!DOCTYPE html><html><head><title>Dynmap</title>
+        <link rel="stylesheet" href="css/dynmap.css">
+        <script src="js/dynmap.js"></script>
+        </head><body class="dynmap"></body></html>
+    """.trimIndent()
+
+    private fun sonda(vararg pezzi: Pair<Int, String>): MappaWeb.Sondaggio =
+        MappaWeb.leggiSonda(pezzi.joinToString("\n") { (porta, corpo) ->
+            "=== PORTA $porta\n$corpo"
+        })
+
+    @Test
+    fun `la sonda chiede a tutte le porte candidate`() {
+        val comando = MappaWeb.comandoSonda(listOf(8100, 9090))
+        assertTrue(comando.contains("=== PORTA 8100"))
+        assertTrue(comando.contains("=== PORTA 9090"))
+        // Dal server verso se stesso: la mappa e' quasi sempre in ascolto solo
+        // sul locale, e chiederlo dal telefono non funzionerebbe.
+        assertTrue(comando.contains("http://127.0.0.1:8100/"))
+        // Su una macchina spoglia c'e' l'uno o l'altro, quasi mai tutti e due.
+        assertTrue(comando.contains("curl") && comando.contains("wget"))
+    }
+
+    @Test
+    fun `senza porte da chiedere non si manda un comando a vuoto`() {
+        // Un for su una lista vuota e' un comando che gira per niente: qui
+        // arriva anche col server spento, e un giro di SSH costa.
+        assertEquals("echo", MappaWeb.comandoSonda(emptyList()))
+    }
+
+    @Test
+    fun `la mappa si riconosce da come si presenta`() {
+        val s = sonda(9090 to paginaBlueMap)
+        assertEquals("bluemap", s.riconosciute[9090])
+        assertTrue(9090 in s.web)
+    }
+
+    @Test
+    fun `una porta che risponde ma non si nomina resta un sito qualunque`() {
+        // Un pannello di controllo, un proxy, una pagina di errore: e' un sito,
+        // quindi puo' essere una mappa travestita, ma non lo sappiamo.
+        val s = sonda(9090 to "<html><body>401 Unauthorized</body></html>")
+        assertNull(s.riconosciute[9090])
+        assertTrue(9090 in s.web)
+    }
+
+    @Test
+    fun `una porta muta non e' un sito`() {
+        // E' il caso che risolve il dilemma da solo: fra le porte comparse dopo
+        // l'installazione, quelle che non parlano HTTP escono di scena senza
+        // che nessuno debba scegliere.
+        val s = sonda(9090 to "")
+        assertTrue(s.web.isEmpty())
+    }
+
+    @Test
+    fun `vince chi si nomina di piu'`() {
+        // Dynmap cita BlueMap una volta sola, in un commento. Fermarsi alla
+        // prima trovata farebbe vincere quella sbagliata per un'inezia.
+        val s = sonda(9090 to (paginaDynmap + "\n<!-- niente a che vedere con bluemap -->"))
+        assertEquals("dynmap", s.riconosciute[9090])
+    }
+
+    @Test
+    fun `due a pari merito non riconoscono nessuna`() {
+        // Meglio non sapere che sapere male: aprire la porta sbagliata mostra
+        // una pagina bianca e si legge come «installazione fallita».
+        val s = sonda(9090 to "<html>bluemap dynmap</html>")
+        assertNull(s.riconosciute[9090])
+    }
+
+    @Test
+    fun `chi si e' nominato vince su tutto il resto`() {
+        // Le altre tre risposte sono supposizioni. Questa e' la mappa che
+        // risponde e dice di essere lei.
+        val candidate = listOf(bluemap.portaPredefinita, 9090, 9091)
+        val s = sonda(
+            bluemap.portaPredefinita to "<html><body>pannello</body></html>",
+            9090 to paginaBlueMap,
+            9091 to "<html><body>pannello</body></html>",
+        )
+        assertEquals(
+            9090,
+            MappaWeb.portaDellaMappa(bluemap, candidate, ricordata = 9091, sondaggio = s)
+        )
+    }
+
+    @Test
+    fun `le porte mute non si propongono nemmeno da scegliere`() {
+        // Due porte in ascolto, nessuna predefinita, niente di ricordato: prima
+        // qui l'app chiedeva. Adesso una delle due non risponde nemmeno, e la
+        // domanda non ha piu' motivo di esistere.
+        val candidate = listOf(9090, 9091)
+        val s = sonda(9090 to "", 9091 to "<html><body>pannello</body></html>")
+        assertEquals(listOf(9091), MappaWeb.restano(bluemap, candidate, s))
+        assertEquals(9091, MappaWeb.portaDellaMappa(bluemap, candidate, sondaggio = s))
+    }
+
+    @Test
+    fun `la porta di un'altra mappa non si propone per questa`() {
+        // Due mappe installate insieme e' raro ma non assurdo, e li' la porta
+        // dell'una non e' mai la risposta per l'altra.
+        val candidate = listOf(9090, 9091)
+        val s = sonda(9090 to paginaDynmap, 9091 to "<html><body>pannello</body></html>")
+        assertEquals(listOf(9091), MappaWeb.restano(bluemap, candidate, s))
+    }
+
+    @Test
+    fun `una sonda che non ha trovato niente vale come non fatta`() {
+        // Ne' curl ne' wget sulla macchina: non e' la prova che le porte siano
+        // mute. Si torna a ragionare sulle sole porte in ascolto, com'era
+        // prima, invece di dire che non c'e' niente.
+        val muta = MappaWeb.leggiSonda("")
+        assertFalse(muta.utile)
+        val candidate = listOf(bluemap.portaPredefinita, 9090)
+        assertEquals(candidate, MappaWeb.restano(bluemap, candidate, muta))
+        assertEquals(
+            bluemap.portaPredefinita,
+            MappaWeb.portaDellaMappa(bluemap, candidate, sondaggio = muta)
+        )
+    }
+
+    @Test
+    fun `la risposta vera del comando si legge`() {
+        // Non un esempio inventato: queste righe sono quelle che il comando ha
+        // stampato davvero, girato contro due porte -- una che serve la pagina
+        // di una mappa e una dove non c'e' niente in ascolto. Il formato lo
+        // decide il comando li' sopra, e un test scritto a mano non si
+        // accorgerebbe se cambiasse.
+        val vera = """
+            === PORTA 9090
+            <!DOCTYPE html><html><head><title>BlueMap</title>
+            <link rel="icon" href="assets/bluemap.png"><script src="assets/bluemap.js"></script>
+            </head><body><div id="map-container">bluemap</div></body></html>
+
+            === PORTA 9091
+
+        """.trimIndent()
+        val s = MappaWeb.leggiSonda(vera)
+        assertEquals("bluemap", s.riconosciute[9090])
+        assertEquals(setOf(9090), s.web)
+        assertEquals(9090, MappaWeb.portaDellaMappa(bluemap, listOf(9090, 9091), sondaggio = s))
+    }
+
+    @Test
+    fun `senza sonda la regola e' quella di prima`() {
+        // La sonda puo' non partire: server irraggiungibile, comando in
+        // timeout. Quando non c'e', le vecchie risposte devono valere ancora.
+        val candidate = listOf(bluemap.portaPredefinita, 9090)
+        assertEquals(
+            bluemap.portaPredefinita,
+            MappaWeb.portaDellaMappa(bluemap, candidate, sondaggio = null)
+        )
+    }
 }
