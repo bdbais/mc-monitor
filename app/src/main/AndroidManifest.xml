@@ -132,6 +132,13 @@
 
         <!-- Tutti i parametri di LinuxGSM, modificabili. -->
         <activity
+            android:name=".ui.MappaParamsActivity"
+            android:exported="false"
+            android:label="Impostazioni della mappa"
+            android:parentActivityName=".MainActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.ParamsActivity"
             android:exported="false"
             android:label="Impostazioni tecniche"

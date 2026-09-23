@@ -648,13 +648,25 @@ class SettingsFragment : Fragment() {
      * seconda per sbaglio, e due mappe sullo stesso server litigano per la porta.
      */
     private fun mappaGiaCE(mappa: MappaWeb.Mappa) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("${mappa.nome} c'e' gia'")
-            .setMessage("Sul server e' gia' installata ${mappa.nome}. La apro?")
-            .setPositiveButton("Apri la mappa") { _, _ -> apriMappa(mappa) }
-            .setNeutralButton("Scegline un'altra") { _, _ -> scegliDallElenco() }
-            .setNegativeButton("Annulla", null)
-            .show()
+        ElencoSpiegato.mostra(
+            requireContext(),
+            titolo = "${mappa.nome} c'e' gia'",
+            nota = "Sul server e' gia' installata ${mappa.nome}.",
+            voci = listOf(
+                "Apri la mappa",
+                "Impostazioni di ${mappa.nome}",
+                "Installa un'altra mappa",
+            ),
+        ) { quale ->
+            when (quale) {
+                0 -> apriMappa(mappa)
+                1 -> startActivity(
+                    Intent(requireContext(), MappaParamsActivity::class.java)
+                        .putExtra(MappaParamsActivity.EXTRA_SLUG, mappa.slug)
+                )
+                else -> scegliDallElenco()
+            }
+        }
     }
 
     private fun scegliDallElenco() {

@@ -8,6 +8,7 @@ import com.bellizia.mcmonitor.lgsm.ChatMessage
 import com.bellizia.mcmonitor.lgsm.ComandoLgsm
 import com.bellizia.mcmonitor.lgsm.Consegna
 import com.bellizia.mcmonitor.lgsm.Copia
+import com.bellizia.mcmonitor.lgsm.ConfigTesto
 import com.bellizia.mcmonitor.lgsm.Cron
 import com.bellizia.mcmonitor.lgsm.Diagnosi
 import com.bellizia.mcmonitor.lgsm.EsitoSuServer
@@ -27,6 +28,7 @@ import com.bellizia.mcmonitor.lgsm.ServerParam
 import com.bellizia.mcmonitor.lgsm.ServerParams
 import com.bellizia.mcmonitor.lgsm.VersionConfig
 import com.bellizia.mcmonitor.lgsm.PlayerEntry
+import com.bellizia.mcmonitor.lgsm.MappaParametri
 import com.bellizia.mcmonitor.lgsm.MappaWeb
 import com.bellizia.mcmonitor.mods.Modrinth
 import com.bellizia.mcmonitor.lgsm.PlayerPos
@@ -719,6 +721,39 @@ object McRepository {
     }
 
     /**
+     * I file di configurazione della mappa installata, cosi' come sono.
+     *
+     * Torna solo quelli che esistono: prima del primo avvio con la mod dentro
+     * non c'e' niente da leggere, perche' li scrive il programma stesso quando
+     * parte la prima volta.
+     */
+    suspend fun leggiConfigMappa(mappa: MappaWeb.Mappa): Map<String, String> {
+        val c = cfg()
+        val r = SshManager.exec(c, MappaParametri.comandoLeggi(c, mappa), 45_000)
+        return MappaParametri.leggiFile(Lgsm.clean(r.text))
+    }
+
+    /**
+     * Riscrive i file cambiati, uno per uno, con una copia di sicurezza ciascuno.
+     *
+     * Se uno non riesce ci si ferma li'. Andare avanti lascerebbe la mappa con
+     * meta' delle impostazioni nuove e meta' vecchie -- una configurazione che
+     * non ha scelto nessuno.
+     */
+    suspend fun salvaConfigMappa(testi: Map<String, String>): Int {
+        val c = cfg()
+        var fatti = 0
+        testi.forEach { (file, testo) ->
+            val r = SshManager.exec(c, MappaParametri.comandoScrivi(c, file, testo), 45_000)
+            if (!MappaParametri.scritto(r.text)) {
+                throw SshException(Lgsm.clean(r.text).trim().ifBlank { "Non sono riuscito a scrivere $file." })
+            }
+            fatti++
+        }
+        return fatti
+    }
+
+    /**
      * Installa una mappa e aspetta che si affacci.
      *
      * Torna il resoconto e la porta trovata, oppure null se non si e' capito
@@ -796,11 +831,38 @@ object McRepository {
                     "chiusa, ed e' meglio cosi': una mappa aperta a tutti dice a " +
                     "chiunque dove hai costruito casa.")
         } else {
-            log("\n     Installata, ma non ho capito su che porta si e' messa.")
-            log("\nPuo' darsi che stia ancora disegnando il mondo: riprova fra qualche " +
-                    "minuto. Se sai gia' l'indirizzo, scrivilo nella casella qui sotto.")
+            log("\n     Installata, ma non si affaccia da nessuna parte.")
+            // Il caso vero, scoperto su un server acceso da ore: BlueMap non
+            // stava disegnando niente, aspettava un permesso. Dirgli «riprova
+            // fra qualche minuto» era un'attesa che non sarebbe finita mai.
+            val bloccata = runCatching { permessoMancante(mappa) }.getOrDefault(false)
+            if (bloccata) {
+                log("\n${mappa.nome} non e' partito: aspetta il permesso di scaricare da " +
+                        "Mojang i file del gioco, che gli servono per disegnare il mondo. " +
+                        "Finche' quel permesso non c'e' non apre nessuna porta.")
+                log("\nLo trovi in Impostazioni di ${mappa.nome}, dal pulsante della mappa: " +
+                        "e' un interruttore, e dopo averlo acceso il server va riavviato.")
+            } else {
+                log("\nPuo' darsi che stia ancora disegnando il mondo: riprova fra qualche " +
+                        "minuto. Se sai gia' l'indirizzo, scrivilo nella casella qui sotto.")
+            }
         }
         return report.toString() to porta
+    }
+
+    /**
+     * Se la mappa e' ferma perche' le manca un permesso, e non perche' sta
+     * ancora lavorando.
+     *
+     * Riguarda BlueMap, che senza `accept-download: true` non parte affatto.
+     * Per le altre due torna sempre false: non hanno niente del genere, e
+     * inventarsi una spiegazione che non c'entra e' peggio che non darne una.
+     */
+    private suspend fun permessoMancante(mappa: MappaWeb.Mappa): Boolean {
+        val parametro = MappaParametri.per(mappa).firstOrNull { it.id == "accept-download" }
+            ?: return false
+        val testo = leggiConfigMappa(mappa)[parametro.file] ?: return false
+        return ConfigTesto.leggi(testo, parametro.percorso) != "true"
     }
 
     /**
