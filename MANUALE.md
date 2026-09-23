@@ -191,7 +191,8 @@ i primi tre servono sempre, gli altri sono facoltativi e si possono lasciare com
 | Script LinuxGSM | `mcserver` | nome dello script |
 | serverfiles | *(vuoto)* | default `<dir>/serverfiles` |
 | Sessione tmux | *(vuoto)* | default: nome dello script |
-| URL mappa web | `http://host:8123` | Dynmap/BlueMap, opzionale |
+| URL mappa web | `http://host:8123` | solo se la mappa ce l'hai già tua e sta fuori dal server |
+| Porta della mappa | *(vuoto)* | lasciala vuota: l'app la trova. Vedi §14 |
 
 Poi **Prova connessione** e **Salva**.
 
@@ -291,7 +292,12 @@ sono: questa schermata non le tocca, e lo dice.
 
 ## 6bis. Le impostazioni tecniche di LinuxGSM
 
-In fondo alla schermata delle impostazioni.
+In fondo alla schermata delle impostazioni, e nell'**ingranaggio** in alto, alla voce
+«Impostazioni tecniche · LinuxGSM» (in modalità esperto).
+
+Prima ci si arrivava solo quando un avvio falliva e la diagnosi puntava lì: una
+schermata raggiungibile soltanto dopo un guasto è una schermata che non esiste
+finché qualcosa non si rompe.
 
 Sono gli interruttori del programma che accende e spegne il server: memoria per Java,
 versione da scaricare, quanti backup tenere, dove mandare gli avvisi. Vivono in
@@ -822,7 +828,7 @@ all'intervallo impostato nelle Impostazioni (default 6 s). **Inquadra** riporta 
 vista, **Azzera scie** ripulisce i percorsi.
 
 Toccando un giocatore la mappa si aggancia e lo segue; se cambia dimensione il filtro si
-adegua da solo. **Mappa web** apre Dynmap/BlueMap a tutto schermo, se configurata.
+adegua da solo.
 
 Le posizioni arrivano da `data get entity <nome> Pos`: serve un server vanilla, Paper o
 Spigot dalla 1.13 in poi.
@@ -831,6 +837,70 @@ Quando la mappa è vuota dice **perché** lo è: nessuno collegato, nessuna posi
 (succede sui server che non rispondono a quel comando, per esempio con certi mod), oppure
 tutti in un'altra dimensione rispetto al filtro scelto. Erano tre casi diversi che
 sembravano lo stesso guasto.
+
+### La mappa web del mondo
+
+La mappa qui sopra la disegna l'app, dalle posizioni dei giocatori. La **mappa web** è
+un'altra cosa: è il tuo mondo vero, visto dall'alto o in tre dimensioni, disegnato da un
+programma che gira sul server.
+
+Prima qui c'era solo una casella dove incollare un indirizzo — e per avere un indirizzo da
+incollare bisognava già sapere cosa sono Dynmap e BlueMap, installarne uno a mano e sapere
+su che porta si mette. Cioè: la casella serviva a chi non ne aveva bisogno.
+
+Adesso il pulsante **Scegli e installa una mappa**, nelle Impostazioni del server, fa
+tutto: sceglie fra le tre, la scarica, la mette fra le mod, riavvia il server e la apre.
+
+| | com'è |
+|---|---|
+| **BlueMap** | il mondo in tre dimensioni, come se ci volassi sopra. La più bella, e quella che fa lavorare di più il computer la prima volta |
+| **Dynmap** | vista dall'alto, come un navigatore. La più vecchia e la più diffusa: se qualcuno ti aiuta, probabilmente conosce questa |
+| **squaremap** | anche dall'alto, ma fatta per pesare poco: da scegliere se il computer è piccolo |
+
+Sono mod, quindi vogliono Fabric o Forge: su un server vanilla non si caricano, e l'app te
+lo dice prima di scaricare qualcosa.
+
+**Non serve aprire niente sul firewall.** La mappa si raggiunge dentro il collegamento SSH
+che l'app apre già. Dal di fuori quella porta resta chiusa, ed è giusto così: una mappa
+aperta a tutti dice a chiunque dove hai costruito casa.
+
+**La porta la trova l'app.** Non leggendo la configurazione — i tre programmi la scrivono
+in tre formati diversi — ma chiedendo alle porte aperte sul server chi sono. Una mappa è
+un sito, un sito risponde, e nella pagina che manda c'è scritto come si chiama. Le porte
+che non rispondono nemmeno come sito escono di scena, e quasi sempre ne resta una sola.
+
+Quando resta ambiguo l'app **chiede**, elencando solo le porte che hanno risposto qualcosa;
+la risposta che dai se la ricorda, e non te la chiede più. Se invece nello stesso Linux
+girano **più server Minecraft**, le loro mappe si presentano tutte con lo stesso nome e la
+porta predefinita è una sola per tutte: lì la risposta la sai solo tu, e si scrive nella
+casella **Porta della mappa** (modalità esperto). Quando c'è un numero scritto vince su
+tutto, e se lì non risponde nessuno l'app si ferma e lo dice — ripiegare su un'altra porta
+vorrebbe dire mostrarti la mappa di un mondo diverso come se fosse la tua.
+
+### Le impostazioni della mappa
+
+Dal pulsante della mappa, quando ne hai già una installata: **Impostazioni di BlueMap** (o
+di Dynmap, o di squaremap).
+
+| | cosa fa |
+|---|---|
+| **Permesso di scaricare i file del gioco** | solo BlueMap. Per disegnare il mondo gli servono le texture ufficiali e le scarica da Mojang, ma non lo fa senza permesso |
+| **Mappa web accesa** | spenta, il programma continua a disegnare il mondo ma non lo mostra a nessuno |
+| **Porta** | dove si affaccia. L'app la trova da sola, quindi cambiarla serve solo se quella porta è già di qualcun altro |
+| **Da dove si può raggiungere** | `0.0.0.0` da tutta la rete, `127.0.0.1` solo dal computer del server. Dal telefono la mappa passa comunque dentro il tunnel, quindi `127.0.0.1` è la scelta prudente |
+| **Indirizzo che vedono i giocatori** | solo squaremap, per chi ha la sua mod sul computer. Se cambi la porta e non cambi questo, continuano a bussare a quella di ieri |
+
+Quel primo interruttore è il più importante di tutti: **finché è spento BlueMap non parte
+affatto.** Niente mappa, nessuna porta aperta, e da fuori sembra che stia ancora disegnando
+il mondo. È un caso vero, trovato su un server acceso da ore.
+
+Del resto del file non si tocca niente, e di ogni file toccato resta una copia di sicurezza
+accanto all'originale. Niente parte al tocco: le modifiche si accumulano e partono con un
+pulsante solo. Il programma legge la sua configurazione quando parte, quindi alla fine il
+server va riavviato — l'app te lo propone.
+
+Se i file non ci sono ancora, è perché li scrive il programma stesso al primo avvio dopo
+l'installazione: accendi il server, aspetta che finisca di partire, e riprova.
 
 ## 15. Mod e modpack
 
