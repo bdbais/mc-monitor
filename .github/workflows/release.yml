@@ -109,6 +109,14 @@ jobs:
             --notes-file store/whatsnew/whatsnew-it-IT.txt \
             || gh release upload "$GITHUB_REF_NAME" "$file" --clobber
 
+          # Secondo asset con NOME FISSO: e' l'URL che l'utente salva nel telefono
+          # (/releases/latest/download/latest.apk non cambia mai). Senza questo ogni
+          # versione ha un nome diverso e chi torna sul repo deve leggere l'elenco
+          # delle release per indovinare quale sia l'ultima.
+          cp "$file" latest.apk
+          gh release upload "$GITHUB_REF_NAME" latest.apk --clobber
+          echo "URL fisso: https://github.com/bdbais/mc-monitor/releases/latest/download/latest.apk"
+
       # Il bundle va a Play solo se il service account è configurato: senza segreto
       # il workflow resta comunque utile per compilare e firmare.
       - name: Carica su Google Play (${{ env.TRACK }})
