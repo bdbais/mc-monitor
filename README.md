@@ -2,8 +2,10 @@
 
 App Android per gestire un server Minecraft installato con **LinuxGSM**, via **SSH**.
 
-APK pronto all'uso: **[l'ultima release](https://github.com/bdbais/mc-monitor/releases/latest)**
-(firmato, `minSdk 26` / Android 8+, `targetSdk 35`), o da
+APK pronto all'uso: **[scarica l'ultimo APK](https://github.com/bdbais/mc-monitor/releases/latest/download/latest.apk)**
+(firmato, `minSdk 26` / Android 8+, `targetSdk 35`) — questo link è **sempre lo
+stesso**, salvalo nei preferiti del telefono e non cambia mai. Ogni release
+pubblica anche l'APK con il numero di versione, e da
 **[mcmonitor.bais.info](https://mcmonitor.bais.info)**.
 
 **[Manuale d'uso completo](MANUALE.md)** · [Release e APK](https://github.com/bdbais/mc-monitor/releases)
