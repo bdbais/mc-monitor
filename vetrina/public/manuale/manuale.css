@@ -1,0 +1,185 @@
+/* Il manuale: una colonna da leggere e un elenco di capitoli che resta fermo.
+   Tutto il resto -- colori, caratteri, testata, coda -- viene da /stile.css:
+   e' lo stesso sito, non un posto nuovo. */
+
+.manuale {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    align-items: start;
+    padding-block: clamp(1.5rem, 4vw, 3rem);
+}
+
+/* I capitoli sono numerati nel manuale perche' sono un percorso, dal
+   collegamento al server fino a cosa fare quando si rompe. Il numero e' dentro
+   il testo della voce, non aggiunto qui per decorazione. */
+.capitoli {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+    border-left: 3px solid var(--erba-scura);
+    padding-left: 0.9rem;
+}
+
+.capitoli-titolo {
+    font-size: 0.68rem;
+    color: var(--erba);
+    margin: 0 0 0.8rem;
+}
+
+.capitoli ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.capitoli li + li {
+    margin-top: 0.15rem;
+}
+
+.capitoli a {
+    display: block;
+    padding: 0.3rem 0.4rem;
+    color: var(--testo-tenue);
+    text-decoration: none;
+    font-size: 0.92rem;
+    line-height: 1.35;
+    border-radius: 2px;
+}
+
+.capitoli a:hover,
+.capitoli a:focus-visible {
+    color: var(--testo);
+    background: var(--pannello);
+}
+
+.testo {
+    max-width: 68ch;
+    font-size: 1.02rem;
+    line-height: 1.62;
+}
+
+.titolo-manuale {
+    font-size: clamp(1rem, 3.4vw, 1.5rem);
+    line-height: 1.5;
+    margin: 0 0 0.6rem;
+}
+
+.versione {
+    color: var(--testo-tenue);
+    margin: 0 0 2.2rem;
+}
+
+.testo h2 {
+    font-size: 1.45rem;
+    margin: 3rem 0 0.9rem;
+    padding-top: 1.4rem;
+    border-top: 2px solid var(--pannello-su);
+    scroll-margin-top: 1rem;
+}
+
+.testo h3 {
+    font-size: 1.14rem;
+    color: var(--erba);
+    margin: 2rem 0 0.6rem;
+    scroll-margin-top: 1rem;
+}
+
+.testo p { margin: 0 0 1rem; }
+.testo ul, .testo ol { margin: 0 0 1.1rem; padding-left: 1.3rem; }
+.testo li { margin-bottom: 0.3rem; }
+
+.testo img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.2rem 0;
+    border: 2px solid var(--pannello-su);
+}
+
+.testo code {
+    background: var(--pannello);
+    border: 1px solid var(--pannello-su);
+    padding: 0.08em 0.35em;
+    font-size: 0.92em;
+    word-break: break-word;
+}
+
+.testo pre {
+    background: var(--pannello);
+    border: 2px solid var(--pannello-su);
+    padding: 0.9rem 1rem;
+    overflow-x: auto;
+    margin: 0 0 1.2rem;
+}
+
+.testo pre code {
+    background: none;
+    border: 0;
+    padding: 0;
+    word-break: normal;
+}
+
+.testo table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1.4rem;
+    font-size: 0.95rem;
+}
+
+.testo th,
+.testo td {
+    border: 1px solid var(--pannello-su);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+}
+
+.testo th {
+    background: var(--pannello);
+    color: var(--erba);
+}
+
+.testo hr {
+    border: 0;
+    border-top: 2px solid var(--pannello-su);
+    margin: 2.5rem 0;
+}
+
+.testo blockquote {
+    margin: 0 0 1.2rem;
+    padding-left: 1rem;
+    border-left: 3px solid var(--terra);
+    color: var(--testo-tenue);
+}
+
+.testata-casa { display: inline-flex; }
+
+/* Sotto i 900 px l'elenco dei capitoli va sopra il testo e smette di seguire la
+   pagina: su un telefono una barra che resta ferma mangia meta' schermo. */
+@media (max-width: 900px) {
+    .manuale {
+        grid-template-columns: 1fr;
+    }
+
+    /* Diciannove capitoli tutti aperti spingono il testo mezzo schermo piu'
+       giu': l'elenco resta, ma dentro una finestra che si scorre da sola. */
+    .capitoli {
+        position: static;
+        max-height: 40vh;
+    }
+
+    .capitoli ul {
+        columns: 2;
+        column-gap: 1rem;
+    }
+
+    .capitoli li {
+        break-inside: avoid;
+    }
+}
+
+@media (max-width: 520px) {
+    .capitoli ul { columns: 1; }
+}

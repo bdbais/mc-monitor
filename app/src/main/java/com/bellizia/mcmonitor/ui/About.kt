@@ -15,7 +15,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
  */
 object About {
 
-    const val MANUAL_URL = "https://github.com/bdbais/mc-monitor/blob/main/MANUALE.md"
+    const val MANUAL_URL = "https://mcmonitor.bais.info/manuale/"
 
     /** Il manuale sta nel repository: si apre nel browser, sempre aggiornato. */
     fun manual(activity: Activity) {

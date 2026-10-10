@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MC Monitor — manuale d'uso — MC Monitor</title>
+<meta name="description" content="Manuale d'uso di MC Monitor: come amministrare un server Minecraft LinuxGSM dal telefono, scheda per scheda.">
+<meta name="theme-color" content="#0E1512">
+<link rel="icon" href="/img/icona-180.png" sizes="180x180">
+<link rel="apple-touch-icon" href="/img/icona-180.png">
+<link rel="preload" href="/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/stile.css">
+<link rel="stylesheet" href="/manuale/manuale.css">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MC Monitor — manuale d'uso — MC Monitor">
+<meta property="og:description" content="Come amministrare un server Minecraft LinuxGSM dal telefono, scheda per scheda.">
+<meta property="og:url" content="https://mcmonitor.bais.info/manuale/">
+<meta property="og:locale" content="it_IT">
+</head>
+<body>
+<a class="salta" href="#contenuto">Vai al contenuto</a>
+
+<header class="testata">
+  <div class="dentro testata-riga">
+    <a class="testata-casa" href="/"><img class="testata-icona" src="/img/icona-180.png" width="40" height="40" alt=""></a>
+    <span class="pixel testata-nome">MC Monitor</span>
+    <nav class="testata-nav" aria-label="Sezioni">
+      <a href="/">Il sito</a>
+      <a href="/scarica">Scarica</a>
+    </nav>
+  </div>
+</header>
+
+<div class="dentro manuale">
+
+  <nav class="capitoli" aria-label="Capitoli">
+    <p class="pixel capitoli-titolo">Capitoli</p>
+    <ul>
+<li><a href="#1-installazione">1. Installazione</a></li>
+<li><a href="#2-il-nome-e-la-password">2. Il nome e la password</a></li>
+<li><a href="#3-i-due-passi-il-computer-e-i-mondi">3. I due passi: il computer e i mondi</a></li>
+<li><a href="#4-configurare-un-server">4. Configurare un server</a></li>
+<li><a href="#5-stato-e-controllo">5. Stato e controllo</a></li>
+<li><a href="#6-le-impostazioni-del-server">6. Le impostazioni del server</a></li>
+<li><a href="#6bis-le-impostazioni-tecniche-di-linuxgsm">6bis. Le impostazioni tecniche di LinuxGSM</a></li>
+<li><a href="#7-il-backup">7. Il backup</a></li>
+<li><a href="#8-i-comandi-di-linuxgsm">8. I comandi di LinuxGSM</a></li>
+<li><a href="#9-quando-qualcosa-va-storto">9. Quando qualcosa va storto</a></li>
+<li><a href="#10-il-progetto-rifare-questo-server-altrove">10. Il progetto: rifare questo server altrove</a></li>
+<li><a href="#11-console">11. Console</a></li>
+<li><a href="#12-le-macro">12. Le macro</a></li>
+<li><a href="#13-giocatori">13. Giocatori</a></li>
+<li><a href="#14-mappa">14. Mappa</a></li>
+<li><a href="#15-mod-e-modpack">15. Mod e modpack</a></li>
+<li><a href="#16-cambiare-versione-di-minecraft">16. Cambiare versione di Minecraft</a></li>
+<li><a href="#17-rcon">17. RCON</a></li>
+<li><a href="#18-aggiornamenti-dellapp">18. Aggiornamenti dell'app</a></li>
+<li><a href="#19-se-qualcosa-non-funziona">19. Se qualcosa non funziona</a></li>
+</ul>
+  </nav>
+
+  <main id="contenuto" class="testo" tabindex="-1">
+    <h1 class="pixel titolo-manuale">MC Monitor — manuale d'uso</h1>
+    <p class="versione">Versione 1.40</p>
+    <p>App Android per amministrare un server Minecraft installato con <strong>LinuxGSM</strong>, via SSH.</p>
+<h2 id="1-installazione">1. Installazione</h2>
+<p>Scarica l'APK dalla pagina delle release, abilita "Installa app sconosciute" per il
+gestore file che usi e apri il file. Serve Android 8 o successivo.</p>
+<p>L'app non richiede account, non usa servizi intermedi e parla solo con il tuo server.</p>
+<h2 id="2-il-nome-e-la-password">2. Il nome e la password</h2>
+<p>Al primo avvio l'app chiede due cose e poi non le chiede più.</p>
+<p><strong>Come ti chiami</strong> — il nome dell'amministratore. Compare nel menu accanto al computer
+collegato, e firma i messaggi nella chat fra amministratori.</p>
+<p><strong>Una password per aprire l'app</strong> — perché da qui si spegne il server, si decide chi può
+entrare e si può cancellare un mondo intero: un telefono lasciato sul tavolo non deve
+avere tutto questo a portata di dito.</p>
+<p>Se il telefono ha impronta o riconoscimento del volto, l'app propone di usarli: aprendo
+compare il lettore, e la password resta come alternativa quando l'impronta non va.</p>
+<p>Si può anche scegliere <strong>"Per ora senza password"</strong>: l'app lo chiede una volta sola e poi
+si apre liberamente. La protezione si accende quando si vuole dal menu, voce <strong>Blocco e
+amministratore</strong>, dove si cambia anche il nome, si toglie la password (serve conoscerla) e
+si decide dopo quanto tempo richiuderla: subito, due minuti, un quarto d'ora, oppure mai
+finché l'app resta aperta.</p>
+<blockquote>
+<p><strong>La password non si recupera.</strong> L'app non la conserva: ne tiene solo un'impronta, che
+non si può riportare indietro. Se la dimentichi l'unica strada è cancellare i dati
+dell'app da Android e ricominciare — e allora conviene aver esportato la configurazione
+o aver acceso il backup automatico, così i server si ritrovano tutti reimportando il file.</p>
+</blockquote>
+<h2 id="3-i-due-passi-il-computer-e-i-mondi">3. I due passi: il computer e i mondi</h2>
+<p>L'app si apre con un menu a sinistra (l'icona con le tre righe, in alto) diviso nei due
+passi che servono davvero, nell'ordine in cui si fanno.</p>
+<h3 id="passo-1-collegamento-al-server-linux">Passo 1 — Collegamento al server Linux</h3>
+<p><img src="/manuale/img/collegamento.png" width="320" alt="Collegamento al server Linux"></p>
+<p>Qui si inseriscono solo i dati per entrare nel computer dove vivono i mondi:</p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Esempio</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Indirizzo del computer</td>
+<td><code>mc.miodominio.it</code></td>
+<td>oppure un IP, tipo <code>192.168.1.10</code></td>
+</tr>
+<tr>
+<td>Porta</td>
+<td><code>22</code></td>
+<td>lasciala così se non ti dicono altro</td>
+</tr>
+<tr>
+<td>Nome utente</td>
+<td><code>mcserver</code></td>
+<td><strong>deve essere l'utente che esegue LinuxGSM</strong></td>
+</tr>
+<tr>
+<td>Password</td>
+<td></td>
+<td>oppure una chiave, con "Uso una chiave al posto della password"</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Collegati</strong> prova davvero il collegamento e, se riesce, passa da solo al secondo passo.
+<strong>Non funziona</strong> avvia la diagnostica: prova un pezzo alla volta (rete, porta, utente,
+password, LinuxGSM) e dice a quale punto si ferma, con un rapporto da copiare.</p>
+<p><strong>Cambia la password di questa utenza</strong> esegue <code>passwd</code> sul computer; la password salvata
+nell'app viene aggiornata subito e il nuovo accesso verificato riaprendo la connessione.</p>
+<p><strong>Dopo una reinstallazione</strong> — su un telefono senza niente dentro compare in cima
+<strong>Riprendi una configurazione salvata</strong>: si sceglie il file esportato (o l'ultimo backup
+automatico), si dà la sua password e tornano server, impostazioni e credenziali. Chi invece
+aggiorna l'app da una versione precedente non deve fare nulla: i dati del server che stava
+usando compaiono già compilati nel passo 1.</p>
+<h3 id="passo-2-server-installati">Passo 2 — Server installati</h3>
+<p><img src="/manuale/img/server-installati.png" width="320" alt="Server installati"></p>
+<p>L'app cerca da sola le istanze LinuxGSM dentro la home dell'utente: non serve sapere in
+quale cartella stanno né come si chiama lo script. Per ognuna mostra</p>
+<ul>
+<li>il quadratino verde se è accesa in questo momento, grigio se è spenta,</li>
+<li>la versione di Minecraft letta da <code>mcserver.cfg</code>,</li>
+<li>la porta a cui si collegano i giocatori e, se attiva, quella di RCON — <strong>in rosso</strong> dal
+  secondo server in poi che usa lo stesso numero: due server sulla stessa porta non possono
+  stare accesi insieme, e il secondo muore appena parte senza spiegare perché. Vale anche
+  fra porta di gioco e RCON, perché il numero è lo stesso spazio,</li>
+<li>la riga <strong>mod</strong>, se il server è moddato: quante sono e con quale loader (Fabric o Forge).
+  Toccandola si apre l'elenco completo delle mod installate,</li>
+<li>la cartella, in piccolo, scritta come <code>~/nome</code>.</li>
+</ul>
+<p><strong>Apri</strong> entra nel mondo scelto: da lì si accende, si spegne, si vedono giocatori, mappa
+e mod. Trascina l'elenco verso il basso per rifare la ricerca.</p>
+<p>Il <strong>cestino</strong> a destra cancella quel server dal computer: cartella, mondo, mod e backup.
+Prima lo spegne, e chiede due conferme — la seconda riscrivendo il nome a mano. Non si
+torna indietro, quindi se il mondo ti interessa fai prima una copia.</p>
+<p>Se l'elenco è vuoto, su quel computer non c'è ancora niente di installato: <strong>Crea un
+nuovo server da zero</strong> avvia l'installazione guidata (ci vuole tempo e banda).</p>
+<h3 id="manutenzione-linuxgsm-da-aggiornare">Manutenzione: LinuxGSM da aggiornare</h3>
+<p>Dopo la ricerca l'app confronta la versione degli script LinuxGSM installati con l'ultima
+pubblicata. Se qualcuno è rimasto indietro compare un riquadro giallo con <strong>Aggiorna
+LinuxGSM</strong>: un tocco lancia <code>update-lgsm</code> sulle istanze interessate e mostra cosa risponde.</p>
+<p>Riguarda solo gli script che gestiscono il server, non Minecraft: il mondo, le mod e la
+configurazione non vengono toccati. Vale la pena farlo, perché con LinuxGSM vecchio comandi
+come <code>update</code> o <code>details</code> iniziano a fallire con errori che non dicono qual è la causa.</p>
+<h3 id="le-altre-voci-del-menu">Le altre voci del menu</h3>
+<p><img src="/manuale/img/menu.png" width="320" alt="Il menu laterale"></p>
+<table>
+<thead>
+<tr>
+<th>Voce</th>
+<th>A cosa serve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Crea un nuovo server</strong></td>
+<td>installa una nuova istanza LinuxGSM, staccata dai due passi</td>
+</tr>
+<tr>
+<td><strong>Profili salvati</strong></td>
+<td>l'elenco classico dei profili, con Aggiungi, Modifica, Duplica, Rimuovi; utile se gestisci più computer</td>
+</tr>
+<tr>
+<td><strong>Amministratori e messaggi</strong></td>
+<td>chi altro sta comandando questo server e la chat fra voi</td>
+</tr>
+<tr>
+<td><strong>Blocco e amministratore</strong></td>
+<td>il tuo nome, la password dell'app e dopo quanto richiuderla</td>
+</tr>
+<tr>
+<td><strong>Manuale d'uso</strong></td>
+<td>apre questa pagina</td>
+</tr>
+<tr>
+<td><strong>Informazioni</strong></td>
+<td>versione, licenza e i progetti su cui l'app si appoggia</td>
+</tr>
+</tbody>
+</table>
+<h3 id="amministratori-e-messaggi">Amministratori e messaggi</h3>
+<p>Se il server lo gestite in più persone, ognuno con la sua copia dell'app, questa pagina
+dice <strong>chi c'è adesso</strong> e permette di <strong>scrivervi</strong>.</p>
+<p>Ogni telefono lascia un segnale sul computer una volta al minuto; l'app li rilegge e mostra
+chi si è fatto vivo di recente, con un pallino verde. Se qualcuno sta facendo qualcosa di
+delicato — avvio, arresto, riavvio — accanto al nome compare cosa, con il pallino giallo.
+Sul pulsante degli amministratori, nella barra in alto dentro un server, compare un numero:
+quanti <strong>altri</strong> ci sono in questo momento.</p>
+<p>Nella stessa pagina c'è la chat. I messaggi restano sul computer del server, in
+<code>~/.mcmonitor/chat.log</code>, e li legge chiunque abbia accesso a quell'utenza — cioè gli
+amministratori, che è esattamente il punto. Non ci sono account: accanto a ogni messaggio
+c'è il nome che ognuno si è dato al primo avvio.</p>
+<p>L'interruttore <strong>avvisa tutti</strong> sotto la chat serve per i messaggi che devono trovare gli
+altri anche quando non stanno guardando: sul telefono di chi non l'ha ancora letto compare
+un <strong>numero rosso sull'icona dell'app</strong>, che sparisce appena apre la chat. Senza, il
+messaggio resta lì ad aspettare che qualcuno passi di là.</p>
+<p>Anche le note lasciate bannando o ammettendo un giocatore finiscono qui, segnate con il
+nome di quel giocatore.</p>
+<p><strong>Il semaforo.</strong> Prima di avviare, fermare o riavviare il server, se c'è qualcun altro
+collegato l'app lo dice e chiede conferma, con un pulsante per scrivergli invece di
+procedere. Non blocca niente — decidi tu — ma toglie il caso peggiore: due persone che si
+spengono il server a vicenda senza sapere l'una dell'altra.</p>
+<p>Cambiare server chiude sessione SSH, RCON e azzera le scie sulla mappa: i dati di un
+server non possono mescolarsi con quelli di un altro.</p>
+<h2 id="4-configurare-un-server">4. Configurare un server</h2>
+<p><img src="/manuale/img/02-impostazioni.png" width="320" alt="Impostazioni"></p>
+<p>Le impostazioni sono divise in sette passi numerati, dal nome del server fino alla mappa:
+i primi tre servono sempre, gli altri sono facoltativi e si possono lasciare come sono.</p>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Esempio</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nome</td>
+<td><code>Server di casa</code></td>
+<td>come lo vedi nell'elenco</td>
+</tr>
+<tr>
+<td>Nome tecnico</td>
+<td><code>server1</code></td>
+<td>dà il nome alla sottocartella</td>
+</tr>
+<tr>
+<td>Host o IP</td>
+<td><code>mc.miodominio.it</code></td>
+<td>accetta anche <code>host:2222</code></td>
+</tr>
+<tr>
+<td>Porta</td>
+<td><code>22</code></td>
+<td>porta SSH</td>
+</tr>
+<tr>
+<td>Utente SSH</td>
+<td><code>mcserver</code></td>
+<td><strong>deve essere l'utente che esegue LinuxGSM</strong></td>
+</tr>
+<tr>
+<td>Password</td>
+<td></td>
+<td>vuota se usi la chiave</td>
+</tr>
+<tr>
+<td>Chiave privata</td>
+<td><code>-----BEGIN OPENSSH PRIVATE KEY-----…</code></td>
+<td>incolla il file intero</td>
+</tr>
+<tr>
+<td>Directory LinuxGSM</td>
+<td><code>~/server1</code></td>
+<td>sottocartella nella home dell'utente SSH</td>
+</tr>
+<tr>
+<td>Script LinuxGSM</td>
+<td><code>mcserver</code></td>
+<td>nome dello script</td>
+</tr>
+<tr>
+<td>serverfiles</td>
+<td><em>(vuoto)</em></td>
+<td>default <code>&lt;dir&gt;/serverfiles</code></td>
+</tr>
+<tr>
+<td>Sessione tmux</td>
+<td><em>(vuoto)</em></td>
+<td>default: nome dello script</td>
+</tr>
+<tr>
+<td>URL mappa web</td>
+<td><code>http://host:8123</code></td>
+<td>solo se la mappa ce l'hai già tua e sta fuori dal server</td>
+</tr>
+<tr>
+<td>Porta della mappa</td>
+<td><em>(vuoto)</em></td>
+<td>lasciala vuota: l'app la trova. Vedi §14</td>
+</tr>
+</tbody>
+</table>
+<p>Poi <strong>Prova connessione</strong> e <strong>Salva</strong>.</p>
+<p><strong>Cambia la password dell'utente SSH</strong> esegue passwd sul server. Se il profilo si
+collega con la password, quella salvata viene aggiornata subito e il nuovo accesso
+verificato riaprendo davvero la connessione: se la verifica fallisce l'app te lo dice
+prima che tu chiuda l'applicazione.</p>
+<p>L'utente SSH è il punto critico: LinuxGSM gira dentro una sessione <code>tmux</code> che appartiene
+a un utente preciso, e i comandi alla console funzionano solo collegandosi con quello.</p>
+<p>Al primo collegamento l'app memorizza l'impronta della chiave host e la verifica ogni
+volta: se cambia, blocca la connessione e lo segnala.</p>
+<h2 id="5-stato-e-controllo">5. Stato e controllo</h2>
+<p><img src="/manuale/img/07-stato.png" width="320" alt="Stato del server"></p>
+<p>Stato STARTED/STOPPED con pallino colorato, IP, porte, versione, uptime e l'output
+completo di <code>lgsm details</code>. I pulsanti <strong>Avvia</strong>, <strong>Ferma</strong> e <strong>Riavvia</strong> chiedono
+conferma quando l'azione disconnette i giocatori, e avvisano se in quel momento c'è un
+altro amministratore collegato.</p>
+<p>Più in basso: la versione di Minecraft configurata e l'elenco dei mod installati, che
+porta alla scheda Mod.</p>
+<p>L'indirizzo da dare a chi gioca ha sempre la porta scritta, anche quando è la 25565 di
+default: senza, le app di messaggistica lo scambiano per l'indirizzo di un sito e lo
+trasformano in un link che non porta da nessuna parte.</p>
+<p>Sulla riga <strong>Impostazioni del server</strong> ci sono due pulsanti: la <strong>cassa</strong> apre il progetto
+(sezione 7), la <strong>matita</strong> apre le impostazioni del gioco (sezione 6), da cui si arriva
+anche a quelle tecniche di LinuxGSM.</p>
+<p>Sotto i tre pulsanti principali ce ne sono altri quattro: <strong>Backup</strong> (sezione 7),
+<strong>Comandi</strong> (sezione 8), <strong>Sicurezza</strong> e <strong>Ripristino</strong> (sezione 9). E quando il server
+non riparte compare <strong>Perché non è partito</strong>, che è il posto da cui cominciare.</p>
+<p>Trascina verso il basso per aggiornare.</p>
+<h2 id="5bis-semplice-o-esperto">5bis. Semplice o esperto</h2>
+<p>In cima alle impostazioni del server c'è un interruttore che decide <strong>quanta app vedi</strong>. Si
+cambia quando vuoi e non tocca niente sul server.</p>
+<p><strong>Semplice</strong> — resta quello che serve per far girare un server: accendere e spegnere, vedere
+chi c'è, ammettere e bannare, backup, mod, mappa, il controllo di sicurezza e la posta.
+Spariscono la scheda <strong>Console</strong>, i <strong>comandi di LinuxGSM</strong>, i <strong>parametri tecnici</strong> e
+<strong>RCON</strong>. Non spariscono dal server: l'app non te li mette davanti.</p>
+<p><strong>Esperto</strong> — vedi tutto, comprese le schermate da cui si può impedire al server di ripartire
+scrivendo la riga sbagliata.</p>
+<p>Un'installazione nuova parte da semplice. Chi l'app ce l'aveva già la ritrova com'era: con dei
+server già configurati si parte da esperto, perché togliere di colpo delle funzioni a chi le
+usa sarebbe peggio che mostrarne troppe a chi comincia.</p>
+<h2 id="6-le-impostazioni-del-server">6. Le impostazioni del server</h2>
+<p>Il pulsante con la matita, nella scheda Stato.</p>
+<p>Sono le impostazioni del <strong>gioco</strong>: difficoltà, messaggio di benvenuto, quanti giocatori
+entrano, quanto lontano si vede, chi può collegarsi. Vivono in
+<code>serverfiles/server.properties</code>, e fino alla 1.22 dall'app non si potevano toccare in
+nessun modo.</p>
+<p>Ogni voce ha il suo tipo, non è un campo di testo qualsiasi: la difficoltà è una scelta fra
+quattro parole, la distanza di visuale un numero fra 3 e 32, il resto sono interruttori. Il
+motivo è che il server <strong>non protesta</strong> per un valore sbagliato: scrivendo
+<code>difficulty=medio</code> non succede niente, il server usa il valore di fabbrica, e chi l'ha
+scritto resta convinto di aver cambiato qualcosa.</p>
+<p><strong>Niente parte finché non premi Salva.</strong> Le modifiche si accumulano — la riga cambiata si
+segna con un puntino — e partono tutte insieme: una connessione, una copia di sicurezza del
+file, un messaggio. Prima di scrivere ti viene mostrato l'elenco esatto, da cosa a cosa.</p>
+<p>Difficoltà e whitelist l'app le scrive nel file <strong>e</strong> le manda al server, così cambiano
+anche per chi sta giocando in quel momento. Se il server è spento la scrittura vale lo
+stesso, e te lo dice invece di far credere che non sia successo niente.</p>
+<p>Le quattro che contano di più su un server piccolo:</p>
+<ul>
+<li><strong>Difficoltà</strong> — in pacifica i mostri non compaiono affatto</li>
+<li><strong>Solo chi è in whitelist</strong> — la vera difesa di un server aperto su internet</li>
+<li><strong>Quanto lontano si vede</strong> — il primo numero da abbassare quando il server singhiozza</li>
+<li><strong>Metti in pausa quando non c'è nessuno</strong> — smette di consumare quando il mondo è vuoto</li>
+</ul>
+<p>Le impostazioni delicate avvisano nella riga stessa: spegnendo il controllo degli account
+Minecraft, per esempio, chiunque può entrare con il nome di un altro.</p>
+<p>Dal 1.21.9 quattro impostazioni (fra cui il PVP) sono uscite da <code>server.properties</code> e sono
+diventate regole di gioco. L'app se ne accorge dalla versione del server e le manda per la
+strada giusta, invece di scrivere una riga che non farebbe niente.</p>
+<p>Le voci che qui non ci sono — porte, indirizzi, messa a punto fine — restano nel file come
+sono: questa schermata non le tocca, e lo dice.</p>
+<h2 id="6bis-le-impostazioni-tecniche-di-linuxgsm">6bis. Le impostazioni tecniche di LinuxGSM</h2>
+<p>In fondo alla schermata delle impostazioni, e nell'<strong>ingranaggio</strong> in alto, alla voce
+«Impostazioni tecniche · LinuxGSM» (in modalità esperto).</p>
+<p>Prima ci si arrivava solo quando un avvio falliva e la diagnosi puntava lì: una
+schermata raggiungibile soltanto dopo un guasto è una schermata che non esiste
+finché qualcosa non si rompe.</p>
+<p>Sono gli interruttori del programma che accende e spegne il server: memoria per Java,
+versione da scaricare, quanti backup tenere, dove mandare gli avvisi. Vivono in
+<code>lgsm/config-lgsm/&lt;script&gt;/&lt;script&gt;.cfg</code>.</p>
+<p>La schermata mostra <strong>tutti</strong> i parametri in vigore, non solo quelli scritti nel file di
+questo server: LinuxGSM ha cinque file di configurazione che legge in fila, e l'app li legge
+tutti e cinque e mette insieme il risultato come farebbe lui. Accanto a ogni valore c'è
+scritto <strong>da dove viene</strong>: di fabbrica, dal file comune a tutti i server, o scritto qui.</p>
+<p>Il file di questo server nasce vuoto ed è normale: contiene solo le differenze rispetto ai
+valori di fabbrica. Prima la schermata leggeva solo quello e diceva "nessun parametro"
+mentre il server ne stava usando una ventina.</p>
+<p>C'è un caso in cui l'app <strong>non</strong> ti lascia scrivere, e te lo spiega: quando il valore in
+vigore viene da un file dei segreti, che LinuxGSM carica dopo quello su cui l'app scrive.
+Scrivendolo lì l'app mostrerebbe il valore nuovo e il server continuerebbe a usare il
+vecchio. Quello si cambia collegandosi al computer.</p>
+<p>Con tutti i parametri in elenco c'è un campo di ricerca in cima.</p>
+<p>Sotto ogni parametro c'è scritto <strong>quando avrà effetto</strong>. Quasi tutti — backup, log,
+avvisi — LinuxGSM li rilegge da solo e non serve riavviare niente: il pulsante di riavvio
+compare solo per la memoria e la riga di avvio, che sono le due che finiscono nel comando
+con cui il server viene lanciato. La versione di Minecraft non si applica con un riavvio ma
+con un aggiornamento, dalla scheda Stato.</p>
+<p><strong>Togliere</strong> un parametro non lo cancella: lo commenta. LinuxGSM torna al valore di
+fabbrica e la riga resta lì a ricordare cosa c'era. Un valore <strong>vuoto</strong> invece non è un
+valore di fabbrica: è una riga che il server esegue lo stesso, e <code>javaram=""</code> diventa
+<code>java -XmxM -jar</code>, cioè un server che non parte più. Per questo l'app non lo lascia
+salvare.</p>
+<p>Prima di ogni modifica il file viene copiato con la data nel nome
+(<code>mcserver.cfg.mcmonitor.bak.20260823...</code>).</p>
+<p>L'elenco completo con le spiegazioni ufficiali è nella
+<a href="https://docs.linuxgsm.com/configuration/game-server-config">documentazione di LinuxGSM</a>,
+richiamata anche dall'aiuto della pagina.</p>
+<h2 id="7-il-backup">7. Il backup</h2>
+<p>Il pulsante <strong>Backup</strong> nella scheda Stato. Sotto ai pulsanti c'è anche scritto quando è
+stato fatto l'ultimo: è la domanda che ci si fa prima di toccare qualsiasi cosa di
+delicato, e prima per avere la risposta bisognava collegarsi al computer.</p>
+<p>Il backup è una copia compressa di tutto il server — mondo, mod, configurazioni — che
+LinuxGSM mette in <code>lgsm/backup</code>. In cima alla schermata vedi quando è stato fatto l'ultimo,
+quanti ce ne sono, quanto occupano e quanto spazio resta. Se lo spazio libero è poco l'app
+lo dice: un backup che si ferma a metà per il disco pieno lascia un archivio rotto che poi
+sembra un backup buono.</p>
+<p><strong>Farlo adesso</strong> — il pulsante lo fa partire subito. Di fabbrica LinuxGSM ferma il server
+per tutta la durata: chi sta giocando viene disconnesso e rientra quando è finita.</p>
+<p><strong>Farlo fare da solo</strong> — scegli ogni quanto (ogni giorno, ogni settimana, ogni mese) e a
+che ora. L'ora è quella del computer dove vive il server, non quella del telefono.</p>
+<p>LinuxGSM non ha un suo modo di programmare i backup: lo fa <code>cron</code>, il pezzo del sistema che
+manda avanti le cose a orario. L'app scrive una riga lì dentro e il backup parte anche a
+telefono spento.</p>
+<p>Quel file però non è dell'app: può contenere righe scritte da qualcun altro, magari anni
+fa. Per questo:</p>
+<ul>
+<li>si legge prima, e se non si capisce cosa c'è <strong>non si tocca niente</strong> — scrivere partendo
+  da una lettura fallita vorrebbe dire cancellare il crontab di qualcun altro;</li>
+<li>si tiene una copia di com'era <strong>sul telefono</strong>, che si rimette con "Rimetti il crontab
+  com'era";</li>
+<li>dopo aver scritto si rilegge per controllare, perché su alcuni sistemi <code>crontab</code> dice di
+  aver scritto anche quando non ha scritto niente;</li>
+<li>se sul computer non c'è cron, o non sta girando, l'app lo dice invece di lasciarti
+  credere che sia tutto a posto.</li>
+</ul>
+<p>Il giorno del mese si ferma al 28: dal 29 in poi ci sono mesi che quel giorno non ce
+l'hanno, e il backup salterebbe senza dire niente.</p>
+<p><strong>Rimettere una copia</strong> — tocca una copia nell'elenco in fondo alla schermata. È l'unica
+operazione dell'app che butta via il lavoro di qualcuno, quindi è fatta con le cinture.</p>
+<p>Prima l'app guarda dentro l'archivio e ti dice quanti file del mondo contiene, con le prime
+voci. Serve: un archivio rimasto a metà per il disco pieno dall'elenco sembra un backup
+buono, e ci si accorge che non lo era solo dopo aver buttato il mondo di adesso. Se dentro
+non c'è il mondo, l'app si ferma lì.</p>
+<p>Poi chiede conferma una seconda volta, dicendo per esteso cosa succede. Poi:</p>
+<ul>
+<li><strong>il server deve essere fermo.</strong> Se è acceso non fa niente: estrarre sopra un mondo in
+  esecuzione lo rovina, e Minecraft riscriverebbe sopra quello appena tornato</li>
+<li><strong>il mondo di adesso non viene cancellato.</strong> Viene spostato di fianco, con la data nel
+  nome (<code>serverfiles.prima-del-ripristino.…</code>). È una rinomina, quindi è istantanea e non
+  occupa un byte in più. Resta lì finché non la togli tu: guarda che sia tutto a posto
+  prima, e ricordati che occupa spazio</li>
+<li><strong>torna indietro tutta la cartella del gioco.</strong> Non solo il mondo: anche i <strong>mod</strong> e
+  <strong>server.properties</strong>, che stanno lì dentro. Restano di adesso soltanto le impostazioni di
+  LinuxGSM — la riga di avvio, la memoria, il backup — così una riparazione fatta dopo non se
+  ne va insieme al resto</li>
+<li><strong>se l'estrazione fallisce a metà, tutto torna esattamente com'era prima</strong></li>
+</ul>
+<p>Prima di cominciare l'app controlla anche che ci sia spazio: serve posto per il mondo che
+torna mentre quello di adesso è ancora lì. Su un mondo grande ci vogliono alcuni minuti.</p>
+<blockquote>
+<p>Dentro l'archivio c'è tutto il server, quindi anche i file di configurazione con le
+password e i token degli avvisi. Se lo copi da qualche parte, tienine conto.</p>
+</blockquote>
+<p>Quante copie tenere e per quanti giorni si decide dalle impostazioni tecniche
+(<code>maxbackups</code>, <code>maxbackupdays</code>).</p>
+<h2 id="8-i-comandi-di-linuxgsm">8. I comandi di LinuxGSM</h2>
+<p>Il pulsante <strong>Comandi</strong> nella scheda Stato.</p>
+<p>Sono gli stessi comandi che si darebbero da terminale scrivendo <code>./mcserver</code> seguito da una
+parola, e girano con i valori che hai messo nelle impostazioni: LinuxGSM rilegge i suoi file
+a ogni esecuzione, quindi quello che parte da qui è esattamente quello che partirebbe da là.</p>
+<p>Ognuno ha scritto cosa fa e, quando serve, cosa succede a chi sta giocando. Quelli che
+fermano il server, scaricano roba o cambiano file chiedono conferma. <code>postdetails</code>, che
+pubblica una pagina in rete, la chiede due volte.</p>
+<p><strong>Non ci sono tutti, e non è prudenza.</strong> <code>console</code>, <code>debug</code> e <code>install</code> aspettano una
+risposta dalla tastiera. Senza un terminale vero quella risposta non arriva mai, e LinuxGSM
+non si ferma: ripete "Please answer yes or no." all'infinito finché non si stacca la
+connessione. <code>debug</code> in più spegne il server prima di partire, quindi lanciarlo e chiudere
+l'app lascerebbe il mondo spento.</p>
+<p><strong>Come si capisce se è andata.</strong> Non dal codice di uscita: LinuxGSM lo usa per dire la
+gravità dell'ultima riga scritta nel suo registro, non se il comando è riuscito — un
+comando che non esiste esce con "tutto bene". Per questo l'app legge cosa ha scritto e ti
+fa vedere il testo intero.</p>
+<p>Un comando che ci mette troppo viene interrotto <strong>sul computer</strong>, non solo staccando la
+connessione: altrimenti resterebbe a girare là senza che nessuno lo sappia, e un backup
+interrotto lascia un blocco che per un'ora impedisce di rifarne un altro.</p>
+<h2 id="9-quando-qualcosa-va-storto">9. Quando qualcosa va storto</h2>
+<p>Tre schermate che servono solo nel momento in cui qualcosa smette di funzionare.
+I pulsanti stanno nella scheda Stato, sotto Avvia / Ferma / Riavvia.</p>
+<h3 id="perche-non-e-partito">Perché non è partito</h3>
+<p>Quando il server non riparte, <strong>la scheda Console non serve</strong>: mostra il log del gioco, che
+è quello dell'ultimo avvio <em>riuscito</em>. Mostrandolo senza dirlo faceva credere che andasse
+tutto bene.</p>
+<p>In cima a questa schermata c'è <strong>la riga di avvio</strong>: il comando esatto con cui LinuxGSM
+lancia il server. Nove volte su dieci il guasto si vede lì — per esempio se contiene due
+volte <code>-jar</code>, o delle opzioni di memoria dopo il nome del programma — e fino alla 1.25 non
+era visibile da nessuna parte nell'app.</p>
+<p>Sotto, il motivo probabile scritto in italiano e il pulsante che porta dove si ripara.
+Sono riconosciuti i casi che capitano davvero: programma non trovato, riga di avvio
+sbagliata, Java troppo vecchio, memoria finita, mod incompatibili, condizioni d'uso non
+accettate, porta occupata. Se non riconosce niente lo dice, invece di inventare.</p>
+<p>Poi ci sono i quattro pezzi per intero:</p>
+<ul>
+<li><strong>Cosa ha deciso LinuxGSM</strong> — il suo registro: se ha rinunciato ad avviare, qui c'è perché</li>
+<li><strong>Cosa ha detto il server</strong> — quello che ha stampato Java prima di morire</li>
+<li><strong>Log di gioco</strong> — l'ultimo avvio riuscito; se il server non parte, è vecchio</li>
+<li><strong>Segnali di stato</strong> — se era partito, se è stato fermato apposta, o se è caduto da solo</li>
+</ul>
+<p>Lo stato in cima lo dice LinuxGSM, non il file di lock: quel file resta al suo posto anche
+quando il server è morto da solo, e fidarsene faceva dire "sta girando" proprio a chi aveva
+aperto la schermata perché non partiva.</p>
+<p>I primi due vengono riscritti a ogni avvio, quindi sono sempre l'ultimo tentativo.
+"Copia tutto" mette il quadro completo negli appunti, da incollare a chi ti sta aiutando:
+ci sono i percorsi del tuo server, non le password.</p>
+<h3 id="ripristino">Ripristino</h3>
+<p>Ogni volta che l'app modifica un file del server ne lascia prima una copia, con la data nel
+nome. Da qui quelle copie si rimettono.</p>
+<p>Toccando una copia vedi <strong>prima</strong> cosa cambierebbe, riga per riga: quelle con il meno
+spariscono, quelle con il più tornano. Solo dopo decidi. E rimettere una copia lascia a sua
+volta una copia di com'era, così se torni indietro dalla cosa sbagliata puoi tornare avanti.</p>
+<p>Riguarda i file che l'app tocca — la configurazione di LinuxGSM e <code>server.properties</code> — non
+il mondo: per quello c'è il backup. Dopo aver rimesso un file, riavvia il server.</p>
+<h3 id="il-controllo-di-sicurezza">Il controllo di sicurezza</h3>
+<p>Un giudizio in una parola — <strong>alta, media o bassa</strong> — su quanto è chiuso il server, con
+l'elenco di cosa lo abbassa e come si sistema. Toccando una voce si arriva dove si ripara.</p>
+<p>Legge solo la configurazione: non prova a entrare nel server e non manda niente fuori dal
+telefono. Non è un esame completo, guarda le poche cose che su un server piccolo fanno la
+differenza fra "ci entrano i tuoi amici" e "ci entra chiunque abbia trovato l'indirizzo".</p>
+<p>Il voto è severo di proposito: basta una cosa grave per farlo scendere in fondo. Su queste
+cose non si fa la media — un server con la whitelist spenta non è "abbastanza sicuro"
+perché il resto è a posto, è aperto.</p>
+<p>Le due che pesano più di tutte sono il controllo degli account Minecraft e la whitelist.
+Poi guarda la password di RCON, come l'app ci parla, i blocchi comando, la zona protetta
+allo spawn, con quale utente ti colleghi al computer, e se l'app ha una password.</p>
+<p>E guarda una cosa che non è sicurezza ma fa lo stesso danno: <strong>due server nella stessa
+console</strong>. LinuxGSM chiama la sessione tmux come lo script, quindi due istanze in cartelle
+diverse ma con lo stesso nome di script finiscono sulla stessa sessione. Un comando mandato a
+uno può arrivare all'altro, e a schermo non si vede niente. Si sistema scrivendo un nome
+diverso nel campo <em>Sessione tmux</em> di uno dei due.</p>
+<h2 id="10-il-progetto-rifare-questo-server-altrove">10. Il progetto: rifare questo server altrove</h2>
+<p>Il pulsante con la cassa, nella scheda Stato.</p>
+<p>Il progetto è la ricetta di questo server in un file solo: le impostazioni di LinuxGSM,
+quelle di Minecraft (<code>server.properties</code>), l'elenco dei mod e, se lo chiedi, chi è in
+whitelist e chi è operatore. Serve a chi vuole rifare il tuo stesso server sul proprio
+computer senza copiare niente a mano.</p>
+<p><strong>Cosa non c'è dentro:</strong></p>
+<ul>
+<li>il mondo — sono gigabyte, si copia con un backup</li>
+<li>i file dei mod — c'è la loro impronta sha1, che su Modrinth ritrova il file esatto:
+  stessa versione, stesso pacchetto, non uno che si chiama allo stesso modo</li>
+<li>le password — né quella SSH, né quella di RCON, né i token di Telegram o il webhook di
+  Discord. Sarebbero utilissimi al clone, e sarebbero anche il modo di regalare a un altro
+  la chiave del proprio server senza accorgersene</li>
+</ul>
+<p>Il file è compresso e cifrato con AES-GCM e una password che scegli tu (PBKDF2, 210.000
+iterazioni). Mandala per un'altra via rispetto al file: se viaggiano insieme, non serve a
+niente.</p>
+<p><strong>In importazione</strong> scegli cosa applicare, riquadro per riquadro, e vedi quanti valori
+sono. Porte, indirizzi e nome del server non vengono toccati: sul tuo computer sono
+diversi, e sovrascriverli spegnerebbe il server o lo farebbe accavallare a un altro.
+I mod che su Modrinth non ci sono vengono elencati per nome, da copiare a mano.</p>
+<p>Whitelist e operatori passano dalla console, quindi in quel momento il server deve essere
+acceso: gli UUID dei giocatori li cerca lui.</p>
+<p>Di ogni file toccato resta una copia con la data. Le impostazioni valgono dal riavvio.</p>
+<blockquote>
+<p>Il file dei <strong>collegamenti</strong> — host, utente, password SSH — è un'altra cosa, e si esporta
+dalle Impostazioni. Se sbagli file, l'app te lo dice invece di aprirlo vuoto.</p>
+</blockquote>
+<h2 id="11-console">11. Console</h2>
+<p><img src="/manuale/img/06-console.png" width="320" alt="Console"></p>
+<p>La coda di <code>logs/latest.log</code>, aggiornata ogni 6 secondi (l'interruttore in alto la ferma).</p>
+<p>Accanto all'interruttore quattro pulsanti:</p>
+<ul>
+<li><strong>macro</strong> — le file di comandi già pronte (sezione 9).</li>
+<li><strong>cerca</strong> — apre una riga di ricerca che filtra le righe già scaricate, senza chiedere
+  niente al server: scrivi <code>ERROR</code>, o il nome di un giocatore, e restano solo quelle. Di
+  fianco è scritto quante righe sono rimaste. Si chiude con lo stesso pulsante.</li>
+<li><strong>a capo automatico</strong> — le righe lunghe continuano sotto invece di uscire a destra. Utile
+  per leggere, meno per confrontare le colonne del log: si accende e si spegne a piacere.</li>
+<li><strong>tutto schermo</strong> — restano solo le righe del log: spariscono barra del titolo, schede,
+  scorciatoie e campo dei comandi, e le righe vanno a capo da sole. Si esce con il pulsante
+  in alto a destra o con il tasto indietro, e tutto torna com'era.</li>
+</ul>
+<p><strong>In orizzontale</strong> l'app si stringe da sola: la fila di scorciatoie diventa il pulsante
+<strong>Comandi</strong> accanto a Invia, l'interruttore perde l'etichetta e le righe vanno a capo. Con
+il telefono girato il log passa da due righe a sei, e a tutto schermo riempie lo schermo.</p>
+<p>Sotto, il campo per inviare comandi e una riga di scorciatoie: <code>list</code>, <code>say</code>, <code>tp</code>,
+<code>gamemode</code>, <code>time set day</code>, <code>weather clear</code>, <code>whitelist</code>, <code>kick</code>, <code>ban</code>, <code>save-all</code>…
+Toccarne una <strong>compila il campo senza inviare</strong>: quelle che finiscono con uno spazio
+aspettano l'argomento, le altre sono complete e basta premere Invia. È voluto: evita
+un <code>ban</code> partito per sbaglio.</p>
+<p><strong>Due tocchi su una riga</strong> del log la selezionano e la copiano intera, anche la parte
+che esce dallo schermo: serve per incollare un errore in una ricerca o in un messaggio.</p>
+<p>I comandi viaggiano su <code>tmux send-keys</code>, oppure via RCON se l'hai attivato.</p>
+<h2 id="12-le-macro">12. Le macro</h2>
+<p>Il pulsante con il fulmine, nella Console.</p>
+<p>Una macro è una fila di comandi con un nome: si tocca una volta e partono tutti,
+nell'ordine giusto. Serve perché quasi niente di quello che fa un amministratore è un
+comando solo — mettere il server in manutenzione vuol dire avvisare, aspettare, avvisare
+ancora, salvare — e a mano si sbaglia l'ordine o si salta un pezzo proprio quando si ha
+fretta.</p>
+<p>Prima di partire l'app mostra la lista esatta di cosa sta per succedere. Le macro che
+cambiano il mondo o disturbano chi gioca lo dicono nella conferma.</p>
+<p><strong>Già pronte</strong>, una ventina, fra cui:</p>
+<ul>
+<li><strong>Manutenzione fra 5 minuti</strong> — avvisa, conta alla rovescia, salva</li>
+<li><strong>Backup a caldo: prima / dopo</strong> — <code>save-off</code> e <code>save-all flush</code>, poi <code>save-on</code></li>
+<li><strong>Pulisci gli oggetti a terra</strong> — la prima cosa da provare quando il server arranca</li>
+<li><strong>Chiudi il server ai nuovi</strong> — whitelist accesa e avviso in chat</li>
+<li><strong>Kit di sopravvivenza</strong>, <strong>Rimetti in piedi qualcuno</strong>, <strong>Dai il benvenuto</strong></li>
+<li>e qualcuna per far divertire: fuochi d'artificio, pioggia di polli, invisibilità,
+  super salto, notte di caccia</li>
+</ul>
+<p><strong>Scriverne una tua</strong>: "Scrivi una macro nuova", poi un comando per riga, senza la barra
+iniziale. Due cose che nei comandi normali non esistono:</p>
+<ul>
+<li><code>&lt;giocatore&gt;</code>, <code>&lt;x&gt;</code>, <code>&lt;messaggio&gt;</code> — un buco fra parentesi angolari diventa una domanda
+  quando lanci la macro. Puoi chiamarli come vuoi</li>
+<li><code>!attendi 30</code> — non è un comando di Minecraft: è una pausa di 30 secondi, per i conti
+  alla rovescia</li>
+</ul>
+<p>Le macro già pronte non si rovinano: se ne apri una e la cambi, quello che salvi diventa
+una macro tua e l'originale resta dov'è.</p>
+<p><strong>Ferma la macro</strong> interrompe subito, anche durante una pausa. I comandi già partiti sono
+già partiti: non tornano indietro. Se un comando fallisce la macro si ferma lì.</p>
+<p>Le macro stanno sul telefono, non sul server.</p>
+<h3 id="fattela-scrivere">Fattela scrivere</h3>
+<p><strong>"Fattela scrivere: descrivi cosa vuoi"</strong> chiede la macro a un servizio di intelligenza
+artificiale: scrivi <em>"prepara il server per una gara di costruzione"</em> e ti torna indietro la
+sequenza di comandi, con un nome e una descrizione.</p>
+<p>Serve una chiave del servizio, gratuita, che si prende in due minuti:</p>
+<ul>
+<li><a href="https://aistudio.google.com/apikey">Google AI Studio</a> (Gemini)</li>
+<li><a href="https://console.groq.com/keys">Groq</a></li>
+</ul>
+<p>La chiave è tua e resta su questo telefono: <strong>nell'app non ce n'è nessuna</strong>, e senza tutto il
+resto funziona lo stesso. Al servizio arrivano la frase che scrivi tu, la versione di
+Minecraft e il mod loader — non indirizzi, non password, non log, non nomi di giocatori.</p>
+<p>Quello che torna indietro non viene creduto sulla parola. Un modello può scrivere <code>stop</code>
+mentre stanno giocando in venti, o <code>op</code> a un nome che non hai mai sentito: comandi
+legittimi, che però non hai chiesto tu. Passano solo i verbi di una lista — parlare in chat,
+cambiare tempo e meteo, dare oggetti ed effetti, teletrasportare, salvare — e quelli tolti
+te li elenca invece di farli sparire in silenzio.</p>
+<p>Poi la macro te la fa <strong>leggere prima di salvarla</strong>, con il pulsante per correggerla. Nasce
+segnata come delicata, così la conferma prima di lanciarla lo ricorda.</p>
+<p>Non è una regola per te: dalla Console <code>stop</code> e <code>ban</code> li scrivi quando vuoi. È una regola
+per quello che scrive qualcun altro al posto tuo, e che nessuno ha riletto prima che
+diventasse un pulsante da premere.</p>
+<h2 id="13-giocatori">13. Giocatori</h2>
+<p><img src="/manuale/img/03-giocatori.png" width="320" alt="Giocatori"></p>
+<p>Tre sezioni: <strong>lista d'attesa</strong>, <strong>online</strong>, <strong>whitelist e ban</strong>.</p>
+<p><strong>Lista d'attesa</strong> — compare solo se serve: chi ha provato a entrare e non è né in
+whitelist né bannato, con data dell'ultimo tentativo ed esito. Due pulsanti: <strong>Ammetti</strong>
+o <strong>Banna</strong>. Appena decidi, il nome finisce in uno dei due file del server e sparisce.
+Se sul server <code>white-list=false</code>, la card avvisa che ammettere qualcuno non impedisce
+comunque agli altri di entrare.</p>
+<p><strong>Online</strong> — nome, coordinate X/Y/Z e dimensione di ciascun giocatore.</p>
+<p><strong>Whitelist e ban</strong> — accanto al titolo della whitelist c'è l'interruttore che la accende
+e la spegne (<code>whitelist on|off</code>): spegnendola l'app chiede conferma, perché da quel momento
+entra chiunque conosca l'indirizzo.</p>
+<p>Quando <strong>banni o ammetti</strong> qualcuno puoi lasciare una nota. La ritrovano gli altri
+amministratori aprendo quel giocatore, insieme al nome di chi l'ha scritta: prima ogni
+volta si ricominciava da capo a chiedersi perché quel nome fosse in quella lista.</p>
+<p>Accanto al nome di chi non è collegato compare <strong>l'ultima volta che si è visto</strong>, presa da
+<code>latest.log</code> e dagli archivi compressi dei giorni scorsi.</p>
+<p><strong>Toccando un nome</strong> si apre il pannello completo:</p>
+<ul>
+<li><strong>Mostra sulla mappa e segui</strong></li>
+<li><strong>Cronologia chat e comandi</strong> con data e ora, anche dai log dei giorni scorsi</li>
+<li><strong>Teletrasporta</strong> a coordinate, verso un altro giocatore, o portando qualcuno da lui</li>
+<li><strong>Modalità di gioco</strong>, <strong>punto di rinascita</strong></li>
+<li><strong>Whitelist</strong>, <strong>op/deop</strong></li>
+<li><strong>Espelli</strong> e <strong>banna</strong> con motivo, <strong>rimuovi ban</strong></li>
+<li><strong>Lascia un messaggio</strong>, per quando non c'è (qui sotto)</li>
+</ul>
+<h3 id="ammettere-e-bannare-su-piu-server">Ammettere e bannare su più server</h3>
+<p>Chi ha due mondi sulla stessa macchina non ha due comunità: ha una comunità e due mondi.
+Bannare un vandalo di là e non di qua vuol dire che fra dieci minuti è di qua.</p>
+<p>Quindi <strong>ammetti</strong>, <strong>banna</strong>, <strong>sbanna</strong> e <strong>togli dalla whitelist</strong> chiedono, prima di
+farlo, su quali altri server ripeterlo. Quelli sullo stesso computer arrivano già spuntati;
+gli altri no, perché chi ha un mondo altrove di solito ha un motivo per tenerlo separato.</p>
+<p>Vale da <strong>tutte</strong> le strade: il pannello di un giocatore, i due campi in cima alla scheda,
+i pulsanti <strong>Ammetti</strong> e <strong>Banna</strong> della lista d'attesa, e <strong>Sbanna</strong> e <strong>Rimuovi</strong> nelle
+liste. Lo stesso gesto non può comportarsi in due modi a seconda di dove lo si tocca.</p>
+<p>Alla fine l'app dice <strong>dove è andata e dove no</strong>, con il motivo. Riuscire a metà è normale,
+non è un'eccezione: un server è spento, un altro sta su una macchina che in quel momento non
+risponde. Quelli non fatti restano come prima, e si riprova quando sono accesi.</p>
+<p>Se hai sbagliato bersaglio, <strong>Annulla tutto</strong> disfa il provvedimento esattamente sui server
+dove era riuscito — non su quelli dove non era passato.</p>
+<p>Due cose che non si propagano:</p>
+<ul>
+<li>il <strong>ban di un indirizzo</strong> (<code>ban-ip</code>): colpisce un indirizzo, che su una rete di casa è di
+  tutta la famiglia, e ripeterlo altrove moltiplicherebbe il danno di uno sbaglio</li>
+<li><strong>espelli</strong>, <strong>op</strong> e <strong>deop</strong>: riguardano quel momento e quel mondo</li>
+</ul>
+<p><strong>"Fatto" vuol dire quanto l'app sa.</strong> Senza RCON parla alla console e non sente la
+risposta: sa che il comando è arrivato, non che il server l'abbia accettato. Con RCON acceso
+la risposta si legge, e un rifiuto — per esempio un nome che non esiste — finisce fra i non
+fatti invece che fra i fatti. L'app te lo dice sotto il riassunto.</p>
+<p>Il server di destinazione dev'essere <strong>acceso</strong>. Il comando passa dalla console, e per
+mettere qualcuno in whitelist il server deve chiedere a Mojang chi è: una riga scritta a mano
+nel file, senza quell'identificativo, un server in online-mode la ignora. Se è spento l'app
+lo dice invece di far finta.</p>
+<h3 id="linventario-di-un-giocatore">L'inventario di un giocatore</h3>
+<p>Dal pannello di un giocatore, <strong>Guarda l'inventario</strong>: cosa ha addosso e nello zaino,
+disposto come nel gioco — armatura, mano secondaria, cintura con la casella che ha in mano
+evidenziata, zaino, baule dell'End. Più vita, fame, livello, dimensione e posizione.</p>
+<p><strong>Da dove arriva.</strong> Da <code>world/playerdata/&lt;identificativo&gt;.dat</code>, il file che Minecraft scrive
+per ogni giocatore e riscrive quando quello esce e a ogni salvataggio del mondo.</p>
+<p>Quindi per chi è collegato in quel momento il file è <strong>vecchio</strong>: l'app chiede prima al server
+di salvare, aspetta, e poi legge. Se il server non risponde te lo dice, invece di mostrarti
+l'inventario di ieri come se fosse di adesso. In fondo alla schermata c'è sempre scritto a
+quando si riferisce quello che stai guardando.</p>
+<p>Il nome viene tradotto in identificativo leggendo <code>usercache.json</code> sul server, dove finisce
+chi è entrato almeno una volta. <strong>Non viene chiesto niente a Mojang</strong>: il nome di una persona
+non esce dal tuo server.</p>
+<p><strong>Perché non ci sono le icone.</strong> Le texture di Minecraft sono di Mojang e non si possono
+mettere dentro un'app. C'è il nome dell'oggetto, la quantità, un simbolo se è incantato, e
+la resistenza che resta quando l'oggetto si consuma — in arancione quando sta per rompersi.
+La faccia è due lettere su un colore ricavato dal nome, sempre lo stesso per lo stesso
+giocatore: serve a distinguere due persone a colpo d'occhio, non a somigliare alla skin.</p>
+<p>Si guarda e basta: da qui non si tocca niente.</p>
+<h3 id="portare-le-liste-su-un-altro-server">Portare le liste su un altro server</h3>
+<p>Ammettere e bannare su più server vale per i provvedimenti <strong>nuovi</strong>. Ma se il secondo mondo
+è arrivato dopo, la sua whitelist è vuota e la sua lista ban pure, e tutto quello che avevi
+deciso negli anni sta solo di qua.</p>
+<p>Il pulsante <strong>Porta le liste su un altro server</strong>, in cima alla scheda Giocatori, fa quello:
+sceglie il server, confronta le due liste e ti dice <strong>chi manca di là</strong>, con i nomi, prima di
+toccare qualcosa. Solo dopo decidi.</p>
+<p>Le liste si leggono dai file, non dalla console, quindi puoi guardare cosa c'è di là <strong>anche a
+server spento</strong> — che è poi il momento in cui uno se lo chiede. Per scriverle, invece, il
+server dev'essere acceso.</p>
+<p>Due regole, tutte e due per lo stesso motivo — non disfare decisioni che ha preso qualcuno:</p>
+<ul>
+<li><strong>si aggiunge soltanto.</strong> Da quel server non viene tolto nessuno. Chi è ammesso di qua e non
+  di là può esserlo per una ragione: un mondo per gli amici stretti, uno per tutti</li>
+<li><strong>chi è ammesso su un server e bannato sull'altro non viene toccato.</strong> L'app te lo fa vedere
+  e si ferma lì: qualcuno ha deciso così, e non tocca a un programma disfarlo</li>
+</ul>
+<h3 id="la-posta-per-chi-non-ce">La posta per chi non c'è</h3>
+<p>Un messaggio lasciato a un giocatore scollegato. Gli arriva in chat quando rientra:</p>
+<pre><code>[MC Monitor] L'admin ti ha scritto mentre non c'eri: ho spostato il tuo baule
+</code></pre>
+<p>Serve per le cose che non vale la pena rincorrere — "domani il server è fermo un'ora",
+"ho sistemato la casa che ti avevano bruciato". Prima bisognava aspettare di beccarlo
+online.</p>
+<p>Si arriva dal pulsante <strong>Posta per chi non c'è</strong> in cima alla scheda Giocatori, oppure dal
+pannello di un giocatore. Se scrivi a qualcuno che è collegato in quel momento l'app te lo
+dice e ti offre di scrivergli subito.</p>
+<p><strong>I messaggi stanno sul server, non sul telefono.</strong> È l'unica scelta che funziona: nel
+momento in cui il giocatore entra il tuo telefono è in tasca o spento, e un messaggio che
+parte solo se hai l'app aperta non è una posta, è una coincidenza.</p>
+<p><strong>La consegna va accesa una volta sola</strong>, con l'interruttore nella schermata Posta. L'app
+mette sul computer un piccolo script e una riga di cron che lo lancia ogni minuto. Quando
+non c'è niente in attesa lo script non dice niente al server: legge le righe di registro
+nuove per tenere il conto di chi c'è, e si ferma lì. È il caso normale, e costa quanto
+leggere le righe scritte nell'ultimo minuto.</p>
+<p>Quando invece c'è posta, guarda nel registro del server <strong>chi è entrato e chi è uscito</strong>, e
+consegna a chi c'è. Non chiede niente alla console, e non è un dettaglio: la risposta a una
+domanda finirebbe nello stesso registro dove finisce la chat, e un giocatore che ci scrivesse
+dentro la frase giusta potrebbe far dare per consegnati -- cioè far cancellare -- i messaggi
+degli altri. Per lo stesso motivo valgono solo le righe scritte dal server, riconosciute
+dall'orologio a inizio riga: quello che scrive un giocatore non conta mai.</p>
+<p><strong>Consegnato vuol dire che il server l'ha confermato.</strong> Che il comando sia stato accettato non
+basta: la prova è che il server rieccheggi il messaggio dicendo a chi. Se invece risponde che
+quel giocatore non c'è -- capita se esce nell'istante sbagliato -- il messaggio torna in coda.</p>
+<p>Se il server non dice né l'una né l'altra cosa, perché è lento o non è un server standard, il
+messaggio si considera partito ma nel registro resta scritto <strong>non confermato</strong>, con il testo
+per intero: così non viene consegnato all'infinito, e se non è arrivato lo si riscrive da lì.</p>
+<p>Con il server fermo, o se la consegna non parte, il messaggio resta in coda e ci si riprova.</p>
+<p>Il caso "non confermato" è l'unico in cui potrebbe non essere arrivato a nessuno: è il prezzo
+per non risussurrarlo a ogni ingresso per sempre. Il testo però resta nel registro, quindi non
+si perde — si riscrive da lì.</p>
+<p>Del crontab l'app tiene una copia di com'era prima, e quello che c'è dentro di altri non lo
+tocca. Spegnendo la consegna i messaggi in attesa restano dove sono.</p>
+<p>Il pulsante <strong>Cosa è già partito</strong> apre il registro delle consegne, che sta sul computer:
+c'è quando, a chi, e il testo per intero. Serve per le righe segnate "non confermato" — se
+quel messaggio non è arrivato, lo si riscrive da lì.</p>
+<p>Un messaggio si può togliere finché non è partito, toccandolo nell'elenco. Oltre 50 in
+attesa l'app si ferma: vuol dire che non li sta consegnando nessuno, e allungare la fila
+non serve. Il testo viene tagliato a 200 caratteri, che è quanto la chat mostra comunque.</p>
+<p>Le voci che richiedono il giocatore in gioco sono disattivate quando è offline.</p>
+<h2 id="14-mappa">14. Mappa</h2>
+<p><img src="/manuale/img/04-mappa.png" width="320" alt="Mappa"></p>
+<p>Piano X/Z navigabile: trascina per spostarti, pizzica o doppio tap per lo zoom. Griglia
+dei chunk con passo automatico, spawn evidenziato, giocatori come punti colorati con la
+<strong>scia dei loro spostamenti</strong>.</p>
+<p>Filtro Overworld / Nether / End in alto. <strong>Tracciamento live</strong> interroga le posizioni
+all'intervallo impostato nelle Impostazioni (default 6 s). <strong>Inquadra</strong> riporta tutti in
+vista, <strong>Azzera scie</strong> ripulisce i percorsi.</p>
+<p>Toccando un giocatore la mappa si aggancia e lo segue; se cambia dimensione il filtro si
+adegua da solo.</p>
+<p>Le posizioni arrivano da <code>data get entity &lt;nome&gt; Pos</code>: serve un server vanilla, Paper o
+Spigot dalla 1.13 in poi.</p>
+<p>Quando la mappa è vuota dice <strong>perché</strong> lo è: nessuno collegato, nessuna posizione ricevuta
+(succede sui server che non rispondono a quel comando, per esempio con certi mod), oppure
+tutti in un'altra dimensione rispetto al filtro scelto. Erano tre casi diversi che
+sembravano lo stesso guasto.</p>
+<h3 id="la-mappa-web-del-mondo">La mappa web del mondo</h3>
+<p>La mappa qui sopra la disegna l'app, dalle posizioni dei giocatori. La <strong>mappa web</strong> è
+un'altra cosa: è il tuo mondo vero, visto dall'alto o in tre dimensioni, disegnato da un
+programma che gira sul server.</p>
+<p>Prima qui c'era solo una casella dove incollare un indirizzo — e per avere un indirizzo da
+incollare bisognava già sapere cosa sono Dynmap e BlueMap, installarne uno a mano e sapere
+su che porta si mette. Cioè: la casella serviva a chi non ne aveva bisogno.</p>
+<p>Adesso il pulsante <strong>Scegli e installa una mappa</strong>, nelle Impostazioni del server, fa
+tutto: sceglie fra le tre, la scarica, la mette fra le mod, riavvia il server e la apre.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>com'è</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>BlueMap</strong></td>
+<td>il mondo in tre dimensioni, come se ci volassi sopra. La più bella, e quella che fa lavorare di più il computer la prima volta</td>
+</tr>
+<tr>
+<td><strong>Dynmap</strong></td>
+<td>vista dall'alto, come un navigatore. La più vecchia e la più diffusa: se qualcuno ti aiuta, probabilmente conosce questa</td>
+</tr>
+<tr>
+<td><strong>squaremap</strong></td>
+<td>anche dall'alto, ma fatta per pesare poco: da scegliere se il computer è piccolo</td>
+</tr>
+</tbody>
+</table>
+<p>Sono mod, quindi vogliono Fabric o Forge: su un server vanilla non si caricano, e l'app te
+lo dice prima di scaricare qualcosa.</p>
+<p><strong>Non serve aprire niente sul firewall.</strong> La mappa si raggiunge dentro il collegamento SSH
+che l'app apre già. Dal di fuori quella porta resta chiusa, ed è giusto così: una mappa
+aperta a tutti dice a chiunque dove hai costruito casa.</p>
+<p><strong>La porta la trova l'app.</strong> Non leggendo la configurazione — i tre programmi la scrivono
+in tre formati diversi — ma chiedendo alle porte aperte sul server chi sono. Una mappa è
+un sito, un sito risponde, e nella pagina che manda c'è scritto come si chiama. Le porte
+che non rispondono nemmeno come sito escono di scena, e quasi sempre ne resta una sola.</p>
+<p>Quando resta ambiguo l'app <strong>chiede</strong>, elencando solo le porte che hanno risposto qualcosa;
+la risposta che dai se la ricorda, e non te la chiede più. Se invece nello stesso Linux
+girano <strong>più server Minecraft</strong>, le loro mappe si presentano tutte con lo stesso nome e la
+porta predefinita è una sola per tutte: lì la risposta la sai solo tu, e si scrive nella
+casella <strong>Porta della mappa</strong> (modalità esperto). Quando c'è un numero scritto vince su
+tutto, e se lì non risponde nessuno l'app si ferma e lo dice — ripiegare su un'altra porta
+vorrebbe dire mostrarti la mappa di un mondo diverso come se fosse la tua.</p>
+<h3 id="le-impostazioni-della-mappa">Le impostazioni della mappa</h3>
+<p>Dal pulsante della mappa, quando ne hai già una installata: <strong>Impostazioni di BlueMap</strong> (o
+di Dynmap, o di squaremap).</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>cosa fa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Permesso di scaricare i file del gioco</strong></td>
+<td>solo BlueMap. Per disegnare il mondo gli servono le texture ufficiali e le scarica da Mojang, ma non lo fa senza permesso</td>
+</tr>
+<tr>
+<td><strong>Mappa web accesa</strong></td>
+<td>spenta, il programma continua a disegnare il mondo ma non lo mostra a nessuno</td>
+</tr>
+<tr>
+<td><strong>Porta</strong></td>
+<td>dove si affaccia. L'app la trova da sola, quindi cambiarla serve solo se quella porta è già di qualcun altro</td>
+</tr>
+<tr>
+<td><strong>Da dove si può raggiungere</strong></td>
+<td><code>0.0.0.0</code> da tutta la rete, <code>127.0.0.1</code> solo dal computer del server. Dal telefono la mappa passa comunque dentro il tunnel, quindi <code>127.0.0.1</code> è la scelta prudente</td>
+</tr>
+<tr>
+<td><strong>Indirizzo che vedono i giocatori</strong></td>
+<td>solo squaremap, per chi ha la sua mod sul computer. Se cambi la porta e non cambi questo, continuano a bussare a quella di ieri</td>
+</tr>
+</tbody>
+</table>
+<p>Quel primo interruttore è il più importante di tutti: <strong>finché è spento BlueMap non parte
+affatto.</strong> Niente mappa, nessuna porta aperta, e da fuori sembra che stia ancora disegnando
+il mondo. È un caso vero, trovato su un server acceso da ore.</p>
+<p>Del resto del file non si tocca niente, e di ogni file toccato resta una copia di sicurezza
+accanto all'originale. Niente parte al tocco: le modifiche si accumulano e partono con un
+pulsante solo. Il programma legge la sua configurazione quando parte, quindi alla fine il
+server va riavviato — l'app te lo propone.</p>
+<p>Se i file non ci sono ancora, è perché li scrive il programma stesso al primo avvio dopo
+l'installazione: accendi il server, aspetta che finisca di partire, e riprova.</p>
+<h2 id="15-mod-e-modpack">15. Mod e modpack</h2>
+<p><img src="/manuale/img/05-mod.png" width="320" alt="Scheda Mod"></p>
+<p><strong>Ambiente del server</strong> — versione di Minecraft e mod loader, che l'app ricava da sola: la
+versione dalla riga che il server scrive nel log all'avvio e, se il server non è mai
+partito, da <code>mcversion</code> nella configurazione di LinuxGSM; il loader dai file presenti.
+Accanto alla versione è scritto da dove viene, "in esecuzione" o "da configurazione".</p>
+<p><strong>Se il server è vanilla</strong> compare <strong>Installa Fabric per Minecraft &lt;versione&gt;</strong>: la
+versione non viene chiesta, è quella del server. Il jar di avvio lo scarica il server da
+meta.fabricmc.net (con curl) e <code>startparameters</code> di LinuxGSM viene modificato per usarlo,
+tenendo una copia del file. Poi va riavviato. Solo se la versione è davvero indeterminabile
+— server mai avviato e <code>mcversion="latest"</code> — l'app la chiede una volta.</p>
+<p><strong>Cerca su Modrinth</strong> — nessun account necessario: l'API pubblica non richiede login. Non
+c'è niente da impostare: i mod vengono cercati per la versione e il loader del server, e
+sotto il campo di ricerca è scritto quali sono. Se per quella combinazione non esce niente,
+un pulsante propone di <strong>cercare senza filtri</strong>.</p>
+<p>Il pulsante con la <strong>stella</strong> apre l'elenco dei <strong>mod consigliati</strong>: quelli che su un
+server piccolo risolvono i problemi che si presentano per primi — il server che arranca, i
+mostri che cancellano le costruzioni, i backup dimenticati — con scritto in una riga a cosa
+serve ognuno. Toccandone uno parte la ricerca già compilata.</p>
+<p><img src="/manuale/img/05-mod-ricerca.png" width="320" alt="Ricerca su Modrinth"></p>
+<p>Toccando un risultato scegli la versione; l'app mostra le dipendenze obbligatorie e può
+installarle insieme al mod. Il file viene scaricato <strong>dal server</strong> e verificato con lo
+sha1 dichiarato da Modrinth: se non coincide viene cancellato.</p>
+<p><strong>Modpack</strong> — scegli un <code>.mrpack</code> dal telefono. L'app lo carica sul server via SFTP, ne
+legge <code>modrinth.index.json</code>, ti mostra versione, loader e quanti file verranno scaricati,
+e segnala se il pacchetto non è compatibile con il server. Poi il server scarica i mod
+elencati e copia le configurazioni contenute in <code>overrides/</code>. I file marcati come solo
+client vengono esclusi.</p>
+<p><strong>Mod installati</strong> — ogni mod si può <strong>disattivare</strong> (rinominato in <code>.disabled</code>, si
+recupera in un tocco) o <strong>rimuovere</strong>.</p>
+<p>Dopo ogni modifica compare il pulsante per riavviare il server.</p>
+<h2 id="16-cambiare-versione-di-minecraft">16. Cambiare versione di Minecraft</h2>
+<p>Nella scheda Stato, <strong>Cambia versione</strong> mostra l'elenco ufficiale delle release preso dal
+manifesto di Mojang. Scegliendone una, l'app scrive <code>mcversion</code> nella configurazione
+LinuxGSM (con copia di sicurezza) e lancia <code>./mcserver update</code>, che ferma il server,
+scarica il jar e riparte.</p>
+<p>Prima di procedere ti viene proposto <strong>Backup e cambio</strong>: usalo. Un mondo salvato con una
+versione recente spesso non si riapre con una precedente, e l'app te lo segnala quando
+stai tornando indietro.</p>
+<h2 id="17-rcon">17. RCON</h2>
+<p>Senza RCON l'app scrive nella console tmux e rilegge il log: ogni aggiornamento lascia
+righe di servizio in <code>latest.log</code>. Con RCON le risposte arrivano subito e il log resta
+pulito.</p>
+<p>Nelle Impostazioni: <strong>Genera password</strong>, poi <strong>Attiva RCON sul server e riavvia</strong>. L'app
+salva una copia di <code>server.properties</code>, scrive le impostazioni, riavvia, attende che la
+porta risponda e prova l'autenticazione, mostrando ogni passo.</p>
+<p>Il <strong>tunnel SSH</strong> è attivo di default: la porta RCON viaggia dentro la connessione SSH,
+quindi non devi aprire porte sul firewall e la password — che il protocollo trasmette in
+chiaro — non esce dal tunnel.</p>
+<h2 id="18-aggiornamenti-dellapp">18. Aggiornamenti dell'app</h2>
+<p>All'avvio l'app controlla se sul repository c'è una release più recente. In tal caso
+compare un banner con versione, dimensione e le note: <strong>Aggiorna</strong> scarica l'APK e apre
+l'installer di sistema, <strong>Più tardi</strong> lo nasconde fino al prossimo avvio.</p>
+<p>La prima volta Android chiede di autorizzare MC Monitor a installare app: è una conferma
+di sistema, l'app non installa nulla da sola.</p>
+<h3 id="se-linstallazione-non-parte">Se l'installazione non parte</h3>
+<p>Android non lascia che un'app ne installi un'altra finche' non glielo dici una volta. Se
+succede, l'app apre da sola il riquadro <strong>"Serve il tuo consenso"</strong> con il pulsante che
+porta dritto alla schermata giusta: <em>Installa app sconosciute · MC Monitor · Consenti da
+questa origine</em>. Accendi l'interruttore, torna indietro e tocca di nuovo Aggiorna — il file
+e' gia' scaricato e non si riscarica.</p>
+<h3 id="la-variante-di-prova">La variante di prova</h3>
+<p>Esiste una seconda versione dell'app che si chiama <strong>"MC Monitor prova"</strong>: e' un attrezzo
+di diagnosi, nato per capire quale componente un certo telefono rifiutasse, e per questo le
+mancano apposta il permesso di installare e il pezzo che consegna i file alle altre app.</p>
+<p>Da quella copia <strong>l'aggiornamento non puo' funzionare</strong>, e non e' un guasto: adesso l'app te
+lo dice prima di scaricare, invece di lasciarti un errore di Android in inglese. Per passare
+a quella normale: salva la configurazione con <em>Impostazioni · Fai un backup ora</em> in una
+cartella (quello funziona anche li'), scarica l'APK dalla pagina delle versioni, installalo
+— e' un'app separata e si affianca — e riprendi la configurazione con <em>Importa</em>.</p>
+<h2 id="19-se-qualcosa-non-funziona">19. Se qualcosa non funziona</h2>
+<p><strong>Diagnostica connessione</strong> (in Impostazioni) prova gli stadi separatamente — DNS, porta
+TCP, handshake SSH, autenticazione — e poi verifica sul server tmux, le sessioni attive,
+lo script LinuxGSM, RCON e i file di log. Il report è copiabile.</p>
+<table>
+<thead>
+<tr>
+<th>Sintomo</th>
+<th>Causa tipica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Timeout in connessione</td>
+<td>telefono su rete mobile e server su IP privato, o porta non inoltrata</td>
+</tr>
+<tr>
+<td>Autenticazione fallita</td>
+<td>utente o chiave errati; la chiave va incollata intera</td>
+</tr>
+<tr>
+<td>I comandi non arrivano alla console</td>
+<td>SSH con un utente diverso da quello di LinuxGSM: <code>tmux ls</code> non vede la sessione</td>
+</tr>
+<tr>
+<td>Nessuna posizione dei giocatori</td>
+<td>server precedente alla 1.13, oppure server in pausa perché vuoto (<code>pause-when-empty-seconds</code>)</td>
+</tr>
+<tr>
+<td>Chat vuota</td>
+<td>manca <code>zgrep</code> sul server: si legge solo <code>latest.log</code></td>
+</tr>
+<tr>
+<td>Mod non caricati</td>
+<td>server vanilla senza mod loader</td>
+</tr>
+<tr>
+<td>Il server non riparte</td>
+<td>apri <strong>Perché non è partito</strong> nella scheda Stato: la Console mostra l'ultimo avvio riuscito, non questo (sezione 9)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>Progetto open source, licenza Apache 2.0 — github.com/bdbais/mc-monitor
+Non affiliato a Mojang Studios o Microsoft.</p>
+  </main>
+
+</div>
+
+<footer class="coda">
+  <div class="dentro">
+    <p>MC Monitor è software libero, licenza Apache 2.0.
+       <a href="https://github.com/bdbais/mc-monitor">Il codice sta su GitHub</a>.</p>
+  </div>
+</footer>
+</body>
+</html>
